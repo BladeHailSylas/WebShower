@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import ClickerHub from "../components/clicker/ClickerHub";
+import PixelStudio from "../components/pixel/PixelStudio";
 
-export default function ClickerPage() {
+export default function PixelPage() {
     const navigate = useNavigate();
     return(
         <div className="flex flex-col items-center">
@@ -10,7 +10,7 @@ export default function ClickerPage() {
                     ←돌아가기
                 </button>
             </div>
-            <ClickerHub />
+            <PixelStudio />
         </div>
     )
 }

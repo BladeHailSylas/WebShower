@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { type NoteInfo, KEYBOARD_MAP, PIANO_NOTES } from '../../constants/pianoContants';
 import MusicalStaff from './MusicalStaff';
 import VirtualPiano from './VirtualPiano';
-import { type NoteInfo, KEYBOARD_MAP, PIANO_NOTES } from '../../constants/pianoContants';
 
 export default function PianoHub() {
   const [activeNotes, setActiveNotes] = useState<string[]>([]);
