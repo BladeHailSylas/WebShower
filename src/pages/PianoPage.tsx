@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import ClickerHub from "../components/clicker/ClickerHub";
+import PianoHub from "../components/piano/PianoHub";
 
-export default function ClickerPage() {
+export default function PianoPage() {
     const navigate = useNavigate();
     return(
         <div className="flex flex-col items-center">
@@ -10,7 +10,7 @@ export default function ClickerPage() {
                     ←돌아가기
                 </button>
             </div>
-            <ClickerHub />
+            <PianoHub />
         </div>
     )
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { CHEAT_CONFIG, CLICKER_SAFETY_LIMITS, type ClickerShopItem } from '../../constants/clickerConstants';
 import ClickPage from './ClickPage';
 import ShopPage from './ShopPage';
@@ -85,7 +85,7 @@ export default function ClickerHub() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800 p-6 flex flex-col items-center">
+    <div className="min-h-screen w-full bg-base-200 text-slate-800 p-6 flex flex-col items-center">
       {/* 시스템 예외 상황 경고 알림 (강사용) */}
       {systemWarning && (
         <div className="alert alert-warning shadow-lg max-w-2xl mb-4 text-sm animate-bounce">
