@@ -113,13 +113,13 @@ export default function ClickerHub() {
       {/* DaisyUI 탭 메뉴를 활용한 화면 전환 */}
       <div className="tabs tabs-boxed bg-white border border-slate-200 p-1 mb-6 w-full max-w-2xl flex">
         <button 
-          className={`tab flex-1 font-bold transition-all ${activeTab === 'click' ? 'tab-active btn-primary text-white rounded-lg' : 'text-slate-500'}`}
+          className={`tab flex-1 font-bold transition-all ${activeTab === 'click' ? 'tab-active btn-primary text-blue-600 rounded-lg' : 'text-slate-500 hover:scale-105'}`}
           onClick={() => setActiveTab('click')}
         >
           메인 창 (Click)
         </button>
         <button 
-          className={`tab flex-1 font-bold transition-all ${activeTab === 'shop' ? 'tab-active btn-primary text-white rounded-lg' : 'text-slate-500'}`}
+          className={`tab flex-1 font-bold transition-all ${activeTab === 'shop' ? 'tab-active btn-primary text-blue-600 rounded-lg' : 'text-slate-500 hover:scale-105'}`}
           onClick={() => setActiveTab('shop')}
         >
           상점 창 (Shop)

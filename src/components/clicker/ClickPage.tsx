@@ -41,8 +41,7 @@ export default function ClickPage({ onMainClick, pointsPerClick }: ClickPageProp
   return (
     <div className="w-full h-full flex flex-col items-center justify-center relative">
       <p className="text-slate-400 text-sm mb-6 text-center">
-        아래의 모던 코어 오브젝트를 클릭하여 포인트를 획득하세요.<br/>
-        <span className="text-xs text-slate-300">(클릭 시 시각적 타격감 이펙트가 발생합니다.)</span>
+        아래의 버튼을 클릭하여 포인트를 획득하세요.<br/>
       </p>
 
       {/* 인터랙티브 클릭 영역 */}
@@ -51,7 +50,7 @@ export default function ClickPage({ onMainClick, pointsPerClick }: ClickPageProp
           onClick={handleClick}
           className="w-48 h-48 rounded-full bg-linear-to-tr from-blue-600 to-indigo-500 shadow-xl border-4 border-white flex items-center justify-center text-white text-2xl font-bold uppercase tracking-wider select-none transform transition-all active:scale-90 hover:scale-105"
         >
-          Push Core
+          Click Here!
         </button>
 
         {/* 시각적 타격감 효과를 위한 떠오르는 텍스트 파티클 구조 */}
