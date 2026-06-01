@@ -40,7 +40,8 @@ export default function MusicalStaff({ activeNotes }: MusicalStaffProps) {
             <div 
               key={noteKey}
               className="absolute left-1/2 flex flex-col items-center transition-transform duration-100 ease-out"
-              style={{ bottom: `${noteInfo.grandStaffStep * STEP_HEIGHT}px`, marginLeft: '-8px' }}
+              style={{ bottom: `${(noteInfo.grandStaffStep - 1) * (STEP_HEIGHT)}px`, marginLeft: '-8px' }}
+              //예외 처리하기는 싫었지만, 시간은 유한하고 고칠 것은 명확하다... 음계가 하나 아래로 내려가면 정확히 맞음
             >
               {/* 계이름 안내 레이블 (모던한 말풍선 형태) */}
               <div className="absolute -top-7 px-2 py-0.5 bg-slate-800 text-white text-[10px] font-bold rounded-md shadow-sm whitespace-nowrap">
@@ -49,16 +50,16 @@ export default function MusicalStaff({ activeNotes }: MusicalStaffProps) {
 
               {/* 가온 도(C4, step: 0) 및 범위를 벗어나는 음의 덧줄(Ledger Line) 자동 생성 로직 */}
               {(noteInfo.grandStaffStep === 0 || noteInfo.grandStaffStep >= 12 || noteInfo.grandStaffStep <= -12) && (
-                <div className="absolute w-8 h-[2px] bg-slate-800 top-1/2 -translate-y-1/2" />
+                <div className="absolute w-8 h-0.5 bg-slate-800 top-1/2 -translate-y-1/2" />
               )}
 
               {/* 음표 머리 */}
-              <div className="w-[16px] h-[12px] bg-slate-800 rounded-[50%] transform -rotate-12 flex items-center justify-center relative">
+              <div className="w-4 h-3 bg-slate-800 rounded-[50%] transform -rotate-12 flex items-center justify-center relative">
                 {noteInfo.isBlack && <span className="absolute -left-4 text-sm font-bold text-slate-800">#</span>}
               </div>
 
               {/* 음표 기둥 (높이에 따라 기둥이 위로 향할지 아래로 향할지 자동 결정) */}
-              <div className={`absolute w-[2px] h-[30px] bg-slate-800 ${
+              <div className={`absolute w-0.5 h-8 bg-slate-800 ${
                 noteInfo.grandStaffStep >= 0 
                   ? 'left-[14px] bottom-[4px]'  // 기둥 아래로
                   : 'left-[0px] top-[4px]'      // 기둥 위로
