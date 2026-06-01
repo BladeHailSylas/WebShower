@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 interface Particle {
   id: number;
@@ -10,10 +10,34 @@ interface Particle {
 interface ClickPageProps {
   onMainClick: () => void;
   pointsPerClick: number;
+  autoClickTick: number; // 추가됨
+  autoPoints: number;    // 추가됨
 }
 
-export default function ClickPage({ onMainClick, pointsPerClick }: ClickPageProps) {
+export default function ClickPage({ onMainClick, pointsPerClick, autoClickTick, autoPoints }: ClickPageProps) {
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const [particles, setParticles] = useState<Particle[]>([]);
+  useEffect(() => {
+    if (autoClickTick === 0 || autoPoints === 0 || !buttonRef.current) return;
+
+    // 버튼의 너비를 기준으로 중앙 최상단 좌표 계산
+    const rect = buttonRef.current.getBoundingClientRect();
+    const x = rect.width / 2; // 가로 중앙
+    const y = 0;              // 세로 최상단
+
+    const newParticle: Particle = {
+      id: Date.now() + Math.random(),
+      x,
+      y,
+      text: `+${autoPoints.toFixed(1)} (Auto)`, // 자동 클릭임을 명시 (필요시 수정)
+    };
+
+    setParticles((prev) => [...prev, newParticle]);
+
+    setTimeout(() => {
+      setParticles((prev) => prev.filter((p) => p.id !== newParticle.id));
+    }, 800);
+  }, [autoClickTick]); // autoClickTick이 변경될 때마다 실행됨
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     onMainClick();
@@ -41,17 +65,17 @@ export default function ClickPage({ onMainClick, pointsPerClick }: ClickPageProp
   return (
     <div className="w-full h-full flex flex-col items-center justify-center relative">
       <p className="text-slate-400 text-sm mb-6 text-center">
-        아래의 모던 코어 오브젝트를 클릭하여 포인트를 획득하세요.<br/>
-        <span className="text-xs text-slate-300">(클릭 시 시각적 타격감 이펙트가 발생합니다.)</span>
+        아래의 버튼을 클릭하여 포인트를 획득하세요.<br/>
       </p>
 
       {/* 인터랙티브 클릭 영역 */}
       <div className="relative">
         <button
           onClick={handleClick}
+          ref={buttonRef} // 4. 버튼에 ref 연결
           className="w-48 h-48 rounded-full bg-linear-to-tr from-blue-600 to-indigo-500 shadow-xl border-4 border-white flex items-center justify-center text-white text-2xl font-bold uppercase tracking-wider select-none transform transition-all active:scale-90 hover:scale-105"
         >
-          Push Core
+          Click Here!
         </button>
 
         {/* 시각적 타격감 효과를 위한 떠오르는 텍스트 파티클 구조 */}

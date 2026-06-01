@@ -1,5 +1,5 @@
 import React from 'react';
-import type { ClickerShopItem } from '../../constants/ClickerConstants';
+import type { ClickerShopItem } from '../../constants/clickerConstants';
 
 interface ShopPageProps {
   items: ClickerShopItem[];
@@ -13,7 +13,6 @@ export default function ShopPage({ items, currentScore, onBuyItem, errorMessage 
     <div className="w-full flex flex-col h-full">
       <div className="flex justify-between items-center mb-4">
         <h3 className="text-lg font-bold text-slate-700">업그레이드 상점</h3>
-        <span className="text-xs text-slate-400">* 상점 구매 시 데이터 연산 바인딩이 즉시 처리됩니다.</span>
       </div>
 
       {/* 학생 조작 예외 상황 발생 시 노출되는 Toast 스타일 경고창 */}
