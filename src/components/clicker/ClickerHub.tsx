@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CHEAT_CONFIG, CLICKER_SAFETY_LIMITS, type ClickerShopItem } from '../../constants/ClickerConstants';
+import { CHEAT_CONFIG, CLICKER_SAFETY_LIMITS, type ClickerShopItem } from '../../constants/clickerConstants';
 import ClickPage from './ClickPage';
 import ShopPage from './ShopPage';
 
@@ -8,6 +8,7 @@ export default function ClickerHub() {
   const [score, setScore] = useState<number>(CHEAT_CONFIG.CLICKER_INITIAL_SCORE);
   const [pointsPerClick, setPointsPerClick] = useState<number>(1);
   const [autoClicksPerSecond, setAutoClicksPerSecond] = useState<number>(0);
+  const [autoClickTick, setAutoClickTick] = useState<number>(0);
   
   // 시스템 경고 및 예외 상태 관리
   const [systemWarning, setSystemWarning] = useState<string | null>(null);
@@ -36,10 +37,12 @@ export default function ClickerHub() {
     const validatedInterval = Math.max(CHEAT_CONFIG.AUTO_CLICK_INTERVAL_MS, CLICKER_SAFETY_LIMITS.MIN_INTERVAL_MS);
 
     const intervalId = setInterval(() => {
-      // 주기마다 초당 자동 클릭 점수를 누적 (인터벌 주기에 비례하여 계산)
-      const pointsPerInterval = autoClicksPerSecond * (validatedInterval / 1000);
-      setScore((prev) => prev + pointsPerInterval);
-    }, validatedInterval);
+    const pointsPerInterval = autoClicksPerSecond * (validatedInterval / 1000);
+    setScore((prev) => prev + pointsPerInterval);
+      
+    // 자동 클릭이 발생했음을 알리는 트리거 업데이트
+    setAutoClickTick((prev) => prev + 1); 
+  }, validatedInterval);
 
     return () => clearInterval(intervalId);
   }, [autoClicksPerSecond]);
@@ -129,7 +132,12 @@ export default function ClickerHub() {
       {/* 내부 페이지 컴포넌트 렌더링 영역 */}
       <div className="w-full max-w-2xl card bg-white border border-slate-200 shadow-sm p-6 min-h-88 flex flex-col justify-center items-center relative overflow-hidden">
         {activeTab === 'click' ? (
-          <ClickPage onMainClick={handleMainClick} pointsPerClick={pointsPerClick * CHEAT_CONFIG.CLICKER_CLICK_MULTIPLIER} />
+          <ClickPage 
+            onMainClick={handleMainClick} 
+            pointsPerClick={pointsPerClick * CHEAT_CONFIG.CLICKER_CLICK_MULTIPLIER}
+            autoClickTick={autoClickTick} 
+            autoPoints={autoClicksPerSecond * (Math.max(CHEAT_CONFIG.AUTO_CLICK_INTERVAL_MS, CLICKER_SAFETY_LIMITS.MIN_INTERVAL_MS) / 1000)}
+          />
         ) : (
           <ShopPage 
             items={items} 
