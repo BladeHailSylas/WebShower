@@ -5,6 +5,7 @@ import PianoPage from './pages/PianoPage'
 import MainHubPage from './pages/MainHubPage'
 import Layout from './components/layout/Layout'
 import PixelPage from './pages/PixelPage'
+import PhysicsPage from './pages/PhysicsPage'
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
           <Route path="/clicker" element={<ClickerPage />}></Route>
           <Route path="/piano" element={<PianoPage />}></Route>
           <Route path="/pixel" element={<PixelPage />}></Route>
+          <Route path="/sandbox" element={<PhysicsPage />}></Route>
         </Route>
       </Routes>
     </BrowserRouter>
