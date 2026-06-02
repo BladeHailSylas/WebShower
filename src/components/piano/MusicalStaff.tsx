@@ -41,7 +41,7 @@ export default function MusicalStaff({ activeNotes }: MusicalStaffProps) {
               key={noteKey}
               className="absolute left-1/2 flex flex-col items-center transition-transform duration-100 ease-out"
               style={{ bottom: `${(noteInfo.grandStaffStep - 1) * (STEP_HEIGHT)}px`, marginLeft: '-8px' }}
-              //예외 처리하기는 싫었지만, 시간은 유한하고 고칠 것은 명확하다... 음계가 하나 아래로 내려가면 정확히 맞음
+              //모든 음표가 한 단계 아래로 내려가면 정확히 맞음, 왜?
             >
               {/* 계이름 안내 레이블 (모던한 말풍선 형태) */}
               <div className="absolute -top-7 px-2 py-0.5 bg-slate-800 text-white text-[10px] font-bold rounded-md shadow-sm whitespace-nowrap">
@@ -52,6 +52,7 @@ export default function MusicalStaff({ activeNotes }: MusicalStaffProps) {
               {(noteInfo.grandStaffStep === 0 || noteInfo.grandStaffStep >= 12 || noteInfo.grandStaffStep <= -12) && (
                 <div className="absolute w-8 h-0.5 bg-slate-800 top-1/2 -translate-y-1/2" />
               )}
+              {/*높은 시의 경우에는 덧줄이 음표 머리 "아래" 생성되어야 함, 수정 필요*/}
 
               {/* 음표 머리 */}
               <div className="w-4 h-3 bg-slate-800 rounded-[50%] transform -rotate-12 flex items-center justify-center relative">
