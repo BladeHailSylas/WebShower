@@ -13,6 +13,7 @@ export default function ClickerHub() {
   // 시스템 경고 및 예외 상태 관리
   const [systemWarning, setSystemWarning] = useState<string | null>(null);
   const [shopError, setShopError] = useState<string | null>(null);
+  const [highScore, setHighScore] = useState<number>(0);
 
   // 상점 아이템 라인업
   const [items, setItems] = useState<ClickerShopItem[]>([
@@ -67,7 +68,9 @@ export default function ClickerHub() {
 
     // 차감 및 상태 업데이트
     setScore((prev) => prev - targetItem.cost);
-    
+    if(highScore < score) {
+      setHighScore(score);
+    }
     if (targetItem.type === 'click') {
       setPointsPerClick((prev) => prev + targetItem.effect);
     } else if (targetItem.type === 'auto') {

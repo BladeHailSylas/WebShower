@@ -174,8 +174,8 @@ export default function GravitySandbox() {
   return (
     <div className="w-full max-w-4xl mx-auto p-6 bg-slate-50 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center gap-6 select-none">
       <div className="text-center">
-        <h2 className="text-2xl font-bold text-slate-800">미니 그래비티 샌드박스</h2>
-        <p className="text-sm text-slate-500 mt-1">수학 공식과 물리 법칙을 코딩으로 설계하고 변조하는 2D 가상 실험실</p>
+        <h2 className="text-2xl font-bold text-slate-800">물리 시뮬레이터</h2>
+        <p className="text-sm text-slate-500 mt-1">코딩으로 알아보는 간단한 고전역학</p>
       </div>
 
       <div className="flex flex-col md:flex-row gap-6 w-full justify-center items-stretch">
@@ -195,7 +195,7 @@ export default function GravitySandbox() {
 
         <div className="w-full md:w-72 p-5 bg-white border border-slate-200 rounded-lg flex flex-col gap-4">
           <div className="space-y-4">
-            <h3 className="text-sm font-bold text-slate-700 flex items-center gap-1">🌐 규칙 조정해보기</h3>
+            <h3 className="text-sm font-bold text-slate-700 flex items-center gap-1">🌐 규칙 조정하기</h3>
             
             <div className="flex flex-col gap-1">
               <div className="flex justify-between text-xs font-semibold text-slate-600">
