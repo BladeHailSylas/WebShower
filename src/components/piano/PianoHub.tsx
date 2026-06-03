@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { type NoteInfo, KEYBOARD_MAP, PIANO_NOTES } from '../../constants/pianoContants';
 import MusicalStaff from './MusicalStaff';
 import VirtualPiano from './VirtualPiano';

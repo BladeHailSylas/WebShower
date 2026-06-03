@@ -7,12 +7,19 @@ export interface NoteInfo {
   grandStaffStep: number; // 가온 도(C4) = 0 기준, 오선보 상의 줄/칸 상대 위치
 }
 
+
+export const CONSTANT_CHORDS = [
+  [48, 55, 64, 55],
+  [48, 55, 64, 55],
+  [48, 55, 64, 55],
+  [48, 55, 64, 55],
+];
 // 캐논 코드 아르페지오 기본 반주 배열 (C -> G -> Am -> F)
 export const ACCOMPANIMENT_CHORDS = [
   [48, 55, 64, 55], // M1 (C): C3, G3, E4, G3
   [43, 50, 59, 50], // M2 (G): G2, D3, B3, D3
   [45, 52, 60, 52], // M3 (Am): A2, E3, C4, E3
-  [41, 48, 57, 48]  // M4 (F): F2, C3, A3, C3
+  [41, 48, 57, 48],  // M4 (F): F2, C3, A3, C3
 ];
 
 export const PIANO_NOTES: NoteInfo[] = [

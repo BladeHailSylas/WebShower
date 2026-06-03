@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { ACCOMPANIMENT_CHORDS, type NoteInfo, PIANO_NOTES } from "../../constants/pianoContants";
+import { CONSTANT_CHORDS, type NoteInfo, PIANO_NOTES } from "../../constants/pianoContants";
 
 // MIDI 규격 매핑 헬퍼 (C4 = 60)
 const getMidiNoteCode = (pitchName: string, octave: string, isBlack: boolean): number => {
@@ -140,7 +140,7 @@ export default function PianoComposerHub() {
       // 2. 왼손 자동 아르페지오 반주 트랙 실시간 수학적 합성
       const measure = Math.floor(currentStep / STEPS_PER_MEASURE);
       const stepInMeasure = currentStep % STEPS_PER_MEASURE;
-      const chord = ACCOMPANIMENT_CHORDS[measure];
+      const chord = CONSTANT_CHORDS[measure];
       const bassNoteCode = chord[stepInMeasure % 4];
       const bassFreq = midiToFreq(bassNoteCode);
 
@@ -218,7 +218,7 @@ export default function PianoComposerHub() {
     });
 
     for (let measure = 0; measure < TOTAL_MEASURES; measure++) {
-      const chord = ACCOMPANIMENT_CHORDS[measure];
+      const chord = CONSTANT_CHORDS[measure];
       for (let step = 0; step < STEPS_PER_MEASURE; step++) {
         const noteCode = chord[step % 4]; 
         const absoluteStep = (measure * STEPS_PER_MEASURE) + step;

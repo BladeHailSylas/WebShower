@@ -1,4 +1,3 @@
-import React from 'react';
 import { PIANO_NOTES } from '../../constants/pianoContants';
 
 interface MusicalStaffProps {
