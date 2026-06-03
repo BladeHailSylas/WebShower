@@ -11,6 +11,7 @@ export default function PianoComposePage() {
                 </button>
             </div>
             <PianoComposerHub />
+            <button className="btn" onClick={() => {navigate("/piano");}}>연주 모드</button>
         </div>
     )
 }

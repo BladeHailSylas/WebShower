@@ -1,5 +1,5 @@
-import { useState, useRef } from "react";
-import { type NoteInfo, PIANO_NOTES } from "../../constants/pianoContants";
+import { useState, useRef, useEffect } from "react";
+import { ACCOMPANIMENT_CHORDS, type NoteInfo, PIANO_NOTES } from "../../constants/pianoContants";
 
 // MIDI 규격 매핑 헬퍼 (C4 = 60)
 const getMidiNoteCode = (pitchName: string, octave: string, isBlack: boolean): number => {
@@ -9,21 +9,45 @@ const getMidiNoteCode = (pitchName: string, octave: string, isBlack: boolean): n
   return baseNote > -1 ? (oct + 1) * 12 + baseNote : 60;
 };
 
+// 확장된 음표 데이터 타입 (박자 길이 포함)
+export interface ComposerNote extends NoteInfo {
+  length: number; // 1(8분음표), 2(4분음표), 4(2분음표), 8(온음표)
+}
 export default function PianoComposerHub() {
-  const TOTAL_STEPS = 16; // 4/4박자 2마디 (8분음표 기준 16개 스텝)
+  const TOTAL_MEASURES = 4;
+  const STEPS_PER_MEASURE = 8;
+  const TOTAL_STEPS = TOTAL_MEASURES * STEPS_PER_MEASURE;
   
-  const [timeline, setTimeline] = useState<NoteInfo[][]>(Array.from({ length: TOTAL_STEPS }, () => []));
+  const [timeline, setTimeline] = useState<(ComposerNote[] | null)[]>(Array.from({ length: TOTAL_STEPS }, () => []));
   const [activeStep, setActiveStep] = useState<number>(0);
+  const [playbackStep, setPlaybackStep] = useState<number | null>(null); // 현재 재생 중인 스텝 마커
+  const [selectedLength, setSelectedLength] = useState<number>(2); 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const playbackIntervalRef = useRef<number | null>(null); //NodeJS.Timeout을 찾을 수 없음; 임시로 number 사용
+
+  // 실시간 루프 내부에서 최신 타임라인 상태를 참조하기 위한 Ref 바인딩
+  const timelineRefData = useRef(timeline);
+  useEffect(() => {
+    timelineRefData.current = timeline;
+  }, [timeline]);
+
+  // 컴포넌트 언마운트 시 재생 인터벌 청소 예외 처리
+  useEffect(() => {
+    return () => {
+      if (playbackIntervalRef.current) clearInterval(playbackIntervalRef.current);
+    };
+  }, []);
 
   const showToast = (message: string) => {
     setToastMessage(message);
-    setTimeout(() => setToastMessage(null), 3000);
+    setTimeout(() => setToastMessage(null), 3500);
   };
 
-  const playNote = (note: NoteInfo) => {
+  // --- [핵심 오디오 소스 엔진] 단일 주파수 발진 함수 고도화 ---
+  const playTone = (frequency: number, duration: number, volume: number = 0.3, type: OscillatorType = 'triangle') => {
     if (!audioCtxRef.current) {
       audioCtxRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
     }
@@ -33,37 +57,122 @@ export default function PianoComposerHub() {
     const osc = ctx.createOscillator();
     const gainNode = ctx.createGain();
     
-    osc.type = 'triangle';
-    osc.frequency.setValueAtTime(note.frequency, ctx.currentTime);
+    osc.type = type;
+    osc.frequency.setValueAtTime(frequency, ctx.currentTime);
     
-    gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 1.0);
+    gainNode.gain.setValueAtTime(volume, ctx.currentTime);
+    // 부드러운 감쇄 곡선(Exponential Decay)을 적용하여 전자음 유출 현상 차단 및 타격감 확보
+    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
     
     osc.connect(gainNode);
     gainNode.connect(ctx.destination);
     osc.start();
-    osc.stop(ctx.currentTime + 1.0);
+    osc.stop(ctx.currentTime + duration);
   };
 
-  // 피아노 건반 입력 핸들러 (음 재생 및 타임라인 기록)
   const handleNoteInput = (note: NoteInfo) => {
-    playNote(note);
+    const availableSpace = TOTAL_STEPS - activeStep;
+    const actualLength = Math.min(selectedLength, availableSpace);
+
+    if (actualLength < selectedLength) {
+      showToast('⚠️ 남은 공간이 부족하여 음표의 길이가 자동으로 조절되었습니다.');
+    }
+
+    playTone(note.frequency, actualLength * 0.25, 0.3, 'triangle');
     
     setTimeline((prev) => {
       const newTimeline = [...prev];
-      // 단음 멜로디 기록 (기존 화음 덮어쓰기)
-      newTimeline[activeStep] = [note];
+      newTimeline[activeStep] = [{ ...note, length: actualLength }];
+      for (let i = 1; i < actualLength; i++) {
+        newTimeline[activeStep + i] = null;
+      }
       return newTimeline;
     });
 
-    // 다음 스텝으로 자동 이동 (편리한 작곡 UX)
-    setActiveStep((prev) => (prev + 1) % TOTAL_STEPS);
+    const nextStep = (activeStep + actualLength) % TOTAL_STEPS;
+    setActiveStep(nextStep);
+
+    if (timelineRef.current) {
+      const scrollAmount = (nextStep / TOTAL_STEPS) * timelineRef.current.scrollWidth;
+      timelineRef.current.scrollTo({ left: scrollAmount - 100, behavior: 'smooth' });
+    }
+  };
+
+  // --- [확장 추가] 실시간 앙상블 들어보기(Playback) 제어 엔진 ---
+  // SHOW STUDENTS: 미디 코드를 주파수로 정밀 변환하는 수학적 공식 적용
+  // 수식 법칙: $f = 440 \times 2^{\frac{d - 69}{12}}$
+  const midiToFreq = (code: number) => 440 * Math.pow(2, (code - 69) / 12);
+
+  const stopPlayback = () => {
+    if (playbackIntervalRef.current) {
+      clearInterval(playbackIntervalRef.current);
+      playbackIntervalRef.current = null;
+    }
+    setPlaybackStep(null);
+    showToast('🛑 연주를 정지했습니다.');
+  };
+
+  const startPlayback = () => {
+    if (playbackIntervalRef.current) {
+      stopPlayback();
+      return;
+    }
+
+    let currentStep = 0;
+    setPlaybackStep(0);
+    showToast('🎶 실시간 코딩 밴드 연주를 시작합니다!');
+
+    // 8분음표 기준 타임 스케줄러 가동 (BPM 120 기준 스텝당 250ms)
+    const intervalId = setInterval(() => {
+      if (currentStep >= TOTAL_STEPS) {
+        stopPlayback();
+        return;
+      }
+
+      // 1. 오른손 멜로디 트랙 실시간 연주 파싱
+      const notes = timelineRefData.current[currentStep];
+      if (notes && notes.length > 0) {
+        notes.forEach((note) => {
+          playTone(note.frequency, note.length * 0.25, 0.25, 'triangle');
+        });
+      }
+
+      // 2. 왼손 자동 아르페지오 반주 트랙 실시간 수학적 합성
+      const measure = Math.floor(currentStep / STEPS_PER_MEASURE);
+      const stepInMeasure = currentStep % STEPS_PER_MEASURE;
+      const chord = ACCOMPANIMENT_CHORDS[measure];
+      const bassNoteCode = chord[stepInMeasure % 4];
+      const bassFreq = midiToFreq(bassNoteCode);
+
+      // 왼손 반주는 멜로디를 방해하지 않도록 은은하고 부드러운 사인파(sine) 기법으로 블렌딩
+      playTone(bassFreq, 0.23, 0.12, 'sine');
+
+      currentStep++;
+      
+      if (currentStep < TOTAL_STEPS) {
+        setPlaybackStep(currentStep);
+        // 재생 헤드 위치에 맞추어 타임라인 뷰포트 자동 트래킹 스크롤
+        if (timelineRef.current) {
+          const scrollAmount = (currentStep / TOTAL_STEPS) * timelineRef.current.scrollWidth;
+          timelineRef.current.scrollTo({ left: scrollAmount - 100, behavior: 'smooth' });
+        }
+      } else {
+        if (playbackIntervalRef.current) {
+          clearInterval(playbackIntervalRef.current);
+          playbackIntervalRef.current = null;
+        }
+        setPlaybackStep(null);
+        showToast('✨ 전체 연주가 완료되었습니다!');
+      }
+    }, 250);
+
+    playbackIntervalRef.current = intervalId;
   };
 
   const clearTimeline = () => {
+    stopPlayback();
     setTimeline(Array.from({ length: TOTAL_STEPS }, () => []));
     setActiveStep(0);
-    showToast('🧹 작곡 타임라인이 초기화되었습니다.');
   };
 
   const triggerDownload = (url: string, filename: string) => {
@@ -75,94 +184,10 @@ export default function PianoComposerHub() {
     document.body.removeChild(link);
   };
 
-  // --- [확장 1] 가상 캔버스를 활용한 PNG 악보 추출 로직 ---
-  const exportToPNG = () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = 800;
-    canvas.height = 300;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // 배경 흰색 채우기
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    const centerY = canvas.height / 2;
-    const STEP_HEIGHT = 6;
-
-    // 오선보 라인 그리기 (높은음/낮은음)
-    ctx.strokeStyle = '#cbd5e1';
-    ctx.lineWidth = 1;
-    const trebleLines = [10, 8, 6, 4, 2];
-    const bassLines = [-2, -4, -6, -8, -10];
-    
-    [...trebleLines, ...bassLines].forEach((step) => {
-      ctx.beginPath();
-      // Y축은 스크린에서 아래로 향하므로, 오프셋을 빼줍니다.
-      const y = centerY - (step * STEP_HEIGHT);
-      ctx.moveTo(40, y);
-      ctx.lineTo(760, y);
-      ctx.stroke();
-    });
-
-    // 높은음자리표, 낮은음자리표 텍스트 드로잉
-    ctx.fillStyle = '#94a3b8';
-    ctx.font = '40px serif';
-    ctx.fillText('𝄞', 50, centerY - 12 * STEP_HEIGHT + 35);
-    ctx.fillText('𝄢', 50, centerY + 2 * STEP_HEIGHT + 35);
-
-    // 타임라인 음표 드로잉
-    const slotWidth = 700 / TOTAL_STEPS;
-    ctx.fillStyle = '#1e293b';
-
-    timeline.forEach((notes, index) => {
-      if (notes.length === 0) return;
-      const x = 100 + (index * slotWidth);
-      
-      notes.forEach((note) => {
-        // [핵심] 현장에서 검증된 오프셋(-1) 적용 연산 바인딩
-        const y = centerY - ((note.grandStaffStep) * STEP_HEIGHT);
-
-        // 덧줄(Ledger Line) 처리
-        if (note.grandStaffStep === 0 || note.grandStaffStep >= 12 || note.grandStaffStep <= -12) {
-          ctx.beginPath();
-          ctx.moveTo(x - 12, centerY); // C4는 centerY 기준
-          ctx.lineTo(x + 12, centerY);
-          ctx.stroke();
-        }
-
-        // 음표 머리
-        ctx.beginPath();
-        ctx.ellipse(x, y, 7, 5, -Math.PI / 6, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 흑건 임시표(#)
-        if (note.isBlack) {
-          ctx.font = '14px Arial';
-          ctx.fillText('#', x - 18, y + 4);
-        }
-
-        // 음표 기둥
-        ctx.beginPath();
-        if (note.grandStaffStep >= 0) {
-          ctx.moveTo(x + 5, y);
-          ctx.lineTo(x + 5, y + 25);
-        } else {
-          ctx.moveTo(x - 5, y);
-          ctx.lineTo(x - 5, y - 25);
-        }
-        ctx.stroke();
-      });
-    });
-
-    const url = canvas.toDataURL('image/png');
-    triggerDownload(url, 'my_sheet_music.png');
-    showToast('🖨️ PNG 고해상도 악보가 생성되었습니다!');
-  };
-
-  // --- [확장 2] 순수 프론트엔드 환경 MIDI 바이너리 추출 스크립트 ---
+  // --- 멀티 트랙 MIDI 파일 추출 엔진 ---
   const exportToMIDI = () => {
-    // 가변 길이 양(VLQ) 바이트 인코딩 헬퍼 함수
+    showToast('⚙️ 바이너리 멀티 트랙 데이터 연산 중...');
+
     const writeVLQ = (arr: number[], val: number) => {
       const bytes = [];
       bytes.push(val & 0x7F);
@@ -174,53 +199,77 @@ export default function PianoComposerHub() {
       for (let i = bytes.length - 1; i >= 0; i--) arr.push(bytes[i]);
     };
 
-    const header = [0x4d, 0x54, 0x68, 0x64, 0x00, 0x00, 0x00, 0x06, 0x00, 0x00, 0x00, 0x01, 0x00, 0x60];
-    const track: number[] = [];
-    const TICKS_PER_STEP = 48; // 8분음표 기준 델타 타임
-    let waitTicks = 0;
+    const TICKS_PER_STEP = 48; 
+    interface MidiEvent { type: number; tick: number; noteCode: number; channel: number; }
+    
+    const track1Events: MidiEvent[] = []; 
+    const track2Events: MidiEvent[] = []; 
 
-    timeline.forEach((notes) => {
-      if (notes.length === 0) {
-        waitTicks += TICKS_PER_STEP;
-      } else {
-        // Note On (0x90)
-        notes.forEach((note, idx) => {
-          writeVLQ(track, idx === 0 ? waitTicks : 0);
-          track.push(0x90, getMidiNoteCode(note.pitchName, note.key.slice(-1), note.isBlack), 0x64);
-        });
-        waitTicks = TICKS_PER_STEP;
-        // Note Off (0x80)
-        notes.forEach((note, idx) => {
-          writeVLQ(track, idx === 0 ? waitTicks : 0);
-          track.push(0x80, getMidiNoteCode(note.pitchName, note.key.slice(-1), note.isBlack), 0x00);
-        });
-        waitTicks = 0;
-      }
+    timeline.forEach((notes, index) => {
+      if (!notes || notes.length === 0) return;
+      notes.forEach((note) => {
+        const noteCode = getMidiNoteCode(note.pitchName, note.key.slice(-1), note.isBlack);
+        const startTick = index * TICKS_PER_STEP;
+        const endTick = (index + note.length) * TICKS_PER_STEP;
+        
+        track1Events.push({ type: 0x90, tick: startTick, noteCode, channel: 0 }); 
+        track1Events.push({ type: 0x80, tick: endTick, noteCode, channel: 0 });   
+      });
     });
 
-    // 트랙 종료 시그널 (FF 2F 00)
-    writeVLQ(track, waitTicks);
-    track.push(0xFF, 0x2F, 0x00);
+    for (let measure = 0; measure < TOTAL_MEASURES; measure++) {
+      const chord = ACCOMPANIMENT_CHORDS[measure];
+      for (let step = 0; step < STEPS_PER_MEASURE; step++) {
+        const noteCode = chord[step % 4]; 
+        const absoluteStep = (measure * STEPS_PER_MEASURE) + step;
+        const startTick = absoluteStep * TICKS_PER_STEP;
+        const endTick = startTick + TICKS_PER_STEP;
 
-    const trackLength = track.length;
-    const trackHeader = [0x4d, 0x54, 0x72, 0x6b, (trackLength >> 24) & 0xff, (trackLength >> 16) & 0xff, (trackLength >> 8) & 0xff, trackLength & 0xff];
+        track2Events.push({ type: 0x91, tick: startTick, noteCode, channel: 1 }); 
+        track2Events.push({ type: 0x81, tick: endTick, noteCode, channel: 1 });   
+      }
+    }
 
-    const midiArray = new Uint8Array([...header, ...trackHeader, ...track]);
-    const blob = new Blob([midiArray], { type: 'audio/midi' });
-    const url = URL.createObjectURL(blob);
+    const buildTrackData = (events: MidiEvent[]) => {
+      events.sort((a, b) => a.tick - b.tick || a.type - b.type);
+      const track: number[] = [];
+      let lastTick = 0;
+
+      events.forEach(ev => {
+        const delta = ev.tick - lastTick;
+        writeVLQ(track, delta);
+        track.push(ev.type, ev.noteCode, ev.type >= 0x90 ? 0x50 : 0x00); 
+        lastTick = ev.tick;
+      });
+
+      writeVLQ(track, 0);
+      track.push(0xFF, 0x2F, 0x00); 
+      
+      const len = track.length;
+      return [0x4d, 0x54, 0x72, 0x6b, (len >> 24) & 0xff, (len >> 16) & 0xff, (len >> 8) & 0xff, len & 0xff, ...track];
+    };
+
+    const track1Data = buildTrackData(track1Events);
+    const track2Data = buildTrackData(track2Events);
+
+    const header = [0x4d, 0x54, 0x68, 0x64, 0x00, 0x00, 0x00, 0x06, 0x00, 0x01, 0x00, 0x02, 0x00, 0x30]; 
+    const midiArray = new Uint8Array([...header, ...track1Data, ...track2Data]);
     
-    triggerDownload(url, 'my_melody.mid');
-    URL.revokeObjectURL(url);
-    showToast('🎹 DAW 호환 MIDI 파일이 추출되었습니다!');
+    setTimeout(() => {
+      const blob = new Blob([midiArray], { type: 'audio/midi' });
+      const url = URL.createObjectURL(blob);
+      triggerDownload(url, 'my_masterpiece_with_auto_band.mid');
+      URL.revokeObjectURL(url);
+      showToast('🎹 왼손 자동 반주 트랙 합성 완료! MIDI 파일이 추출되었습니다.');
+    }, 1000); 
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto p-6 bg-slate-50 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center gap-6 select-none relative">
+    <div className="w-full mx-auto p-6 bg-slate-50 border border-slate-200 rounded-xl shadow-sm flex flex-col items-center gap-6 select-none relative">
       
-      {/* 시각적 타격감 토스트 */}
       {toastMessage && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 animate-fade-in-down">
-          <div className="px-4 py-2 bg-slate-800 text-white rounded-lg shadow-lg text-sm font-medium">
+          <div className="px-5 py-3 bg-slate-800 text-white rounded-lg shadow-2xl text-sm font-semibold tracking-wide flex items-center gap-2 border border-slate-700">
             {toastMessage}
           </div>
         </div>
@@ -228,65 +277,114 @@ export default function PianoComposerHub() {
 
       <div className="text-center w-full flex justify-between items-end">
         <div className="text-left">
-          <h2 className="text-2xl font-bold text-slate-800">디지털 비주얼 작곡가</h2>
-          <p className="text-sm text-slate-500 mt-1">4/4박자 스텝 시퀀서 및 MIDI/PNG 실물 추출 시스템</p>
+          <h2 className="text-2xl font-bold text-slate-800">디지털 밴드 스튜디오</h2>
+          <p className="text-sm text-slate-500 mt-1">4마디 스텝 시퀀서 및 알고리즘 기반 멀티 트랙 자동 반주 시스템</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={exportToPNG} className="btn btn-sm btn-outline btn-primary">PNG 악보 추출</button>
-          <button onClick={exportToMIDI} className="btn btn-sm btn-primary text-white">MIDI 파일 추출</button>
+          {/* [신규 추가] 실시간 연주 들어보기 제어 토글 버튼 */}
+          <button 
+            onClick={startPlayback} 
+            className={`btn btn-sm font-bold px-4 shadow-md border-none ${
+              playbackStep !== null ? 'bg-rose-500 hover:bg-rose-600 text-white animate-pulse' : 'bg-emerald-600 hover:bg-emerald-700 text-white'
+            }`}
+          >
+            {playbackStep !== null ? '⏹️ 정지' : '▶️ 들어보기'}
+          </button>
+          <button onClick={exportToMIDI} className="btn btn-sm bg-indigo-600 hover:bg-indigo-700 border-none text-white font-bold px-4 shadow-md">
+            MIDI 파일 추출
+          </button>
         </div>
       </div>
 
-      {/* --- 작곡 스텝 시퀀서 UI --- */}
-      <div className="w-full bg-white border border-slate-200 rounded-lg p-4 flex flex-col gap-2">
-        <div className="flex justify-between items-center mb-1">
-          <span className="text-xs font-bold text-slate-500">타임라인 (1마디 8스텝 x 2)</span>
-          <button onClick={clearTimeline} className="text-xs text-slate-400 hover:text-slate-600">전체 지우기</button>
+      <div className="w-full bg-white border border-slate-200 rounded-lg p-4 flex flex-col gap-3">
+        <div className="flex justify-between items-center">
+          <span className="text-xs font-bold text-slate-500">타임라인 (4/4박자 4마디)</span>
+          <button onClick={clearTimeline} className="text-xs text-slate-400 hover:text-slate-600 font-semibold">전체 지우기</button>
         </div>
-        <div className="grid grid-cols-16 gap-1 overflow-x-auto w-full" style={{ gridTemplateColumns: `repeat(${TOTAL_STEPS}, minmax(40px, 1fr))` }}>
-          {timeline.map((notes, idx) => (
-            <div 
-              key={idx}
-              onClick={() => setActiveStep(idx)}
-              className={`h-16 flex flex-col items-center justify-center rounded border transition-colors cursor-pointer ${
-                activeStep === idx 
-                  ? 'bg-blue-100 border-primary shadow-inner' 
-                  : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
-              }`}
-            >
-              {notes.length > 0 ? (
-                <div className="text-xs font-bold text-slate-700 text-center">
-                  {notes.map(n => n.nameName + (n.isBlack ? '#' : '')).join(',')}
-                </div>
-              ) : (
-                <div className="text-[10px] text-slate-300">-</div>
-              )}
+        
+        <div 
+          ref={timelineRef}
+          className="flex overflow-x-auto w-full custom-scrollbar pb-2 snap-x snap-mandatory"
+        >
+          {Array.from({ length: TOTAL_MEASURES }).map((_, measureIdx) => (
+            <div key={`measure-${measureIdx}`} className="flex-shrink-0 flex items-center snap-start">
+              <div className="h-20 flex flex-col justify-between px-2 text-[10px] text-slate-400 font-mono border-r border-slate-200 mr-1">
+                <span>M{measureIdx + 1}</span>
+              </div>
+              
+              <div className="grid gap-1 mr-4" style={{ gridTemplateColumns: `repeat(${STEPS_PER_MEASURE}, minmax(40px, 40px))` }}>
+                {Array.from({ length: STEPS_PER_MEASURE }).map((_, stepIdx) => {
+                  const absoluteIdx = (measureIdx * STEPS_PER_MEASURE) + stepIdx;
+                  const notes = timeline[absoluteIdx];
+                  
+                  if (notes === null) return null; 
+                  
+                  const isOccupied = notes.length > 0;
+                  const spanLength = isOccupied ? notes[0].length : 1;
+                  const isLastMeasureOverflow = absoluteIdx + spanLength > TOTAL_STEPS;
+                  const adjustedSpan = isLastMeasureOverflow ? TOTAL_STEPS - absoluteIdx : spanLength;
+
+                  // [시각적 타격감 교체] 들어보기 연주 중인 스텝은 초록색(emerald) 레이아웃으로 실시간 트래킹 하이라이팅 처리
+                  const isCurrentPlaying = playbackStep !== null && playbackStep >= absoluteIdx && playbackStep < absoluteIdx + adjustedSpan;
+                  const isActiveInput = activeStep === absoluteIdx;
+
+                  return (
+                    <div 
+                      key={absoluteIdx}
+                      onClick={() => { if(playbackStep === null) setActiveStep(absoluteIdx); }}
+                      style={{ gridColumn: `span ${adjustedSpan}` }}
+                      className={`h-16 flex flex-col items-center justify-center rounded border transition-all duration-100 ${
+                        isCurrentPlaying 
+                          ? 'bg-emerald-100 border-emerald-500 text-emerald-900 font-black scale-105 shadow-md z-10'
+                          : isActiveInput 
+                            ? 'bg-blue-100 border-primary shadow-inner scale-[1.02]' 
+                            : isOccupied ? 'bg-indigo-50 border-indigo-200' : 'bg-slate-50 border-slate-100 hover:bg-slate-200'
+                      }`}
+                    >
+                      {isOccupied ? (
+                        <div className={`text-xs font-bold text-center flex flex-col items-center ${isCurrentPlaying ? 'text-emerald-800' : 'text-indigo-700'}`}>
+                          <span>{notes.map(n => n.nameName + (n.isBlack ? '#' : '')).join(',')}</span>
+                          <span className={`text-[9px] mt-0.5 ${isCurrentPlaying ? 'text-emerald-500' : 'text-indigo-400 opacity-80'}`}>({adjustedSpan}칸)</span>
+                        </div>
+                      ) : (
+                        <div className={`w-1.5 h-1.5 rounded-full ${isCurrentPlaying ? 'bg-emerald-400 scale-150' : 'bg-slate-200'}`}></div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           ))}
         </div>
-        <p className="text-[10px] text-slate-400 text-center mt-2">
-          작성할 칸을 클릭한 후 아래의 건반을 누르면 음표가 기록됩니다. (건반 클릭 시 자동 다음 칸 이동)
-        </p>
       </div>
 
-      {/* --- 가상 피아노 건반 재사용부 (약식 포함) --- */}
-      <div className="w-full overflow-x-auto pb-4 custom-scrollbar bg-white rounded-lg border border-slate-100 p-2">
-        <div className="flex relative min-w-[max-content] h-40 px-2 pt-2">
+      <div className="w-full bg-slate-100 p-2 rounded-lg flex items-center justify-center gap-4 border border-slate-200 shadow-inner">
+        <span className="text-xs font-bold text-slate-500">입력할 박자 선택:</span>
+        <div className="btn-group flex gap-1">
+          <button onClick={() => setSelectedLength(1)} className={`btn btn-sm ${selectedLength === 1 ? 'bg-slate-700 text-white hover:bg-slate-800' : 'btn-outline bg-white'}`}>8분 (1칸)</button>
+          <button onClick={() => setSelectedLength(2)} className={`btn btn-sm ${selectedLength === 2 ? 'bg-slate-700 text-white hover:bg-slate-800' : 'btn-outline bg-white'}`}>4분 (2칸)</button>
+          <button onClick={() => setSelectedLength(4)} className={`btn btn-sm ${selectedLength === 4 ? 'bg-slate-700 text-white hover:bg-slate-800' : 'btn-outline bg-white'}`}>2분 (4칸)</button>
+          <button onClick={() => setSelectedLength(8)} className={`btn btn-sm ${selectedLength === 8 ? 'bg-slate-700 text-white hover:bg-slate-800' : 'btn-outline bg-white'}`}>온음표 (8칸)</button>
+        </div>
+      </div>
+
+      <div className="w-full flex justify-center overflow-x-auto pb-4 custom-scrollbar bg-white rounded-lg border border-slate-100 p-2">
+        <div className="flex relative min-w-max h-40 px-2 pt-2">
           {PIANO_NOTES.map((note, index) => {
             if (note.isBlack) {
               return (
                 <button
                   key={note.key}
-                  onMouseDown={() => handleNoteInput(note)}
-                  className="w-8 h-24 bg-slate-800 border border-slate-900 rounded-b-md absolute z-20 hover:bg-primary transition-colors shadow-md"
-                  style={{ left: `${(PIANO_NOTES.filter((n, i) => !n.isBlack && index > i).length * 48) - 16}px` }}
+                  onMouseDown={() => { if(playbackStep === null) handleNoteInput(note); }}
+                  className="w-6 h-24 bg-slate-800 border border-slate-900 rounded-b-md absolute z-20 hover:bg-primary transition-colors shadow-md"
+                  style={{ left: `${(PIANO_NOTES.filter((n, i) => !n.isBlack && index > i).length * 48) - 4}px` }}
                 />
               );
             } else {
               return (
                 <button
                   key={note.key}
-                  onMouseDown={() => handleNoteInput(note)}
+                  onMouseDown={() => { if(playbackStep === null) handleNoteInput(note); }}
                   className="w-12 h-36 bg-white border border-slate-200 rounded-b-lg flex flex-col justify-end pb-2 items-center hover:bg-blue-50 transition-colors shadow-sm"
                 >
                   <span className="text-[10px] font-bold text-slate-400">{note.nameName}</span>
@@ -299,13 +397,14 @@ export default function PianoComposerHub() {
 
       <style>{`
         @keyframes fadeInDown {
-          0% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+          0% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
           100% { opacity: 1; transform: translateX(-50%) translateY(0); }
         }
-        .animate-fade-in-down { animation: fadeInDown 0.3s ease-out forwards; }
-        .custom-scrollbar::-webkit-scrollbar { height: 8px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .animate-fade-in-down { animation: fadeInDown 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        .custom-scrollbar::-webkit-scrollbar { height: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f8fafc; border-radius: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 6px; border: 2px solid #f8fafc; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
       `}</style>
     </div>
   );
