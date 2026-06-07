@@ -279,11 +279,12 @@ export default function PianoComposerHub() {
       }
     }
 
-    const buildTrackData = (events: MidiEvent[]) => {
+    const buildTrackData = (events: MidiEvent[], channel: number, instrumentCode: number) => {
       events.sort((a, b) => a.tick - b.tick || a.type - b.type);
       const track: number[] = [];
       let lastTick = 0;
-
+      writeVLQ(track, 0);
+      track.push(0xC0 | channel, instrumentCode);
       events.forEach(ev => {
         const delta = ev.tick - lastTick;
         writeVLQ(track, delta);
@@ -298,8 +299,8 @@ export default function PianoComposerHub() {
       return [0x4d, 0x54, 0x72, 0x6b, (len >> 24) & 0xff, (len >> 16) & 0xff, (len >> 8) & 0xff, len & 0xff, ...track];
     };
 
-    const track1Data = buildTrackData(track1Events);
-    const track2Data = buildTrackData(track2Events);
+    const track1Data = buildTrackData(track1Events, 0, 73);
+    const track2Data = buildTrackData(track2Events, 1, 48);
 
     const header = [0x4d, 0x54, 0x68, 0x64, 0x00, 0x00, 0x00, 0x06, 0x00, 0x01, 0x00, 0x02, 0x00, 0x30]; 
     const midiArray = new Uint8Array([...header, ...track1Data, ...track2Data]);
@@ -432,8 +433,8 @@ export default function PianoComposerHub() {
                 <button
                   key={note.key}
                   onMouseDown={() => { if(playbackStep === null) handleNoteInput(note); }}
-                  className="w-8 h-24 bg-slate-800 border border-slate-900 rounded-b-md absolute z-20 hover:bg-primary transition-colors shadow-md"
-                  style={{ left: `${(PIANO_NOTES.filter((n, i) => !n.isBlack && index > i).length * 48) - 16}px` }}
+                  className="w-6 h-24 bg-slate-800 border border-slate-900 rounded-b-md absolute z-20 hover:bg-primary transition-colors shadow-md"
+                  style={{ left: `${(PIANO_NOTES.filter((n, i) => !n.isBlack && index > i).length * 48) - 4}px` }}
                 />
               );
             } else {

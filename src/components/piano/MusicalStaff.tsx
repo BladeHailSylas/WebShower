@@ -19,15 +19,15 @@ export default function MusicalStaff({ activeNotes }: MusicalStaffProps) {
       <div className="relative w-full flex items-center justify-center">
         
         {/* 높은음자리표 렌더링 */}
-        <div className="absolute left-8 bottom-[12px] text-5xl font-serif text-slate-400 font-bold z-10">𝄞</div>
+        <div className="absolute left-8 bottom-3 text-5xl font-serif text-slate-400 font-bold z-10">𝄞</div>
         {trebleLines.map((step) => (
-          <div key={`treble-${step}`} className="absolute w-full h-[1px] bg-slate-300" style={{ bottom: `${step * STEP_HEIGHT}px` }} />
+          <div key={`treble-${step}`} className="absolute w-full h-px bg-slate-300" style={{ bottom: `${step * STEP_HEIGHT}px` }} />
         ))}
 
         {/* 낮은음자리표 렌더링 */}
-        <div className="absolute left-8 top-[12px] text-5xl font-serif text-slate-400 font-bold z-10">𝄢</div>
+        <div className="absolute left-8 top-3 text-5xl font-serif text-slate-400 font-bold z-10">𝄢</div>
         {bassLines.map((step) => (
-          <div key={`bass-${step}`} className="absolute w-full h-[1px] bg-slate-300" style={{ bottom: `${step * STEP_HEIGHT}px` }} />
+          <div key={`bass-${step}`} className="absolute w-full h-px bg-slate-300" style={{ bottom: `${step * STEP_HEIGHT}px` }} />
         ))}
 
         {/* --- 눌린 건반 음표 렌더링 영역 --- */}

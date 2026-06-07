@@ -13,7 +13,10 @@ export default function ClickerHub() {
   // 시스템 경고 및 예외 상태 관리
   const [systemWarning, setSystemWarning] = useState<string | null>(null);
   const [shopError, setShopError] = useState<string | null>(null);
-  const [highScore, setHighScore] = useState<number>(0);
+  const [highScore, setHighScore] = useState<number>(() => {
+    const savedScore = localStorage.getItem("HighScore");
+    return savedScore ? Number(savedScore) : 0;
+  });
 
   // 상점 아이템 라인업
   const [items, setItems] = useState<ClickerShopItem[]>([
@@ -29,7 +32,14 @@ export default function ClickerHub() {
       setSystemWarning(null);
     }
   }, []);
-
+  useEffect(() => {
+    localStorage.setItem("HighScore", highScore.toString());
+  }, [highScore, setHighScore]);
+  useEffect(() => {
+    if(score > highScore) {
+      setHighScore(score);
+    }
+  }, [score, setScore]);
   // 2. 자동 클릭(Auto-Click) 타이머 루프 구현
   useEffect(() => {
     if (autoClicksPerSecond <= 0) return;
@@ -51,7 +61,8 @@ export default function ClickerHub() {
   // 3. 메인 클릭 핸들러
   const handleMainClick = () => {
     const gainedPoints = pointsPerClick * CHEAT_CONFIG.CLICKER_CLICK_MULTIPLIER;
-    setScore((prev) => prev + gainedPoints);
+    const totalPoints = score + gainedPoints;
+    setScore(totalPoints);
   };
 
   // 4. 상점 구매 핸들러
@@ -68,9 +79,6 @@ export default function ClickerHub() {
 
     // 차감 및 상태 업데이트
     setScore((prev) => prev - targetItem.cost);
-    if(highScore < score) {
-      setHighScore(score);
-    }
     if (targetItem.type === 'click') {
       setPointsPerClick((prev) => prev + targetItem.effect);
     } else if (targetItem.type === 'auto') {
@@ -134,6 +142,9 @@ export default function ClickerHub() {
 
       {/* 내부 페이지 컴포넌트 렌더링 영역 */}
       <div className="w-full max-w-2xl card bg-white border border-slate-200 shadow-sm p-6 min-h-88 flex flex-col justify-center items-center relative overflow-hidden">
+        <div className="flex mb-12 text-slate-500 font-bold">
+          최고 득점: {highScore}
+        </div>
         {activeTab === 'click' ? (
           <ClickPage 
             onMainClick={handleMainClick} 
