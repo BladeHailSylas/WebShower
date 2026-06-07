@@ -49,9 +49,16 @@ export default function MusicalStaff({ activeNotes }: MusicalStaffProps) {
 
               {/* 가온 도(C4, step: 0) 및 범위를 벗어나는 음의 덧줄(Ledger Line) 자동 생성 로직 */}
               {(noteInfo.grandStaffStep === 0 || noteInfo.grandStaffStep >= 12 || noteInfo.grandStaffStep <= -12) && (
-                <div className="absolute w-8 h-0.5 bg-slate-800 top-1/2 -translate-y-1/2" />
+                <div 
+                  className="absolute w-8 h-0.5 bg-slate-800 top-1/2" 
+                  style={{ 
+                    // 가장 높은 '시'(step 13)일 때는 1스텝 높이(6px)만큼 덧줄을 아래로 내려서 머리 밑에 정렬
+                    transform: noteInfo.grandStaffStep === 13 
+                      ? 'translateY(calc(-50% + 6px))' 
+                      : 'translateY(-50%)' 
+                  }}
+                />
               )}
-              {/*높은 시의 경우에는 덧줄이 음표 머리 "아래" 생성되어야 함, 수정 필요*/}
 
               {/* 음표 머리 */}
               <div className="w-4 h-3 bg-slate-800 rounded-[50%] transform -rotate-12 flex items-center justify-center relative">
