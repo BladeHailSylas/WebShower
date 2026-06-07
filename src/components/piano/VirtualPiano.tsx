@@ -1,4 +1,3 @@
-import React from 'react';
 import { type NoteInfo, PIANO_NOTES } from '../../constants/pianoContants';
 
 interface VirtualPianoProps {

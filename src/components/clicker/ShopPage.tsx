@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ClickerShopItem } from '../../constants/clickerConstants';
 
 interface ShopPageProps {

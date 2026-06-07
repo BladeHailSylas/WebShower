@@ -1,4 +1,3 @@
-import React from 'react';
 import { PIANO_NOTES } from '../../constants/pianoContants';
 
 interface MusicalStaffProps {
@@ -20,15 +19,15 @@ export default function MusicalStaff({ activeNotes }: MusicalStaffProps) {
       <div className="relative w-full flex items-center justify-center">
         
         {/* 높은음자리표 렌더링 */}
-        <div className="absolute left-8 bottom-[12px] text-5xl font-serif text-slate-400 font-bold z-10">𝄞</div>
+        <div className="absolute left-8 bottom-3 text-5xl font-serif text-slate-400 font-bold z-10">𝄞</div>
         {trebleLines.map((step) => (
-          <div key={`treble-${step}`} className="absolute w-full h-[1px] bg-slate-300" style={{ bottom: `${step * STEP_HEIGHT}px` }} />
+          <div key={`treble-${step}`} className="absolute w-full h-px bg-slate-300" style={{ bottom: `${step * STEP_HEIGHT}px` }} />
         ))}
 
         {/* 낮은음자리표 렌더링 */}
-        <div className="absolute left-8 top-[12px] text-5xl font-serif text-slate-400 font-bold z-10">𝄢</div>
+        <div className="absolute left-8 top-3 text-5xl font-serif text-slate-400 font-bold z-10">𝄢</div>
         {bassLines.map((step) => (
-          <div key={`bass-${step}`} className="absolute w-full h-[1px] bg-slate-300" style={{ bottom: `${step * STEP_HEIGHT}px` }} />
+          <div key={`bass-${step}`} className="absolute w-full h-px bg-slate-300" style={{ bottom: `${step * STEP_HEIGHT}px` }} />
         ))}
 
         {/* --- 눌린 건반 음표 렌더링 영역 --- */}
@@ -41,7 +40,7 @@ export default function MusicalStaff({ activeNotes }: MusicalStaffProps) {
               key={noteKey}
               className="absolute left-1/2 flex flex-col items-center transition-transform duration-100 ease-out"
               style={{ bottom: `${(noteInfo.grandStaffStep - 1) * (STEP_HEIGHT)}px`, marginLeft: '-8px' }}
-              //예외 처리하기는 싫었지만, 시간은 유한하고 고칠 것은 명확하다... 음계가 하나 아래로 내려가면 정확히 맞음
+              //모든 음표가 한 단계 아래로 내려가면 정확히 맞음, 왜?
             >
               {/* 계이름 안내 레이블 (모던한 말풍선 형태) */}
               <div className="absolute -top-7 px-2 py-0.5 bg-slate-800 text-white text-[10px] font-bold rounded-md shadow-sm whitespace-nowrap">
@@ -50,7 +49,15 @@ export default function MusicalStaff({ activeNotes }: MusicalStaffProps) {
 
               {/* 가온 도(C4, step: 0) 및 범위를 벗어나는 음의 덧줄(Ledger Line) 자동 생성 로직 */}
               {(noteInfo.grandStaffStep === 0 || noteInfo.grandStaffStep >= 12 || noteInfo.grandStaffStep <= -12) && (
-                <div className="absolute w-8 h-0.5 bg-slate-800 top-1/2 -translate-y-1/2" />
+                <div 
+                  className="absolute w-8 h-0.5 bg-slate-800 top-1/2" 
+                  style={{ 
+                    // 가장 높은 '시'(step 13)일 때는 1스텝 높이(6px)만큼 덧줄을 아래로 내려서 머리 밑에 정렬
+                    transform: noteInfo.grandStaffStep === 13 
+                      ? 'translateY(calc(-50% + 6px))' 
+                      : 'translateY(-50%)' 
+                  }}
+                />
               )}
 
               {/* 음표 머리 */}

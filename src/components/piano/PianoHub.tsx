@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { type NoteInfo, KEYBOARD_MAP, PIANO_NOTES } from '../../constants/pianoContants';
 import MusicalStaff from './MusicalStaff';
 import VirtualPiano from './VirtualPiano';
@@ -87,11 +87,13 @@ export default function PianoHub() {
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, [isAudioUnlocked]);
-
+  useEffect(() => {
+    initAudio();
+  }, []);
   return (
     <div className="w-full bg-white border border-slate-200 rounded-2xl shadow-sm p-6 flex flex-col gap-6">
       {/* 인터랙티브 브라우저 예외 안내 */}
-      {!isAudioUnlocked && (
+      {/* !isAudioUnlocked && (
         <div className="alert bg-blue-50 border border-blue-200 text-slate-700 text-sm flex justify-between items-center rounded-xl p-3">
           <div className="flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" className="stroke-blue-600 shrink-0 h-5 w-5" fill="none" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
@@ -99,7 +101,7 @@ export default function PianoHub() {
           </div>
           <button onClick={initAudio} className="btn btn-sm btn-primary text-white font-bold">오디오 활성화</button>
         </div>
-      )}
+      )*/}
 
       {/* [상단 구성] 오선보 학습 시각화 영역 */}
       <div className="bg-slate-50 border border-slate-100 rounded-xl p-4 flex flex-col items-center justify-center min-h-[160px]">
