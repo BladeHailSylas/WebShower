@@ -1,14 +1,21 @@
-import { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { type NoteInfo, PIANO_NOTES } from '../../constants/pianoContants';
 
 export interface ComposerNote extends NoteInfo {
   length: number; 
 }
 
-// 표준 MIDI 노트 번호 생성 헬퍼
+// [수정됨] 표준 MIDI 노트 번호 생성 헬퍼 (검은 건반 문자열 정규화 예외 처리 적용)
 const getMidiNoteCode = (pitchName: string, octave: string, isBlack: boolean): number => {
   const notes = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
-  const baseNote = notes.indexOf(pitchName + (isBlack ? '#' : ''));
+  
+  // 기존 기호를 제거한 순수 음계명 추출 후, 조건에 따라 정확히 하나의 '#'만 결합되도록 정규화
+  let purePitch = pitchName.replace('#', '');
+  if (isBlack || pitchName.includes('#')) {
+    purePitch += '#';
+  }
+  
+  const baseNote = notes.indexOf(purePitch);
   const oct = parseInt(octave, 10);
   return baseNote > -1 ? (oct + 1) * 12 + baseNote : 60;
 };
@@ -17,12 +24,12 @@ const getMidiNoteCode = (pitchName: string, octave: string, isBlack: boolean): n
 // SHOW STUDENTS: 규칙 기반 AI 화성학 엔진을 위한 지능형 코드 데이터 풀
 // =================================================================
 const CHORD_POOL = [
-  { name: 'C Major',  pitches: ['C', 'E', 'G'], pattern: [48, 55, 64, 55] }, // C3, G3, E4, G3
-  { name: 'D Minor',  pitches: ['D', 'F', 'A'], pattern: [50, 57, 65, 57] }, // D3, A3, F4, A3
-  { name: 'E Minor',  pitches: ['E', 'G', 'B'], pattern: [52, 59, 67, 59] }, // E3, B3, G4, B3
-  { name: 'F Major',  pitches: ['F', 'A', 'C'], pattern: [41, 48, 57, 48] }, // F2, C3, A3, C3
-  { name: 'G Major',  pitches: ['G', 'B', 'D'], pattern: [43, 50, 59, 50] }, // G2, D3, B3, D3
-  { name: 'A Minor',  pitches: ['A', 'C', 'E'], pattern: [45, 52, 60, 52] }, // A2, E3, C4, E3
+  { name: 'C Major',  pitches: ['C', 'E', 'G'], pattern: [48, 55, 64, 55] },
+  { name: 'D Minor',  pitches: ['D', 'F', 'A'], pattern: [50, 57, 65, 57] },
+  { name: 'E Minor',  pitches: ['E', 'G', 'B'], pattern: [52, 59, 67, 59] },
+  { name: 'F Major',  pitches: ['F', 'A', 'C'], pattern: [41, 48, 57, 48] },
+  { name: 'G Major',  pitches: ['G', 'B', 'D'], pattern: [43, 50, 59, 50] },
+  { name: 'A Minor',  pitches: ['A', 'C', 'E'], pattern: [45, 52, 60, 52] },
 ];
 
 export default function PianoComposerHub() {
@@ -54,25 +61,20 @@ export default function PianoComposerHub() {
       const scoreBoard: { [key: string]: number } = { 'C Major': 0, 'D Minor': 0, 'E Minor': 0, 'F Major': 0, 'G Major': 0, 'A Minor': 0 };
       const pitchWeights: { [key: string]: number } = {};
 
-      // 1. 해당 마디 내부의 모든 음표를 순회하며 위치/길이 가중치 스코어링
       for (let stepIdx = 0; stepIdx < STEPS_PER_MEASURE; stepIdx++) {
         const absoluteIdx = (measureIdx * STEPS_PER_MEASURE) + stepIdx;
         const notes = timeline[absoluteIdx];
 
         if (notes && notes.length > 0) {
-          // 규칙 A: 1번째 스텝(강박)과 5번째 스텝(중강박)에 위치한 음은 3배 가중치
           const positionWeight = (stepIdx === 0 || stepIdx === 4) ? 3 : 1;
-
           notes.forEach((note) => {
-            const pName = note.pitchName; // 'C', 'D', 'E' 등
-            // 규칙 B: 음표의 길이(length)에 정비례하여 누적 가중치 연산
+            const pName = note.pitchName.replace('#', '');
             const totalWeight = positionWeight * note.length;
             pitchWeights[pName] = (pitchWeights[pName] || 0) + totalWeight;
           });
         }
       }
 
-      // 2. 누적된 음계 점수를 바탕으로 코드 풀 대조 매칭 진행
       CHORD_POOL.forEach((chord) => {
         chord.pitches.forEach((pitch) => {
           if (pitchWeights[pitch]) {
@@ -81,7 +83,6 @@ export default function PianoComposerHub() {
         });
       });
 
-      // 3. 가장 높은 점수를 획득한 화음 선별 (동점 혹은 무음 시 C Major Fallback)
       let bestChordName = 'C Major';
       let maxScore = 0;
       
@@ -91,7 +92,6 @@ export default function PianoComposerHub() {
           bestChordName = chordName;
         }
       });
-
       return bestChordName;
     });
 
@@ -133,9 +133,25 @@ export default function PianoComposerHub() {
     
     setTimeline((prev) => {
       const newTimeline = [...prev];
+      
+      // 1. [핵심 수정] 기존 음표 선(先) 제거 로직 (데이터 파편 청소)
+      const existingSlot = newTimeline[activeStep];
+      if (existingSlot && existingSlot.length > 0) {
+        const oldLength = existingSlot[0].length;
+        // 기존 음표가 차지하고 있던 길이만큼 순회하며 후속 슬롯들을 빈 배열로 초기화
+        for (let i = 1; i < oldLength; i++) {
+          if (activeStep + i < TOTAL_STEPS) {
+            newTimeline[activeStep + i] = []; 
+          }
+        }
+      }
+
+      // 2. 새 음표 삽입 및 새로운 점유 공간(null) 설정
       newTimeline[activeStep] = [{ ...note, length: actualLength }];
       for (let i = 1; i < actualLength; i++) {
-        newTimeline[activeStep + i] = null;
+        if (activeStep + i < TOTAL_STEPS) {
+          newTimeline[activeStep + i] = null;
+        }
       }
       return newTimeline;
     });
@@ -147,6 +163,34 @@ export default function PianoComposerHub() {
       const scrollAmount = (nextStep / TOTAL_STEPS) * timelineRef.current.scrollWidth;
       timelineRef.current.scrollTo({ left: scrollAmount - 100, behavior: 'smooth' });
     }
+  };
+
+  // --- [신규 추가] 특정 음표 삭제 핸들러 엔진 ---
+  const handleDeleteNote = (e: React.MouseEvent, absoluteIdx: number) => {
+    e.preventDefault(); // 우클릭 시 브라우저 기본 메뉴 차단
+    e.stopPropagation();
+
+    if (playbackStep !== null) {
+      showToast('⚠️ 연주 중에는 타임라인을 수정할 수 없습니다.');
+      return;
+    }
+
+    setTimeline((prev) => {
+      const newTimeline = [...prev];
+      const targetSlot = newTimeline[absoluteIdx];
+      
+      // 해당 스텝에 음표가 존재할 경우, 점유하고 있던 빈 스텝(null)들을 연쇄적으로 초기화
+      if (targetSlot && targetSlot.length > 0) {
+        const noteLength = targetSlot[0].length;
+        newTimeline[absoluteIdx] = []; 
+        for (let i = 1; i < noteLength; i++) {
+          if (absoluteIdx + i < TOTAL_STEPS) {
+            newTimeline[absoluteIdx + i] = [];
+          }
+        }
+      }
+      return newTimeline;
+    });
   };
 
   // --- [실시간 연주 들어보기 제어 엔진] ---
@@ -177,7 +221,6 @@ export default function PianoComposerHub() {
         return;
       }
 
-      // 1. 오른손 선율 실시간 재생
       const notes = timeline[currentStep];
       if (notes && notes.length > 0) {
         notes.forEach((note) => {
@@ -185,7 +228,6 @@ export default function PianoComposerHub() {
         });
       }
 
-      // 2. 분석 엔진이 채택한 코드를 바탕으로 왼손 아르페지오 동적 합성 연주
       const measureIdx = Math.floor(currentStep / STEPS_PER_MEASURE);
       const stepInMeasure = currentStep % STEPS_PER_MEASURE;
       const currentChordName = analyzedChords[measureIdx];
@@ -248,9 +290,8 @@ export default function PianoComposerHub() {
     interface MidiEvent { type: number; tick: number; noteCode: number; channel: number; }
     
     const track1Events: MidiEvent[] = []; 
-    const track2Events: MidiEvent[] = []; 
+    const track2Events: MidiEvent[] = [];
 
-    // 트랙 1: 오른손 커스텀 선율
     timeline.forEach((notes, index) => {
       if (!notes || notes.length === 0) return;
       notes.forEach((note) => {
@@ -263,19 +304,18 @@ export default function PianoComposerHub() {
       });
     });
 
-    // 트랙 2: 선율을 역산 추적하여 매칭된 화음 아르페지오 합성
     for (let measure = 0; measure < TOTAL_MEASURES; measure++) {
       const currentChordName = analyzedChords[measure];
       const targetChord = CHORD_POOL.find(c => c.name === currentChordName) || CHORD_POOL[0];
 
       for (let step = 0; step < STEPS_PER_MEASURE; step++) {
-        const noteCode = targetChord.pattern[step % 4]; 
+        const noteCode = targetChord.pattern[step % 4];
         const absoluteStep = (measure * STEPS_PER_MEASURE) + step;
         const startTick = absoluteStep * TICKS_PER_STEP;
         const endTick = startTick + TICKS_PER_STEP;
 
         track2Events.push({ type: 0x91, tick: startTick, noteCode, channel: 1 }); 
-        track2Events.push({ type: 0x81, tick: endTick, noteCode, channel: 1 });   
+        track2Events.push({ type: 0x81, tick: endTick, noteCode, channel: 1 });
       }
     }
 
@@ -285,6 +325,7 @@ export default function PianoComposerHub() {
       let lastTick = 0;
       writeVLQ(track, 0);
       track.push(0xC0 | channel, instrumentCode);
+
       events.forEach(ev => {
         const delta = ev.tick - lastTick;
         writeVLQ(track, delta);
@@ -302,7 +343,7 @@ export default function PianoComposerHub() {
     const track1Data = buildTrackData(track1Events, 0, 73);
     const track2Data = buildTrackData(track2Events, 1, 48);
 
-    const header = [0x4d, 0x54, 0x68, 0x64, 0x00, 0x00, 0x00, 0x06, 0x00, 0x01, 0x00, 0x02, 0x00, 0x30]; 
+    const header = [0x4d, 0x54, 0x68, 0x64, 0x00, 0x00, 0x00, 0x06, 0x00, 0x01, 0x00, 0x02, 0x00, 0x30];
     const midiArray = new Uint8Array([...header, ...track1Data, ...track2Data]);
     
     setTimeout(() => {
@@ -311,7 +352,7 @@ export default function PianoComposerHub() {
       triggerDownload(url, 'intelligent_harmony_composition.mid');
       URL.revokeObjectURL(url);
       showToast('🎹 분석 매칭된 완벽한 2차 트랙 합성이 완료되었습니다!');
-    }, 1000); 
+    }, 1000);
   };
 
   return (
@@ -345,21 +386,16 @@ export default function PianoComposerHub() {
         </div>
       </div>
 
-      {/* --- 작곡 스텝 시퀀서 및 AI 분석 화음 시각화 대시보드 --- */}
       <div className="w-full bg-white border border-slate-200 rounded-lg p-4 flex flex-col gap-3 shadow-inner">
         <div className="flex justify-between items-center">
-          <span className="text-xs font-bold text-slate-500">타임라인 및 실시간 화성학 분석 결과</span>
+          <span className="text-xs font-bold text-slate-500">타임라인 및 실시간 화성학 분석 결과 (우클릭하여 음표 삭제 가능)</span>
           <button onClick={clearTimeline} className="text-xs text-slate-400 hover:text-slate-600 font-semibold">전체 지우기</button>
         </div>
         
-        <div 
-          ref={timelineRef}
-          className="flex overflow-x-auto w-full custom-scrollbar pb-2 snap-x snap-mandatory"
-        >
+        <div ref={timelineRef} className="flex overflow-x-auto w-full custom-scrollbar pb-2 snap-x snap-mandatory">
           {Array.from({ length: TOTAL_MEASURES }).map((_, measureIdx) => (
             <div key={`measure-${measureIdx}`} className="shrink-0 flex flex-col snap-start bg-slate-50/50 p-2 rounded-lg border border-slate-100 mr-4">
               
-              {/* [확장 연출 핵심] 컴퓨터가 분석해낸 화음 명칭 실시간 시각 표출 영역 */}
               <div className="flex justify-between items-center px-1 mb-2">
                 <span className="text-[11px] font-mono font-bold text-slate-400">MEASURE {measureIdx + 1}</span>
                 <span className="px-2 py-0.5 rounded bg-indigo-100 text-indigo-700 text-xs font-black tracking-wide shadow-sm animate-fade-in-down">
@@ -372,35 +408,59 @@ export default function PianoComposerHub() {
                   {Array.from({ length: STEPS_PER_MEASURE }).map((_, stepIdx) => {
                     const absoluteIdx = (measureIdx * STEPS_PER_MEASURE) + stepIdx;
                     const notes = timeline[absoluteIdx];
-                    
                     if (notes === null) return null; 
                     
                     const isOccupied = notes.length > 0;
                     const spanLength = isOccupied ? notes[0].length : 1;
                     const isLastMeasureOverflow = absoluteIdx + spanLength > TOTAL_STEPS;
                     const adjustedSpan = isLastMeasureOverflow ? TOTAL_STEPS - absoluteIdx : spanLength;
-
                     const isCurrentPlaying = playbackStep !== null && playbackStep >= absoluteIdx && playbackStep < absoluteIdx + adjustedSpan;
                     const isActiveInput = activeStep === absoluteIdx;
+                    const hasBlackKey = notes && notes.some(n => n.isBlack);
 
                     return (
                       <div 
                         key={absoluteIdx}
                         onClick={() => { if(playbackStep === null) setActiveStep(absoluteIdx); }}
+                        onContextMenu={(e) => handleDeleteNote(e, absoluteIdx)}
                         style={{ gridColumn: `span ${adjustedSpan}` }}
-                        className={`h-16 flex flex-col items-center justify-center rounded border transition-all duration-100 ${
+                        className={`group relative h-16 flex flex-col items-center justify-center rounded border transition-all duration-100 cursor-pointer ${
                           isCurrentPlaying 
-                            ? 'bg-emerald-100 border-emerald-500 text-emerald-900 font-black scale-105 shadow-md z-10'
+                            ? 'bg-emerald-100 border-emerald-500 shadow-md z-10 scale-105'
                             : isActiveInput 
                               ? 'bg-blue-100 border-primary shadow-inner scale-[1.02]' 
-                              : isOccupied ? 'bg-indigo-50 border-indigo-200' : 'bg-white border-slate-200 hover:bg-slate-100'
+                              : isOccupied 
+                                ? (hasBlackKey ? 'bg-slate-700 border-slate-800' : 'bg-indigo-50 border-indigo-200') 
+                                : 'bg-white border-slate-200 hover:bg-slate-100'
                         }`}
                       >
                         {isOccupied ? (
-                          <div className={`text-xs font-bold text-center flex flex-col items-center ${isCurrentPlaying ? 'text-emerald-800' : 'text-indigo-700'}`}>
-                            <span>{notes.map(n => n.nameName + (n.isBlack ? '#' : '')).join(',')}</span>
-                            <span className={`text-[9px] mt-0.5 ${isCurrentPlaying ? 'text-emerald-500' : 'text-indigo-400 opacity-80'}`}>({adjustedSpan}칸)</span>
-                          </div>
+                          <>
+                            <div className={`text-xs font-bold text-center flex flex-col items-center ${isCurrentPlaying ? 'text-emerald-800' : (hasBlackKey ? 'text-slate-100' : 'text-indigo-700')}`}>
+                              <span className="flex items-center gap-1">
+                                {notes.map((n, i) => (
+                                  <span key={n.key} className="flex items-center">
+                                    {n.nameName}
+                                    {/* 올림음 시각화 전용 네온 배지 렌더링 */}
+                                    {n.isBlack && <span className="ml-0.5 px-0.5 bg-slate-800 text-cyan-300 rounded text-[9px] font-black border border-slate-600 shadow-sm leading-none">♯</span>}
+                                    {i < notes.length - 1 && ','}
+                                  </span>
+                                ))}
+                              </span>
+                              <span className={`text-[9px] mt-1 ${isCurrentPlaying ? 'text-emerald-500' : (hasBlackKey ? 'text-slate-400' : 'text-indigo-400 opacity-80')}`}>({adjustedSpan}칸)</span>
+                            </div>
+
+                            {/* [신규 기능] 삭제용 미니 X 버튼 (마우스 오버 시 노출) */}
+                            {playbackStep === null && (
+                              <button
+                                onClick={(e) => handleDeleteNote(e, absoluteIdx)}
+                                className="absolute top-1 right-1 w-4 h-4 bg-rose-500 hover:bg-rose-600 text-white rounded-full text-[10px] flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 shadow-sm leading-none"
+                                title="음표 삭제 (우클릭)"
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </>
                         ) : (
                           <div className={`w-1.5 h-1.5 rounded-full ${isCurrentPlaying ? 'bg-emerald-400 scale-150' : 'bg-slate-200'}`}></div>
                         )}
