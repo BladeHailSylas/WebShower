@@ -38,6 +38,28 @@ export default function PixelStudio() {
   };
 
   const handleMouseUp = () => setIsDrawing(false);
+// 모바일/태블릿 드래그 드로잉을 위한 터치 무브 핸들러
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 0) return;
+    
+    // 화면 브라우저 기본 스크롤 동작을 무력화하여 드로잉에만 집중 강제
+    e.preventDefault(); 
+    
+    const touch = e.touches[0];
+    // 현재 손가락 터치 좌표 바로 밑에 위치한 DOM 엘리먼트 역추적 추출
+    const target = document.elementFromPoint(touch.clientX, touch.clientY);
+    if (!target) return;
+
+    // 1번 단계에서 심어둔 data 속성 파싱
+    const rowStr = target.getAttribute('data-row');
+    const colStr = target.getAttribute('data-col');
+
+    if (rowStr !== null && colStr !== null) {
+      const r = parseInt(rowStr, 10);
+      const c = parseInt(colStr, 10);
+      drawPixel(r, c);
+    }
+  };
   const loadTemplate = () => { setGrid(HEART_TEMPLATE); showToast('❤️ 도안을 불러왔습니다.'); };
   const clearGrid = () => { setGrid(Array.from({ length: GRID_SIZE }, () => Array(GRID_SIZE).fill(0))); showToast('🧹 캔버스가 초기화되었습니다.'); };
 
@@ -151,12 +173,17 @@ export default function PixelStudio() {
           <div 
             className="border-2 border-slate-300 bg-white shadow-sm touch-none"
             onMouseLeave={handleMouseUp}
+           // --- [모바일/태블릿 슬라이드 드로잉 이벤트 연동] ---
+           onTouchMove={handleTouchMove} 
+           onTouchStart={handleTouchMove}
             style={{ display: 'grid', gridTemplateColumns: `repeat(${GRID_SIZE}, minmax(0, 1fr))`, width: 'fit-content' }}
           >
             {grid.map((row, rowIndex) =>
               row.map((colorIndex, colIndex) => (
                 <div
                   key={`${rowIndex}-${colIndex}`}
+                  data-row={rowIndex}
+                  data-col={colIndex}
                   onMouseDown={() => handleMouseDown(rowIndex, colIndex)}
                   onMouseEnter={() => handleMouseEnter(rowIndex, colIndex)}
                   onMouseUp={handleMouseUp}
@@ -168,7 +195,7 @@ export default function PixelStudio() {
           </div>
           <div className="flex gap-2 justify-center">
             <button onClick={loadTemplate} className="btn btn-sm btn-outline btn-primary font-bold">하트 도안</button>
-            <button onClick={clearGrid} className="btn btn-sm btn-ghost bg-slate-200 text-slate-600 font-bold">지우기</button>
+            <button onClick={clearGrid} className="btn btn-sm btn-ghost bg-slate-200 text-slate-600 font-bold">전부 지우기</button>
           </div>
         </div>
 

@@ -23,7 +23,15 @@ export default function VirtualPiano({ activeNotes, onNoteStart, onNoteEnd }: Vi
                 key={note.key}
                 onMouseDown={() => onNoteStart(note)}
                 onMouseUp={() => onNoteEnd(note.key)}
-                onMouseLeave={() => onNoteEnd(note.key)}
+                onMouseLeave={() => onNoteEnd(note.key)}// --- [모바일/태블릿 크로스 플랫폼 예외 처리 추가] ---
+                onTouchStart={(e) => {
+                   e.preventDefault(); // 모바일 기본 스크롤 및 가상 마우스 이벤트 생성 차단
+                    onNoteStart(note);
+                }}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  onNoteEnd(note.key);
+                }}
                 className={`w-6 h-24 bg-slate-800 border border-slate-900 rounded-b-md absolute z-20 transition-all duration-75 shadow-md ${
                   isActive ? 'bg-primary border-primary h-[94px]' : 'hover:bg-slate-700'
                 }`}
@@ -41,6 +49,15 @@ export default function VirtualPiano({ activeNotes, onNoteStart, onNoteEnd }: Vi
                 onMouseDown={() => onNoteStart(note)}
                 onMouseUp={() => onNoteEnd(note.key)}
                 onMouseLeave={() => onNoteEnd(note.key)}
+                // --- [모바일/태블릿 크로스 플랫폼 예외 처리 추가] ---
+                onTouchStart={(e) => {
+                   e.preventDefault(); // 모바일 기본 스크롤 및 가상 마우스 이벤트 생성 차단
+                    onNoteStart(note);
+                }}
+                onTouchEnd={(e) => {
+                  e.preventDefault();
+                  onNoteEnd(note.key);
+                }}
                 className={`w-12 h-40 bg-white border border-slate-200 rounded-b-lg flex flex-col justify-end pb-2 items-center transition-all duration-75 shadow-sm ${
                   isActive ? 'bg-blue-50 border-blue-300 pt-2 h-[156px] shadow-inner' : 'hover:bg-slate-50'
                 }`}

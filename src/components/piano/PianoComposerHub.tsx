@@ -340,8 +340,8 @@ export default function PianoComposerHub() {
       return [0x4d, 0x54, 0x72, 0x6b, (len >> 24) & 0xff, (len >> 16) & 0xff, (len >> 8) & 0xff, len & 0xff, ...track];
     };
 
-    const track1Data = buildTrackData(track1Events, 0, 73);
-    const track2Data = buildTrackData(track2Events, 1, 48);
+    const track1Data = buildTrackData(track1Events, 0, 1);
+    const track2Data = buildTrackData(track2Events, 1, 33);
 
     const header = [0x4d, 0x54, 0x68, 0x64, 0x00, 0x00, 0x00, 0x06, 0x00, 0x01, 0x00, 0x02, 0x00, 0x30];
     const midiArray = new Uint8Array([...header, ...track1Data, ...track2Data]);
