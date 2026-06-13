@@ -7,6 +7,8 @@ import Layout from './components/layout/Layout'
 import PixelPage from './pages/PixelPage'
 import PhysicsPage from './pages/PhysicsPage'
 import PianoComposePage from './pages/PianoComposePage'
+import GamePage from './pages/GamePage'
+import BlockStudioPage from './pages/BlockStudioPage'
 
 function App() {
   return (
@@ -15,10 +17,12 @@ function App() {
         <Route element={<Layout />}>
           <Route path="/" element={<MainHubPage />}></Route>
           <Route path="/clicker" element={<ClickerPage />}></Route>
+          <Route path="/game" element={<GamePage />}></Route>
           <Route path="/piano" element={<PianoPage />}></Route>
           <Route path="/piano-compose" element={<PianoComposePage />}></Route>
           <Route path="/pixel" element={<PixelPage />}></Route>
           <Route path="/sandbox" element={<PhysicsPage />}></Route>
+          <Route path="/code" element={<BlockStudioPage />}></Route>
         </Route>
       </Routes>
     </BrowserRouter>
