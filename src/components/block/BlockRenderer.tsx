@@ -6,7 +6,9 @@ interface BlockRendererProps {
   blocks: HtmlBlock[];
 }
 
-// 🌟 [Phase 3 신규] 비밀번호 매크로 블록 전용 실시간 미리보기 인터랙티브 컴포넌트
+// =============================================================
+// 🌟 [Phase 3] 1. 비밀번호 구역 미리보기 컴포넌트 (추상화 슬롯 반영)
+// =============================================================
 function PasswordPreviewItem({ block, renderFn }: { block: HtmlBlock; renderFn: (b: HtmlBlock) => React.ReactNode }) {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [inputVal, setInputVal] = useState('');
@@ -14,31 +16,28 @@ function PasswordPreviewItem({ block, renderFn }: { block: HtmlBlock; renderFn: 
 
   const handleSubmit = (e: SubmitEvent) => {
     e.preventDefault();
-    // 포스트잇 속성 창에 인젝션된 correctAnswer 정답 매칭
     if (inputVal === (block.correctAnswer || '12345')) {
       setIsUnlocked(true);
     } else {
       setIsShaking(true);
-      // 0.5초 후 쉐이크 클래스 제거
       setTimeout(() => setIsShaking(false), 500);
     }
   };
 
-  // 명세서 사양: 암호 성공 및 전환 연출 (잠긴 요소 언마운트, 보상 요소 페이드인)
   if (isUnlocked) {
     return (
-      <div className="w-full border border-slate-200 rounded-2xl p-6 duration-500 animate-fade-in">
+      <div className="w-full duration-500 animate-fade-in">
         <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl mb-4 text-center text-xs font-bold text-emerald-700">
-          🔓 자물쇠 해제 완료! 보상이 나타났습니다.
+          🔓 자물쇠 해제 완료!
         </div>
+        {/* 캡슐화 완료: conditionalChildren 적용 */}
         {block.conditionalChildren?.map(child => renderFn(child))}
       </div>
     );
   }
 
-  // 명세서 사양: 초기 진입 상태 및 실패 시 좌우 쉐이크 애니메이션 작동
   return (
-    <div className={`w-full p-4 bg-white border border-slate-200 rounded-2xl shadow-sm transition-transform ${isShaking ? 'animate-[shake_0.5s_ease-in-out]' : ''}`}>
+    <div className={`w-full p-4 bg-white border border-slate-200 rounded-2xl shadow-sm ${isShaking ? 'animate-[shake_0.5s_ease-in-out]' : ''}`}>
       <form onSubmit={handleSubmit} className="space-y-3 mb-4">
         <input 
           type="password" 
@@ -51,13 +50,10 @@ function PasswordPreviewItem({ block, renderFn }: { block: HtmlBlock; renderFn: 
           열기
         </button>
       </form>
-      
-      {/* 하단에 잠겼을 때 슬롯 트리 조건부 렌더링 */}
       <div className="pt-3 border-t border-dashed border-slate-100">
+        {/* 캡슐화 완료: defaultChildren 적용 */}
         {block.defaultChildren?.map(child => renderFn(child))}
       </div>
-
-      {/* 런타임 쉐이크 애니메이션 CSS 주입 */}
       <style>{`
         @keyframes shake {
           0%, 100% { transform: translateX(0); }
@@ -65,6 +61,38 @@ function PasswordPreviewItem({ block, renderFn }: { block: HtmlBlock; renderFn: 
           40%, 80% { transform: translateX(6px); }
         }
       `}</style>
+    </div>
+  );
+}
+
+// =============================================================
+// 🌟 [Phase 3] 2. 여닫는 구역 미리보기 컴포넌트 (buttonText 제거 버전)
+// =============================================================
+function TogglePreviewItem({ block, renderFn }: { block: HtmlBlock; renderFn: (b: HtmlBlock) => React.ReactNode }) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <div className="w-full border border-slate-200 rounded-xl p-4 bg-white shadow-sm my-2 text-slate-900">
+      <div className="flex justify-between items-center gap-4">
+        <div className="flex-1">
+          {/* 캡슐화 완료: defaultChildren (상시 노출) */}
+          {block.defaultChildren?.map(child => renderFn(child))}
+        </div>
+        <button 
+          onClick={() => setIsOpen(!isOpen)}
+          className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 text-xs font-bold rounded-lg transition-colors shrink-0"
+        >
+          {/* buttonText 속성 없이 시스템 빌트인으로 가볍게 처리 */}
+          {isOpen ? '닫기' : '열기'}
+        </button>
+      </div>
+
+      {isOpen && (
+        <div className="mt-3 pt-3 border-t border-dashed border-slate-100 animate-fade-in">
+          {/* 캡슐화 완료: conditionalChildren (펼침 노출) */}
+          {block.conditionalChildren?.map(child => renderFn(child))}
+        </div>
+      )}
     </div>
   );
 }
@@ -85,6 +113,8 @@ export default function BlockRenderer({blocks} : BlockRendererProps) {
         case 'PASSWORD_ZONE':
         // 패스워드 전용 조건부 런타임 샌드박스로 우회
         return <PasswordPreviewItem key={block.id} block={block} renderFn={renderBlockToReact} />;
+        case 'TOGGLE_ZONE':
+        return <TogglePreviewItem key={block.id} block={block} renderFn={renderBlockToReact} />;
         default: return null;
       }
     };
@@ -98,7 +128,7 @@ export default function BlockRenderer({blocks} : BlockRendererProps) {
         case 'P': return `<p class="${classes}">${block.content || ''}</p>`;
         // [신규] 이미지 HTML 태그 변환 케이스
         case 'IMAGE': return `<img src="${block.src || ''}" alt="학원 안내" class="${classes}" />`;
-        case 'PASSWORD_ZONE':
+        case 'PASSWORD_ZONE':{
         // 명세서 사양: 고유 해시 모듈화 및 DOM 탐색용 클래스 바인딩 출력
         console.log(block.id);
         const blockId = `pw_${block.id}`;
@@ -114,7 +144,6 @@ export default function BlockRenderer({blocks} : BlockRendererProps) {
       const root = document.getElementById('${blockId}-root');
       const inputVal = root.querySelector('.user-pw-input').value;
       const answer = "${answer}";
-      
       if (inputVal === answer) {
         root.querySelector('.zone-locked').style.display = 'none';
         root.querySelector('.zone-unlocked').style.display = 'block';
@@ -132,7 +161,6 @@ export default function BlockRenderer({blocks} : BlockRendererProps) {
       40%, 80% { transform: translateX(6px); }
     }
   </style>
-
   <div class="zone-locked" style="display: block;">
     <form class="password-form" onsubmit="verifyPassword_${uniqueId}(event)" class="space-y-4" style="display: flex; flex-direction: column; gap: 12px;">
       <input type="password" class="user-pw-input" placeholder="비밀번호를 입력하세요" style="width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 12px; box-sizing: border-box;" />
@@ -142,11 +170,42 @@ export default function BlockRenderer({blocks} : BlockRendererProps) {
       ${lockedHtml}
     </div>
   </div>
-
   <div class="zone-unlocked" style="display: none;">
     ${unlockedHtml}
   </div>
 </div>`.trim());
+        }
+        case 'TOGGLE_ZONE': {
+        const blockId = `pw_${block.id}`;
+        const uniqueId = blockId.split("-")[2];
+        const defaultHtml = block.defaultChildren?.map(buildHtmlString).join('') || '';
+        const conditionalHtml = block.conditionalChildren?.map(buildHtmlString).join('') || '';
+
+        return `
+<div id="${blockId}-root" class="${classes}">
+  <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px;">
+    <div style="flex: 1;">${defaultHtml}</div>
+    <button onclick="toggleSection_${uniqueId}(this)" style="padding: 6px 12px; background: #f1f5f9; color: #334155; font-size: 12px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer; shrink-0;">열기</button>
+  </div>
+  <div class="zone-conditional" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed #e2e8f0;">
+    ${conditionalHtml}
+  </div>
+  <script>
+    function toggleSection_${uniqueId}(btn) {
+      const root = document.getElementById('${blockId}-root');
+      const target = root.querySelector('.zone-conditional');
+      const isHidden = target.style.display === 'none';
+      if (isHidden) {
+        target.style.display = 'block';
+        btn.innerText = '닫기';
+      } else {
+        target.style.display = 'none';
+        btn.innerText = '열기';
+      }
+    }
+  </script>
+</div>`.trim();
+      }
         default: return '';
       }
     };
@@ -169,26 +228,21 @@ export default function BlockRenderer({blocks} : BlockRendererProps) {
 </html>`.trim();
 
     try {
-      // 1. 브라우저 내장 런타임 표준 CompressionStream을 이용해 고밀도 gzip 압축 실행
-      const stream = new Blob([fullHtmlDocument]).stream();
-      const compressedStream = stream.pipeThrough(new CompressionStream('gzip'));
-      const buffer = await new Response(compressedStream).arrayBuffer();
+      // 🌟 [변경] 브라우저 메모리 압축 대신 로컬 Vite Node.js 미들웨어 파일 저장소로 전송
+      const response = await fetch('/api/save-page', {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/html;charset=utf-8' },
+        body: fullHtmlDocument
+      });
+      
+      const data = await response.json();
 
-      // 2. 압축된 바이너리 배열 버퍼를 Base64 가독형 문자열로 안전하게 변환
-      let binary = '';
-      const bytes = new Uint8Array(buffer);
-      for (let i = 0; i < bytes.byteLength; i++) {
-        binary += String.fromCharCode(bytes[i]);
-      }
-      const encodedData = btoa(binary);
-
-      // 3. URL 주소창에서 특수기호 유실을 차단하기 위한 최종 배포 랩핑
-      const safeParam = encodeURIComponent(encodedData);
-      setQrUrl(`${window.location.origin}/code?code=${safeParam}`);
-      console.log(`${window.location.origin}/code?code=${safeParam}`);
+      // 🎯 데이터 크기와 무관하게 단 8자리의 해시 키값 포인터로 고정된 청정 URL 발급!
+      setQrUrl(`${window.location.origin}/code?key=${data.key}`);
+      console.log(`${window.location.origin}/code?key=${data.key}`);
       setIsModalOpen(true);
     } catch (err) {
-      console.error("배포 데이터 압축 컴파일링 중 예외가 발생했습니다:", err);
+      console.error("로컬 파일 시스템 컴파일 저장 중 오류가 발생했습니다:", err);
     }
   };
   return (

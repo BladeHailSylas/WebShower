@@ -1,5 +1,5 @@
 // types.ts (또는 전역 타입 정의부)
-export type BlockType = 'CONTAINER' | 'H1' | 'P' | 'IMAGE' | 'PASSWORD_ZONE'; // IMAGE 추가
+export type BlockType = 'CONTAINER' | 'H1' | 'P' | 'IMAGE' | 'PASSWORD_ZONE' | 'TOGGLE_ZONE'; // IMAGE 추가
 
 export interface StyleProps {
   className?: string; // 예: 'text-red-500 bg-slate-100' (Tailwind 기반)

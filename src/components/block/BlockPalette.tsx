@@ -38,7 +38,8 @@ export default function BlockPalette() {
       <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-6">
         <div className="flex flex-col gap-3">
           <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">구조 요소</h3>
-          <PaletteItem type="CONTAINER" label="구역 만들기 (Box)" icon="📦" />
+          <PaletteItem type="CONTAINER" label="일반 구역 만들기" icon="📦" />
+          <PaletteItem type="TOGGLE_ZONE" label="여닫는 구역 만들기" icon="📂" />
         </div>
 
         <div className="flex flex-col gap-3">

@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 #only for simple debugging
 runner.cmd
+
+public/

@@ -1,27 +1,27 @@
-export function useMobileDownload() {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    let foundCode = false;
-    if (code) {
-      foundCode = true;
-      // 🌟 스트림 처리를 위해 내부에 비동기 전용 실행 블록 구성
-      const triggerDownload = async () => {
-        try {
-          const cleanCode = code.replace(/ /g, '+');
+import { useRef } from "react";
 
-          // 1. Base64 규격을 디코딩하여 원시 바이트 가상 스트링 문자열 획득
-          const binary = atob(cleanCode);
-          const bytes = new Uint8Array(binary.length);
-          for (let i = 0; i < binary.length; i++) {
-            bytes[i] = binary.charCodeAt(i);
+export function useMobileDownload() {
+  const hasDownloaded = useRef(false);
+    const params = new URLSearchParams(window.location.search);
+    const key = params.get('key');
+    const storage = sessionStorage.getItem('downloaded');
+    let foundCode = false;
+    if (key && !hasDownloaded.current && !storage) {
+      foundCode = true;
+      hasDownloaded.current = true; // 최초 진입 시 즉시 가드 활성화
+      sessionStorage.setItem('downloaded', 'true');
+      const fetchAndDownloadFile = async () => {
+        try {
+          // Vite 개발 서버의 public 폴더에 저장된 정적 파일을 키값으로 다이렉트 역조회
+          const response = await fetch(`/temp-pages/${key}.html`);
+          
+          // ⚠️ [명세 수용] 만약 30분이 지나 소멸했거나 없는 키인 경우 예외 핸들링
+          if (response.status === 404) {
+            alert("요청하신 페이지 파일이 존재하지 않거나, 30분 만료 시간이 지나 서버에서 자동 소멸되었습니다.");
+            return;
           }
 
-          // 2. DecompressionStream을 가동하여 브라우저 메모리 단축 팩 해제
-          const stream = new Blob([bytes]).stream();
-          const decompressedStream = stream.pipeThrough(new DecompressionStream('gzip'));
-          const decodedHtml = await new Response(decompressedStream).text();
-
-          // 3. 최종 복원된 순수 HTML 텍스트를 다운로드 가능한 Blob 파일 객체로 전환
+          const decodedHtml = await response.text();
           const blob = new Blob([decodedHtml], { type: 'text/html;charset=utf-8' });
           const downloadUrl = URL.createObjectURL(blob);
 
@@ -34,11 +34,11 @@ export function useMobileDownload() {
           document.body.removeChild(a);
           URL.revokeObjectURL(downloadUrl);
         } catch (error) {
-          console.error("모바일 수신 및 압축 해제 프로세스 도중 장애가 발생했습니다.", error);
+          console.error("모바일 정적 파일 포인터 다운로드 중 예외 발생:", error);
         }
       };
 
-      triggerDownload();
+      fetchAndDownloadFile();
     }
     return foundCode;
 }

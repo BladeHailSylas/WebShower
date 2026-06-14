@@ -53,14 +53,18 @@ function SortableBlockItem({ block, activeStyleId, onStyleClick }: { block: Html
         <div className="p-3 font-bold text-slate-200 text-sm flex justify-between items-center">
           <span>
             {isContainer 
-              ? '일반 구역 만들기 (Box)' 
+              ? '일반 구역' 
               : block.type === 'H1' 
                 ? `제목: ${block.content || '(내용 없음)'}` 
                 : block.type === 'IMAGE' 
-                  ? '이미지 넣기 (Image)' :
+                  ? '이미지' :
                   block.type === 'PASSWORD_ZONE' ? 
-                  ' 비밀번호 매크로 구역'
-                  : `문단: ${textLimiter(block.content, 10) || '(내용 없음)'}`}
+                  '비밀번호 매크로 구역'
+                  :
+                  block.type === 'TOGGLE_ZONE' ? 
+                  '여닫는 구역'
+                  :
+                  `문단: ${textLimiter(block.content, 10) || '(내용 없음)'}`}
           </span>
         </div>
         
@@ -86,11 +90,13 @@ function SortableBlockItem({ block, activeStyleId, onStyleClick }: { block: Html
           </div>
         )}
         {isZone && (
+          block.type === "PASSWORD_ZONE" ? 
+          (
           <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="mb-3 relative flex items-stretch w-max">
             <div className="flex flex-col rounded-l-xl p-4 min-w-85 gap-3">
 
               <div ref={setLockedRef} className={`p-3 border-l-2 border-dashed border-red-500/30 bg-red-950/20 flex flex-col gap-1 transition-colors ${isLockedOver ? 'bg-red-900/30 ring-2 ring-red-500/50' : ''}`}>
-                <div className="text-[10px] text-red-400 font-bold tracking-tight mb-1">🔴 잠겼을 때 화면에 노출될 요소</div>
+                <div className="text-[10px] text-red-400 font-bold tracking-tight mb-1">잠겼을 때 화면에 노출될 요소</div>
                 <SortableContext items={(block.defaultChildren || []).map(c => c.id)} strategy={verticalListSortingStrategy}>
                   {block.defaultChildren?.map(child => <SortableBlockItem key={child.id} block={child} activeStyleId={activeStyleId} onStyleClick={onStyleClick} />)}
                 </SortableContext>
@@ -100,7 +106,7 @@ function SortableBlockItem({ block, activeStyleId, onStyleClick }: { block: Html
               </div>
               
               <div ref={setUnlockedRef} className={`p-3 border-l-2 border-dashed border-emerald-500/30 bg-emerald-950/20 flex flex-col gap-1 transition-colors ${isUnlockedOver ? 'bg-emerald-900/30 ring-2 ring-emerald-500/50' : ''}`}>
-                <div className="text-[10px] text-emerald-400 font-bold tracking-tight mb-1">🟢 비밀번호 일치 시 나타날 보상 요소</div>
+                <div className="text-[10px] text-emerald-400 font-bold tracking-tight mb-1">비밀번호 일치 시 나타날 보상 요소</div>
                 <SortableContext items={(block.conditionalChildren || []).map(c => c.id)} strategy={verticalListSortingStrategy}>
                   {block.conditionalChildren?.map(child => <SortableBlockItem key={child.id} block={child} activeStyleId={activeStyleId} onStyleClick={onStyleClick} />)}
                 </SortableContext>
@@ -110,7 +116,33 @@ function SortableBlockItem({ block, activeStyleId, onStyleClick }: { block: Html
               </div>
             </div>
           </div>
-          )}
+          ) :
+          block.type === "TOGGLE_ZONE" ? (
+            <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="mb-3 relative flex items-stretch w-max">
+            <div className="flex flex-col rounded-l-xl p-4 min-w-85 gap-3">
+
+              <div ref={setLockedRef} className={`p-3 border-l-2 border-dashed border-emerald-500/30 bg-emerald-950/20 flex flex-col gap-1 transition-colors ${isLockedOver ? 'bg-emerald-900/30 ring-2 ring-emerald-500/50' : ''}`}>
+                <div className="text-[10px] text-emerald-400 font-bold tracking-tight mb-1">항상 보이는 요소</div>
+                <SortableContext items={(block.defaultChildren || []).map(c => c.id)} strategy={verticalListSortingStrategy}>
+                  {block.defaultChildren?.map(child => <SortableBlockItem key={child.id} block={child} activeStyleId={activeStyleId} onStyleClick={onStyleClick} />)}
+                </SortableContext>
+                {(!block.defaultChildren || block.defaultChildren.length === 0) && (
+                  <span className="text-[10px] text-slate-500 font-medium py-2 text-center pointer-events-none">블록을 놓으세요</span>
+                )}
+              </div>
+              
+              <div ref={setUnlockedRef} className={`p-3 border-l-2 border-dashed border-blue-500/30 bg-blue-950/20 flex flex-col gap-1 transition-colors ${isUnlockedOver ? 'bg-blue-900/30 ring-2 ring-blue-500/50' : ''}`}>
+                <div className="text-[10px] text-blue-400 font-bold tracking-tight mb-1">열렸을 때 보이는 요소</div>
+                <SortableContext items={(block.conditionalChildren || []).map(c => c.id)} strategy={verticalListSortingStrategy}>
+                  {block.conditionalChildren?.map(child => <SortableBlockItem key={child.id} block={child} activeStyleId={activeStyleId} onStyleClick={onStyleClick} />)}
+                </SortableContext>
+                {(!block.conditionalChildren || block.conditionalChildren.length === 0) && (
+                  <span className="text-[10px] text-slate-500 font-medium py-2 text-center pointer-events-none">블록을 놓으세요</span>
+                )}
+              </div>
+            </div>
+          </div>
+          ) : null)}
       </div>
 
       <div 

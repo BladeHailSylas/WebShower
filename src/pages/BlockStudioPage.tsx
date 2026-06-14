@@ -188,7 +188,7 @@ export default function BlockStudioPage() {
 
   const renderOverlayBlock = (block: HtmlBlock) => {
     const isContainer = block.type === 'CONTAINER';
-    const isZone = block.type === 'PASSWORD_ZONE';
+    const isZone = block.type.toString().split('_')[1] === 'ZONE';
     return (
       <div className={`flex flex-col border-2 border-emerald-400 bg-slate-800 rounded-xl shadow-2xl opacity-95 scale-105 ${isContainer ? 'min-w-70' : 'min-w-50'}`}>
         <div className="p-3 font-bold text-slate-200 text-sm flex justify-between items-center">
@@ -197,6 +197,7 @@ export default function BlockStudioPage() {
           block.type === 'H1' ? `제목: ${block.content || ''}` : 
           block.type === 'IMAGE' ? '이미지 (Image)' : 
           block.type === 'PASSWORD_ZONE' ? '비밀번호 매크로 구역' :
+          block.type === 'TOGGLE_ZONE' ? '여닫는 구역' :
           `문단: ${textLimiter(block.content, 10) || ''}`}</span>
         </div>
         {/* 컨테이너일 경우 내부의 자식들까지 똑같이 축소해서 렌더링 */}
@@ -207,7 +208,7 @@ export default function BlockStudioPage() {
         )}
         {isZone && (block.defaultChildren || block.conditionalChildren) && (
           <div>
-            <div className="ml-6 mr-2 mb-2 p-3 bg-red-950/20 border-l-2 border-red-500 border-dashed min-h-15 flex flex-col gap-1 pointer-events-none">
+            <div className="ml-6 mr-2 mb-2 p-3 bg-emerald-950/20 border-l-2 border-emerald-500 border-dashed min-h-15 flex flex-col gap-1 pointer-events-none">
               {block.defaultChildren?.map(renderOverlayBlock)}
             </div>
             <div className="ml-6 mr-2 mb-2 p-3 bg-emerald-900/20 border-l-2 border-emerald-500 border-dashed min-h-15 flex flex-col gap-1 pointer-events-none">
@@ -218,8 +219,9 @@ export default function BlockStudioPage() {
       </div>
     );
   };
+  console.log(window.screen.width);
   // 다운로드를 위해 들어온 경우
-  if(code) {
+  if(code || window.screen.width < 640) {
     return(
     <div className="h-full flex flex-col justify-center items-center">
         <div className="text-7xl font-bold">
