@@ -85,7 +85,7 @@ export default function BlockStudioPage() {
     const activeId = active.id as string;
     const overId = over.id as string;
     const isPaletteItem = active.data.current?.type === 'PALETTE_ITEM';
-
+    console.log(overId);
     setBlocks((prev) => {
       let nextBlocks = [...prev];
       let movingBlock: HtmlBlock;
@@ -144,10 +144,10 @@ export default function BlockStudioPage() {
           });
         };
         nextBlocks = insertIntoContainer(nextBlocks);
-      } else if (overId.startsWith('pw-locked-') || overId.startsWith('pw-unlocked-')) {
+      } else if (overId.startsWith('droppable-default-') || overId.startsWith('droppable-conditional-')) {
         // 🌟 [명세서 분기] 독립된 2중 자식 슬롯 내부로 정밀 조립
-        const isLockedSlot = overId.startsWith('pw-locked-');
-        const targetBlockId = overId.replace(isLockedSlot ? 'pw-locked-' : 'pw-unlocked-', '');
+        const isLockedSlot = overId.startsWith('droppable-default-');
+        const targetBlockId = overId.replace(isLockedSlot ? 'droppable-default-' : 'droppable-conditional-', '');
 
         const insertIntoPasswordSlot = (nodes: HtmlBlock[]): HtmlBlock[] => {
           return nodes.map(n => {
@@ -188,15 +188,27 @@ export default function BlockStudioPage() {
 
   const renderOverlayBlock = (block: HtmlBlock) => {
     const isContainer = block.type === 'CONTAINER';
+    const isZone = block.type === 'PASSWORD_ZONE';
     return (
       <div className={`flex flex-col border-2 border-emerald-400 bg-slate-800 rounded-xl shadow-2xl opacity-95 scale-105 ${isContainer ? 'min-w-70' : 'min-w-50'}`}>
         <div className="p-3 font-bold text-slate-200 text-sm flex justify-between items-center">
-          <span>{isContainer ? '구역 만들기 (Box)' : block.type === 'H1' ? `제목: ${block.content || ''}` : block.type === 'IMAGE' ? '이미지 (Image)' : `문단: ${textLimiter(block.content, 10) || ''}`}</span>
+          <span>{
+          isContainer ? '일반 구역 만들기 (Box)' : 
+          block.type === 'H1' ? `제목: ${block.content || ''}` : 
+          block.type === 'IMAGE' ? '이미지 (Image)' : 
+          block.type === 'PASSWORD_ZONE' ? '비밀번호 매크로 구역' :
+          `문단: ${textLimiter(block.content, 10) || ''}`}</span>
         </div>
         {/* 컨테이너일 경우 내부의 자식들까지 똑같이 축소해서 렌더링 */}
         {isContainer && block.children && (
           <div className="ml-6 mr-2 mb-2 p-3 bg-slate-900/80 border-l-2 border-emerald-500 border-dashed min-h-15 flex flex-col gap-1 pointer-events-none">
             {block.children.map(renderOverlayBlock)}
+          </div>
+        )}
+        {isZone && (block.defaultChildren || block.conditionalChildren) && (
+          <div className="ml-6 mr-2 mb-2 p-3 bg-slate-900/80 border-l-2 border-emerald-500 border-dashed min-h-15 flex flex-col gap-1 pointer-events-none">
+            {block.defaultChildren?.map(renderOverlayBlock)}
+            {block.conditionalChildren?.map(renderOverlayBlock)}
           </div>
         )}
       </div>

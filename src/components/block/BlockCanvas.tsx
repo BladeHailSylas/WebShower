@@ -18,10 +18,10 @@ function SortableBlockItem({ block, activeStyleId, onStyleClick }: { block: Html
 
   // 🌟 명세서 사양: 2중 격리 공간 개별 센서 주입
   const { setNodeRef: setLockedRef, isOver: isLockedOver } = useDroppable({
-    id: `pw-locked-${block.id}`,
+    id: `droppable-default-${block.id}`,
   });
   const { setNodeRef: setUnlockedRef, isOver: isUnlockedOver } = useDroppable({
-    id: `pw-unlocked-${block.id}`,
+    id: `droppable-conditional-${block.id}`,
   });
 
   // 🎯 [인접 블록 애니메이션 버그 패치] 
