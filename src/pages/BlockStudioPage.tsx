@@ -13,7 +13,6 @@ import BlockCanvas from "../components/block/BlockCanvas";
 import BlockPalette from "../components/block/BlockPalette";
 import BlockRenderer from "../components/block/BlockRenderer";
 import type { BlockType, HtmlBlock } from "../types/types";
-import { useMobileDownload } from "../utils/useMobileDownload";
 import textLimiter from "../utils/textLimiter";
 
 // [수정] 통합 테스트용 레벨 1 모범 페이지: 학원 로비 안내판
@@ -48,7 +47,6 @@ const LEVEL_1_TEMPLATE: HtmlBlock[] = [
 
 export default function BlockStudioPage() {
   const [blocks, setBlocks] = useState<HtmlBlock[]>(LEVEL_1_TEMPLATE);
-  const code = useMobileDownload();
   // [신규] 현재 드래그 중인 아이템의 상태 관리
   const [activeDragType, setActiveDragType] = useState<BlockType | null>(null);
   const [activeDragLabel, setActiveDragLabel] = useState<string | null>(null);
@@ -219,21 +217,6 @@ export default function BlockStudioPage() {
       </div>
     );
   };
-  console.log(window.screen.width);
-  // 다운로드를 위해 들어온 경우
-  if(code || window.screen.width < 640) {
-    return(
-    <div className="h-full flex flex-col justify-center items-center">
-        <div className="text-7xl font-bold">
-            다운로드 중입니다...
-        </div>
-        <p className="mt-2">
-          다운로드한 페이지를 보려면 휴대폰의 내 파일 앱으로 들어가세요.
-        </p>
-    </div>
-    );
-  }
-  else {
     return (
     // [수정] 전체 레이아웃을 DndContext로 래핑
       <DndContext 
@@ -265,5 +248,4 @@ export default function BlockStudioPage() {
         </DragOverlay>
       </DndContext>
     );
-  }
 }
