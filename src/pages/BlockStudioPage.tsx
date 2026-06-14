@@ -39,7 +39,7 @@ const LEVEL_1_TEMPLATE: HtmlBlock[] = [
       {
         id: 'b-desc',
         type: 'P',
-        content: '블록을 조립하여 상상하는 모든 것을 웹사이트로 만들어보세요. 오늘 만든 작품을 스마트폰에 저장해서 부모님께 자랑해볼까요?',
+        content: '블록을 조립하여 나만의 웹사이트를 만들어보세요. 오늘 만든 작품을 스마트폰에 저장해서 부모님께 자랑해볼까요?',
         styles: { className: 'text-sm text-slate-500 leading-relaxed font-medium' }
       }
     ]
@@ -120,8 +120,8 @@ export default function BlockStudioPage() {
           return nodes.filter(n => n.id !== id).map(n => ({
             ...n,
             children: n.children ? removeNode(n.children, id) : n.children,
-            lockedChildren: n.defaultChildren ? removeNode(n.defaultChildren, id) : n.defaultChildren,
-            unlockedChildren: n.conditionalChildren ? removeNode(n.conditionalChildren, id) : n.conditionalChildren,
+            defaultChildren: n.defaultChildren ? removeNode(n.defaultChildren, id) : n.defaultChildren,
+            conditionalChildren: n.conditionalChildren ? removeNode(n.conditionalChildren, id) : n.conditionalChildren,
           }));
         };
         nextBlocks = removeNode(nextBlocks, activeId);
@@ -181,7 +181,7 @@ export default function BlockStudioPage() {
         };
         nextBlocks = insertSibling(nextBlocks);
       }
-
+      console.log(nextBlocks);
       return nextBlocks;
     });
   };
@@ -206,9 +206,13 @@ export default function BlockStudioPage() {
           </div>
         )}
         {isZone && (block.defaultChildren || block.conditionalChildren) && (
-          <div className="ml-6 mr-2 mb-2 p-3 bg-slate-900/80 border-l-2 border-emerald-500 border-dashed min-h-15 flex flex-col gap-1 pointer-events-none">
-            {block.defaultChildren?.map(renderOverlayBlock)}
-            {block.conditionalChildren?.map(renderOverlayBlock)}
+          <div>
+            <div className="ml-6 mr-2 mb-2 p-3 bg-red-950/20 border-l-2 border-red-500 border-dashed min-h-15 flex flex-col gap-1 pointer-events-none">
+              {block.defaultChildren?.map(renderOverlayBlock)}
+            </div>
+            <div className="ml-6 mr-2 mb-2 p-3 bg-emerald-900/20 border-l-2 border-emerald-500 border-dashed min-h-15 flex flex-col gap-1 pointer-events-none">
+              {block.conditionalChildren?.map(renderOverlayBlock)}
+            </div>
           </div>
         )}
       </div>

@@ -32,46 +32,6 @@ function SortableBlockItem({ block, activeStyleId, onStyleClick }: { block: Html
     zIndex: isDragging ? 50 : 1,
     opacity: isDragging ? 0.6 : 1,
   };
-
-  // 🌟 [PASSWORD_ZONE] 매크로 블록 전용 2중 슬롯 렌더링 명세 구현
-  if (block.type === 'PASSWORD_ZONE') {
-    return (
-      <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="mb-3 relative flex items-stretch w-max">
-        <div className="flex flex-col border-2 border-amber-600 bg-slate-800 rounded-l-xl p-4 min-w-85 gap-3">
-          <div className="text-xs font-black text-amber-400 flex items-center gap-1.5">
-            <span>🔒</span> 비밀번호 매크로 구역
-          </div>
-
-          {/* [잠겼을 때] 격리 공간 */}
-          <div ref={setLockedRef} className={`p-3 rounded-xl border-2 border-dashed border-red-500/30 bg-red-950/20 flex flex-col gap-1 transition-colors ${isLockedOver ? 'bg-red-900/30 border-red-400' : ''}`}>
-            <div className="text-[10px] text-red-400 font-bold tracking-tight mb-1">🔴 잠겼을 때 화면에 노출될 요소</div>
-            <SortableContext items={(block.defaultChildren || []).map(c => c.id)} strategy={verticalListSortingStrategy}>
-              {block.defaultChildren?.map(child => <SortableBlockItem key={child.id} block={child} activeStyleId={activeStyleId} onStyleClick={onStyleClick} />)}
-            </SortableContext>
-            {(!block.defaultChildren || block.defaultChildren.length === 0) && (
-              <span className="text-[10px] text-slate-500 font-medium py-2 text-center pointer-events-none">블록을 놓으세요</span>
-            )}
-          </div>
-
-          {/* [풀렸을 때] 격리 공간 */}
-          <div ref={setUnlockedRef} className={`p-3 rounded-xl border-2 border-dashed border-emerald-500/30 bg-emerald-950/20 flex flex-col gap-1 transition-colors ${isUnlockedOver ? 'bg-emerald-900/30 border-emerald-400' : ''}`}>
-            <div className="text-[10px] text-emerald-400 font-bold tracking-tight mb-1">🟢 비밀번호 일치 시 나타날 보상 요소</div>
-            <SortableContext items={(block.conditionalChildren || []).map(c => c.id)} strategy={verticalListSortingStrategy}>
-              {block.conditionalChildren?.map(child => <SortableBlockItem key={child.id} block={child} activeStyleId={activeStyleId} onStyleClick={onStyleClick} />)}
-            </SortableContext>
-            {(!block.conditionalChildren || block.conditionalChildren.length === 0) && (
-              <span className="text-[10px] text-slate-500 font-medium py-2 text-center pointer-events-none">블록을 놓으세요</span>
-            )}
-          </div>
-        </div>
-
-        <div onClick={(e) => onStyleClick(e, block.id)} onPointerDown={(e) => e.stopPropagation()} className={`w-8 bg-amber-500 rounded-r-xl border-y-2 border-r-2 border-amber-600 cursor-pointer hover:bg-amber-400 flex items-center justify-center shrink-0 ${activeStyleId === block.id ? 'ring-2 ring-amber-300 z-10' : ''}`}>
-          <div className="w-1.5 h-1.5 rounded-full bg-white/70" />
-        </div>
-      </div>
-    );
-  }
-
   // 2. [신규] 컨테이너 내부 공간의 드롭(Drop) 센서 분리 탑재
   const { setNodeRef: setContainerDropRef, isOver: isContainerOver } = useDroppable({
     id: `droppable-container-${block.id}`,
@@ -79,6 +39,7 @@ function SortableBlockItem({ block, activeStyleId, onStyleClick }: { block: Html
   });
 
   const isContainer = block.type === 'CONTAINER';
+  const isZone = block.type.toString().split("_")[1] === 'ZONE';
 
   return (
     <div 
@@ -96,7 +57,9 @@ function SortableBlockItem({ block, activeStyleId, onStyleClick }: { block: Html
               : block.type === 'H1' 
                 ? `제목: ${block.content || '(내용 없음)'}` 
                 : block.type === 'IMAGE' 
-                  ? '이미지 넣기 (Image)' 
+                  ? '이미지 넣기 (Image)' :
+                  block.type === 'PASSWORD_ZONE' ? 
+                  ' 비밀번호 매크로 구역'
                   : `문단: ${textLimiter(block.content, 10) || '(내용 없음)'}`}
           </span>
         </div>
@@ -122,6 +85,32 @@ function SortableBlockItem({ block, activeStyleId, onStyleClick }: { block: Html
             )}
           </div>
         )}
+        {isZone && (
+          <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="mb-3 relative flex items-stretch w-max">
+            <div className="flex flex-col rounded-l-xl p-4 min-w-85 gap-3">
+
+              <div ref={setLockedRef} className={`p-3 border-l-2 border-dashed border-red-500/30 bg-red-950/20 flex flex-col gap-1 transition-colors ${isLockedOver ? 'bg-red-900/30 ring-2 ring-red-500/50' : ''}`}>
+                <div className="text-[10px] text-red-400 font-bold tracking-tight mb-1">🔴 잠겼을 때 화면에 노출될 요소</div>
+                <SortableContext items={(block.defaultChildren || []).map(c => c.id)} strategy={verticalListSortingStrategy}>
+                  {block.defaultChildren?.map(child => <SortableBlockItem key={child.id} block={child} activeStyleId={activeStyleId} onStyleClick={onStyleClick} />)}
+                </SortableContext>
+                {(!block.defaultChildren || block.defaultChildren.length === 0) && (
+                  <span className="text-[10px] text-slate-500 font-medium py-2 text-center pointer-events-none">블록을 놓으세요</span>
+                )}
+              </div>
+              
+              <div ref={setUnlockedRef} className={`p-3 border-l-2 border-dashed border-emerald-500/30 bg-emerald-950/20 flex flex-col gap-1 transition-colors ${isUnlockedOver ? 'bg-emerald-900/30 ring-2 ring-emerald-500/50' : ''}`}>
+                <div className="text-[10px] text-emerald-400 font-bold tracking-tight mb-1">🟢 비밀번호 일치 시 나타날 보상 요소</div>
+                <SortableContext items={(block.conditionalChildren || []).map(c => c.id)} strategy={verticalListSortingStrategy}>
+                  {block.conditionalChildren?.map(child => <SortableBlockItem key={child.id} block={child} activeStyleId={activeStyleId} onStyleClick={onStyleClick} />)}
+                </SortableContext>
+                {(!block.conditionalChildren || block.conditionalChildren.length === 0) && (
+                  <span className="text-[10px] text-slate-500 font-medium py-2 text-center pointer-events-none">블록을 놓으세요</span>
+                )}
+              </div>
+            </div>
+          </div>
+          )}
       </div>
 
       <div 
@@ -172,7 +161,11 @@ export default function BlockCanvas({ blocks, setBlocks }: BlockCanvasProps) {
 
   // ⚙️ [Phase 4 패치] 중첩 구조를 지원하는 안전한 블록 적출(삭제) 엔진
   const deleteCurrentBlock = () => {
-    if (!activeStyleId) return;
+    console.log("현재 타겟 ID (activeStyleId):", activeStyleId);
+    if (!activeStyleId) {
+      console.log("❌ 타겟 ID가 없어서 삭제가 취소되었습니다.");
+      return;
+    }
 
     const deleteRecursive = (nodes: HtmlBlock[]): HtmlBlock[] => {
       return nodes
@@ -180,12 +173,16 @@ export default function BlockCanvas({ blocks, setBlocks }: BlockCanvasProps) {
         .map(node => ({
           ...node,
           children: node.children ? deleteRecursive(node.children) : node.children,
-          lockedChildren: node.defaultChildren ? deleteRecursive(node.defaultChildren) : node.defaultChildren,
-          unlockedChildren: node.conditionalChildren ? deleteRecursive(node.conditionalChildren) : node.conditionalChildren,
+          defaultChildren: node.defaultChildren ? deleteRecursive(node.defaultChildren) : node.defaultChildren,
+          conditionalChildren: node.conditionalChildren ? deleteRecursive(node.conditionalChildren) : node.conditionalChildren,
         }));
     };
 
-    setBlocks((prev) => deleteRecursive(prev as HtmlBlock[]));
+  setBlocks((prev) => {
+    const res = deleteRecursive(prev);
+    console.log("삭제 연산 후 전역 트리 상태:", res);
+    return res;
+  });
     setActiveStyleId(null);
   };
 
