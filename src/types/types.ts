@@ -1,5 +1,5 @@
 // types.ts (또는 전역 타입 정의부)
-export type BlockType = 'CONTAINER' | 'H1' | 'P' | 'IMAGE'; // IMAGE 추가
+export type BlockType = 'CONTAINER' | 'H1' | 'P' | 'IMAGE' | 'PASSWORD_ZONE'; // IMAGE 추가
 
 export interface StyleProps {
   className?: string; // 예: 'text-red-500 bg-slate-100' (Tailwind 기반)
@@ -10,7 +10,10 @@ export interface HtmlBlock {
   id: string;
   type: BlockType;
   content?: string;
-  src?: string; // [추가] 이미지 요소용 URL 데이터
+  src?: string;
+  correctAnswer?: string; // 🌟 비밀번호 매크로 블록 정답 필드
   styles?: StyleProps;
-  children?: HtmlBlock[]; // 구조 요소 내부에 삽입될 자식 블록들
+  children?: HtmlBlock[];
+  defaultChildren?: HtmlBlock[];   // 🌟 명세서 사양: [잠겼을 때] 슬롯 트랙
+  conditionalChildren?: HtmlBlock[]; // 🌟 명세서 사양: [풀렸을 때] 슬롯 트랙
 }

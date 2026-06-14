@@ -10,18 +10,18 @@ interface BlockCanvasProps {
   setBlocks: (blocks: HtmlBlock[] | ((prev: HtmlBlock[]) => HtmlBlock[])) => void;
 }
 
-function SortableBlockItem({ 
-  block, 
-  activeStyleId, 
-  onStyleClick 
-}: { 
-  block: HtmlBlock; 
-  activeStyleId: string | null; 
-  onStyleClick: (e: MouseEvent, id: string) => void; 
-}) {
+function SortableBlockItem({ block, activeStyleId, onStyleClick }: { block: HtmlBlock; activeStyleId: string | null; onStyleClick: (e: MouseEvent, id: string) => void; }) {
   const { attributes, listeners, setNodeRef, transform, transition: _/*dndTransition*/, isDragging } = useSortable({
     id: block.id,
     data: { type: 'CANVAS_ITEM', block },
+  });
+
+  // 🌟 명세서 사양: 2중 격리 공간 개별 센서 주입
+  const { setNodeRef: setLockedRef, isOver: isLockedOver } = useDroppable({
+    id: `pw-locked-${block.id}`,
+  });
+  const { setNodeRef: setUnlockedRef, isOver: isUnlockedOver } = useDroppable({
+    id: `pw-unlocked-${block.id}`,
   });
 
   // 🎯 [인접 블록 애니메이션 버그 패치] 
@@ -32,6 +32,45 @@ function SortableBlockItem({
     zIndex: isDragging ? 50 : 1,
     opacity: isDragging ? 0.6 : 1,
   };
+
+  // 🌟 [PASSWORD_ZONE] 매크로 블록 전용 2중 슬롯 렌더링 명세 구현
+  if (block.type === 'PASSWORD_ZONE') {
+    return (
+      <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="mb-3 relative flex items-stretch w-max">
+        <div className="flex flex-col border-2 border-amber-600 bg-slate-800 rounded-l-xl p-4 min-w-85 gap-3">
+          <div className="text-xs font-black text-amber-400 flex items-center gap-1.5">
+            <span>🔒</span> 비밀번호 매크로 구역
+          </div>
+
+          {/* [잠겼을 때] 격리 공간 */}
+          <div ref={setLockedRef} className={`p-3 rounded-xl border-2 border-dashed border-red-500/30 bg-red-950/20 flex flex-col gap-1 transition-colors ${isLockedOver ? 'bg-red-900/30 border-red-400' : ''}`}>
+            <div className="text-[10px] text-red-400 font-bold tracking-tight mb-1">🔴 잠겼을 때 화면에 노출될 요소</div>
+            <SortableContext items={(block.defaultChildren || []).map(c => c.id)} strategy={verticalListSortingStrategy}>
+              {block.defaultChildren?.map(child => <SortableBlockItem key={child.id} block={child} activeStyleId={activeStyleId} onStyleClick={onStyleClick} />)}
+            </SortableContext>
+            {(!block.defaultChildren || block.defaultChildren.length === 0) && (
+              <span className="text-[10px] text-slate-500 font-medium py-2 text-center pointer-events-none">블록을 놓으세요</span>
+            )}
+          </div>
+
+          {/* [풀렸을 때] 격리 공간 */}
+          <div ref={setUnlockedRef} className={`p-3 rounded-xl border-2 border-dashed border-emerald-500/30 bg-emerald-950/20 flex flex-col gap-1 transition-colors ${isUnlockedOver ? 'bg-emerald-900/30 border-emerald-400' : ''}`}>
+            <div className="text-[10px] text-emerald-400 font-bold tracking-tight mb-1">🟢 비밀번호 일치 시 나타날 보상 요소</div>
+            <SortableContext items={(block.conditionalChildren || []).map(c => c.id)} strategy={verticalListSortingStrategy}>
+              {block.conditionalChildren?.map(child => <SortableBlockItem key={child.id} block={child} activeStyleId={activeStyleId} onStyleClick={onStyleClick} />)}
+            </SortableContext>
+            {(!block.conditionalChildren || block.conditionalChildren.length === 0) && (
+              <span className="text-[10px] text-slate-500 font-medium py-2 text-center pointer-events-none">블록을 놓으세요</span>
+            )}
+          </div>
+        </div>
+
+        <div onClick={(e) => onStyleClick(e, block.id)} onPointerDown={(e) => e.stopPropagation()} className={`w-8 bg-amber-500 rounded-r-xl border-y-2 border-r-2 border-amber-600 cursor-pointer hover:bg-amber-400 flex items-center justify-center shrink-0 ${activeStyleId === block.id ? 'ring-2 ring-amber-300 z-10' : ''}`}>
+          <div className="w-1.5 h-1.5 rounded-full bg-white/70" />
+        </div>
+      </div>
+    );
+  }
 
   // 2. [신규] 컨테이너 내부 공간의 드롭(Drop) 센서 분리 탑재
   const { setNodeRef: setContainerDropRef, isOver: isContainerOver } = useDroppable({
@@ -53,7 +92,7 @@ function SortableBlockItem({
         <div className="p-3 font-bold text-slate-200 text-sm flex justify-between items-center">
           <span>
             {isContainer 
-              ? '구역 만들기 (Box)' 
+              ? '일반 구역 만들기 (Box)' 
               : block.type === 'H1' 
                 ? `제목: ${block.content || '(내용 없음)'}` 
                 : block.type === 'IMAGE' 
@@ -73,13 +112,13 @@ function SortableBlockItem({
             <SortableContext items={(block.children || []).map(c => c.id)} strategy={verticalListSortingStrategy}>
               {block.children?.map((child) => (
                  // 재귀(Recursive) 호출: 자식 블록도 동일한 SortableItem으로 렌더링
-                 <SortableBlockItem key={child.id} block={child} activeStyleId={activeStyleId} onStyleClick={onStyleClick} />
+                  <SortableBlockItem key={child.id} block={child} activeStyleId={activeStyleId} onStyleClick={onStyleClick} />
               ))}
             </SortableContext>
             
             {/* 자식이 비어있을 때 직관적인 안내 가이드 제공 */}
             {(!block.children || block.children.length === 0) && (
-               <span className="text-xs text-slate-500 font-medium my-2 text-center pointer-events-none">요소를 드롭하여 중첩하세요</span>
+                <span className="text-xs text-slate-500 font-medium my-2 text-center pointer-events-none">요소를 드롭하여 중첩하세요</span>
             )}
           </div>
         )}
@@ -106,15 +145,51 @@ export default function BlockCanvas({ blocks, setBlocks }: BlockCanvasProps) {
   const findBlockRecursive = (nodes: HtmlBlock[], targetId: string): HtmlBlock | undefined => {
     for (const node of nodes) {
       if (node.id === targetId) return node;
-      if (node.children) {
-        const found = findBlockRecursive(node.children, targetId);
-        if (found) return found;
-      }
+      if (node.children) { const f = findBlockRecursive(node.children, targetId); if (f) return f; }
+      if (node.defaultChildren) { const f = findBlockRecursive(node.defaultChildren, targetId); if (f) return f; }
+      if (node.conditionalChildren) { const f = findBlockRecursive(node.conditionalChildren, targetId); if (f) return f; }
     }
     return undefined;
   };
 
-  // 현재 수정 중인 활성화된 블록 객체 찾기
+  // ⚙️ [Phase 4 패치] 중첩 구조를 지원하는 내용/디자인 수정 엔진
+  const updateCurrentBlock = (fields: Partial<HtmlBlock>) => {
+    if (!activeStyleId) return;
+    const updateRecursive = (nodes: HtmlBlock[]): HtmlBlock[] => {
+      return nodes.map(node => {
+        if (node.id === activeStyleId) return { ...node, ...fields };
+        return {
+          ...node,
+          children: node.children ? updateRecursive(node.children) : node.children,
+          defaultChildren: node.defaultChildren ? updateRecursive(node.defaultChildren) : node.defaultChildren,
+          conditionalChildren: node.conditionalChildren ? updateRecursive(node.conditionalChildren) : node.conditionalChildren,
+        };
+      });
+    };
+    // (이전 단계의 setBlocks 타입 호환성을 위해 타입 단언 사용)
+    setBlocks((prev) => updateRecursive(prev as HtmlBlock[]));
+  };
+
+  // ⚙️ [Phase 4 패치] 중첩 구조를 지원하는 안전한 블록 적출(삭제) 엔진
+  const deleteCurrentBlock = () => {
+    if (!activeStyleId) return;
+
+    const deleteRecursive = (nodes: HtmlBlock[]): HtmlBlock[] => {
+      return nodes
+        .filter(node => node.id !== activeStyleId)
+        .map(node => ({
+          ...node,
+          children: node.children ? deleteRecursive(node.children) : node.children,
+          lockedChildren: node.defaultChildren ? deleteRecursive(node.defaultChildren) : node.defaultChildren,
+          unlockedChildren: node.conditionalChildren ? deleteRecursive(node.conditionalChildren) : node.conditionalChildren,
+        }));
+    };
+
+    setBlocks((prev) => deleteRecursive(prev as HtmlBlock[]));
+    setActiveStyleId(null);
+  };
+
+    // 현재 수정 중인 활성화된 블록 객체 찾기
   // 현재 팝업이 열려있는 대상을 재귀적으로 탐색하여 바인딩
   const targetBlock = activeStyleId ? findBlockRecursive(blocks, activeStyleId) : undefined;
   const popupPos = { x: lineStart.x + 180, y: Math.max(20, lineStart.y - 60) };
@@ -134,45 +209,6 @@ export default function BlockCanvas({ blocks, setBlocks }: BlockCanvasProps) {
       });
     }
     setActiveStyleId(blockId);
-  };
-
-  // ⚙️ [Phase 4 패치] 중첩 구조를 지원하는 내용/디자인 수정 엔진
-  const updateCurrentBlock = (fields: Partial<HtmlBlock>) => {
-    if (!activeStyleId) return;
-    
-    const updateRecursive = (nodes: HtmlBlock[]): HtmlBlock[] => {
-      return nodes.map(node => {
-        if (node.id === activeStyleId) {
-          return { ...node, ...fields }; // 대상 블록 수정
-        }
-        if (node.children) {
-          return { ...node, children: updateRecursive(node.children) }; // 자식 노드 파고들기
-        }
-        return node;
-      });
-    };
-    
-    // (이전 단계의 setBlocks 타입 호환성을 위해 타입 단언 사용)
-    setBlocks((prev) => updateRecursive(prev as HtmlBlock[]));
-  };
-
-  // ⚙️ [Phase 4 패치] 중첩 구조를 지원하는 안전한 블록 적출(삭제) 엔진
-  const deleteCurrentBlock = () => {
-    if (!activeStyleId) return;
-
-    const deleteRecursive = (nodes: HtmlBlock[]): HtmlBlock[] => {
-      return nodes
-        .filter(node => node.id !== activeStyleId) // 현재 층위에서 타겟 필터링
-        .map(node => {
-          if (node.children) {
-            return { ...node, children: deleteRecursive(node.children) }; // 자식 트리에서도 필터링
-          }
-          return node;
-        });
-    };
-
-    setBlocks((prev) => deleteRecursive(prev as HtmlBlock[]));
-    setActiveStyleId(null);
   };
 
   return (
@@ -249,6 +285,13 @@ export default function BlockCanvas({ blocks, setBlocks }: BlockCanvasProps) {
                     onChange={(e) => updateCurrentBlock({ src: e.target.value })}
                     className="bg-white border border-amber-200 rounded-lg px-3 py-2 outline-none focus:ring-2 ring-sky-300 text-xs font-mono text-slate-700 shadow-inner" 
                   />
+                </label>
+              )}
+
+              {targetBlock.type === 'PASSWORD_ZONE' && (
+                <label className="flex flex-col gap-1.5 bg-amber-100 p-2.5 rounded-lg border border-amber-200">
+                  <span className="text-xs font-bold text-amber-900">🔑 정답 암호문 설정</span>
+                  <input type="text" value={targetBlock.correctAnswer || ''} onChange={(e) => updateCurrentBlock({ correctAnswer: e.target.value })} className="bg-white border border-amber-300 rounded px-2 py-1 text-xs font-mono" />
                 </label>
               )}
 

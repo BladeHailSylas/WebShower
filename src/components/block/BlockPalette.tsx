@@ -47,6 +47,10 @@ export default function BlockPalette() {
           <PaletteItem type="P" label="문단 쓰기 (P)" icon="📝" />
           <PaletteItem type="IMAGE" label="이미지 넣기 (Image)" icon="🖼️" />
         </div>
+        <div className="flex flex-col gap-3">
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">매크로 블록</h3>
+          <PaletteItem type="PASSWORD_ZONE" label="비밀번호 구역 만들기" icon="🔒" />
+        </div>
       </div>
     </div>
   );

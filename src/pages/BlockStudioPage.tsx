@@ -90,27 +90,25 @@ export default function BlockStudioPage() {
       let nextBlocks = [...prev];
       let movingBlock: HtmlBlock;
 
-      // ⚙️ 1. 이동할 대상(movingBlock) 확보 및 기존 위치에서 안전하게 적출
+      // 1. 블록 인스턴스 확보 및 기존 위치에서 안전 적출 (2중 슬롯 지원)
       if (isPaletteItem) {
-        // 팔레트에서 새롭게 생성하는 경우
         const newType = active.data.current?.blockType as BlockType;
         movingBlock = {
           id: `block-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           type: newType,
-          content: newType === 'H1' ? '새로운 제목' : newType === 'P' ? '새로운 문단' : undefined,
-          src: newType === 'IMAGE' ? 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=600&auto=format&fit=crop' : undefined,
-          styles: { className: newType === 'CONTAINER' ? 'p-4 border-2 border-dashed border-slate-300 rounded-lg min-h-[60px] mb-2' : 'mb-2 text-slate-800' },
+          correctAnswer: newType === 'PASSWORD_ZONE' ? '12345' : undefined, // 명세서 기본값 실시간 인젝션
+          styles: { className: newType === 'PASSWORD_ZONE' ? 'p-6 bg-white rounded-2xl shadow-md border' : 'mb-2 text-slate-800' },
+          defaultChildren: newType === 'PASSWORD_ZONE' ? [] : undefined,
+          conditionalChildren: newType === 'PASSWORD_ZONE' ? [] : undefined,
           children: newType === 'CONTAINER' ? [] : undefined,
         };
       } else {
-        // 기존 캔버스에 있던 블록을 트리 전체에서 찾아냄 (재귀 탐색)
         const findNode = (nodes: HtmlBlock[], id: string): HtmlBlock | null => {
           for (const n of nodes) {
             if (n.id === id) return n;
-            if (n.children) {
-              const found = findNode(n.children, id);
-              if (found) return found;
-            }
+            if (n.children) { const f = findNode(n.children, id); if (f) return f; }
+            if (n.defaultChildren) { const f = findNode(n.defaultChildren, id); if (f) return f; }
+            if (n.conditionalChildren) { const f = findNode(n.conditionalChildren, id); if (f) return f; }
           }
           return null;
         };
@@ -118,42 +116,68 @@ export default function BlockStudioPage() {
         if (!foundBlock) return prev;
         movingBlock = foundBlock;
 
-        // 원본 트리에서 해당 블록 적출 (재귀 필터링)
         const removeNode = (nodes: HtmlBlock[], id: string): HtmlBlock[] => {
-          return nodes.filter(n => n.id !== id).map(n => 
-            n.children ? { ...n, children: removeNode(n.children, id) } : n
-          );
+          return nodes.filter(n => n.id !== id).map(n => ({
+            ...n,
+            children: n.children ? removeNode(n.children, id) : n.children,
+            lockedChildren: n.defaultChildren ? removeNode(n.defaultChildren, id) : n.defaultChildren,
+            unlockedChildren: n.conditionalChildren ? removeNode(n.conditionalChildren, id) : n.conditionalChildren,
+          }));
         };
         nextBlocks = removeNode(nextBlocks, activeId);
       }
 
-      // ⚙️ 2. 확보한 블록을 새로운 목적지에 삽입
+      // 2. 새로운 2중 슬롯 타일 목적지 해석 및 강제 주입
       if (overId === 'canvas-droppable') {
-        // Case A: 빈 캔버스 바닥에 드롭 (최상위 배열 추가)
         nextBlocks.push(movingBlock);
       } else if (overId.startsWith('droppable-container-')) {
-        // Case B: 특정 컨테이너 '내부 공간'에 드롭 (자식으로 추가)
         const targetContainerId = overId.replace('droppable-container-', '');
         const insertIntoContainer = (nodes: HtmlBlock[]): HtmlBlock[] => {
           return nodes.map(n => {
-            if (n.id === targetContainerId) {
-              return { ...n, children: [...(n.children || []), movingBlock] };
-            }
-            if (n.children) return { ...n, children: insertIntoContainer(n.children) };
-            return n;
+            if (n.id === targetContainerId) return { ...n, children: [...(n.children || []), movingBlock] };
+            return {
+              ...n,
+              children: n.children ? insertIntoContainer(n.children) : n.children,
+              defaultChildren: n.defaultChildren ? insertIntoContainer(n.defaultChildren) : n.defaultChildren,
+              conditionalChildren: n.conditionalChildren ? insertIntoContainer(n.conditionalChildren) : n.conditionalChildren,
+            };
           });
         };
         nextBlocks = insertIntoContainer(nextBlocks);
+      } else if (overId.startsWith('pw-locked-') || overId.startsWith('pw-unlocked-')) {
+        // 🌟 [명세서 분기] 독립된 2중 자식 슬롯 내부로 정밀 조립
+        const isLockedSlot = overId.startsWith('pw-locked-');
+        const targetBlockId = overId.replace(isLockedSlot ? 'pw-locked-' : 'pw-unlocked-', '');
+
+        const insertIntoPasswordSlot = (nodes: HtmlBlock[]): HtmlBlock[] => {
+          return nodes.map(n => {
+            if (n.id === targetBlockId) {
+              if (isLockedSlot) return { ...n, defaultChildren: [...(n.defaultChildren || []), movingBlock] };
+              return { ...n, conditionalChildren: [...(n.conditionalChildren || []), movingBlock] };
+            }
+            return {
+              ...n,
+              children: n.children ? insertIntoPasswordSlot(n.children) : n.children,
+              defaultChildren: n.defaultChildren ? insertIntoPasswordSlot(n.defaultChildren) : n.defaultChildren,
+              conditionalChildren: n.conditionalChildren ? insertIntoPasswordSlot(n.conditionalChildren) : n.conditionalChildren,
+            };
+          });
+        };
+        nextBlocks = insertIntoPasswordSlot(nextBlocks);
       } else {
-        // Case C: 다른 블록 위에 드롭 (형제 노드로서 인덱스 정렬 삽입)
         const insertSibling = (nodes: HtmlBlock[]): HtmlBlock[] => {
           const targetIndex = nodes.findIndex(n => n.id === overId);
           if (targetIndex > -1) {
             const copy = [...nodes];
-            copy.splice(targetIndex, 0, movingBlock); // 목표 블록 위치에 끼워넣기
+            copy.splice(targetIndex, 0, movingBlock);
             return copy;
           }
-          return nodes.map(n => n.children ? { ...n, children: insertSibling(n.children) } : n);
+          return nodes.map(n => ({
+            ...n,
+            children: n.children ? insertSibling(n.children) : n.children,
+            lockedChildren: n.defaultChildren ? insertSibling(n.defaultChildren) : n.defaultChildren,
+            unlockedChildren: n.conditionalChildren ? insertSibling(n.conditionalChildren) : n.conditionalChildren,
+          }));
         };
         nextBlocks = insertSibling(nextBlocks);
       }
@@ -178,7 +202,7 @@ export default function BlockStudioPage() {
       </div>
     );
   };
-
+  // 다운로드를 위해 들어온 경우
   if(code) {
     return(
     <div className="h-full flex flex-col justify-center items-center">
@@ -186,7 +210,7 @@ export default function BlockStudioPage() {
             다운로드 중입니다...
         </div>
         <p className="mt-2">
-          다운로드한 페이지를 보려면 내 파일에서 페이지 파일을 찾아 열어보세요.
+          다운로드한 페이지를 보려면 휴대폰의 내 파일 앱으로 들어가세요.
         </p>
     </div>
     );
