@@ -1,9 +1,15 @@
 // types.ts (또는 전역 타입 정의부)
-export type BlockType = 'CONTAINER' | 'H1' | 'P' | 'IMAGE' | 'PASSWORD_ZONE' | 'TOGGLE_ZONE'; // IMAGE 추가
+export type BlockType = 'CONTAINER' | 'H1' | 'P' | 'A' | 'IMAGE' | 'PASSWORD_ZONE' | 'TOGGLE_ZONE'; // IMAGE 추가
 
 export interface StyleProps {
   className?: string; // 예: 'text-red-500 bg-slate-100' (Tailwind 기반)
   inherit?: boolean;  // '공통으로 적용' 여부 (Phase 3에서 활성화)
+  // 아이들이 드롭다운과 체크박스로 선택할 스타일 원자 단위
+  textColor?: 'black' | 'gray' | 'red' | 'blue' | 'green';
+  bgColor?: 'none' | 'white' | 'slate' | 'red' | 'blue' | 'green' | 'yellow';
+  textAlign?: 'left' | 'center' | 'right';
+  isBold?: boolean;    // 두껍게 여부
+  isRounded?: boolean; // 테두리 둥글게 여부
 }
 
 export interface HtmlBlock {
@@ -11,6 +17,7 @@ export interface HtmlBlock {
   type: BlockType;
   content?: string;
   src?: string;
+  link?: string;
   correctAnswer?: string; // 🌟 비밀번호 매크로 블록 정답 필드
   styles?: StyleProps;
   children?: HtmlBlock[];

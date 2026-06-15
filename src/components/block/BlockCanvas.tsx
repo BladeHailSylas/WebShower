@@ -4,6 +4,7 @@ import { useDroppable } from '@dnd-kit/core'; // [추가]
 import { CSS } from '@dnd-kit/utilities';
 import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import textLimiter from '../../utils/textLimiter';
+import BlockStylePanel from './BlockStylePanel';
 
 interface BlockCanvasProps {
   blocks: HtmlBlock[];
@@ -64,6 +65,8 @@ function SortableBlockItem({ block, activeStyleId, onStyleClick }: { block: Html
                   block.type === 'TOGGLE_ZONE' ? 
                   '여닫는 구역'
                   :
+                  block.type === 'A' ? 
+                  `링크: ${block.content || '(글 없음)'} (${block.link || '링크 없음'})` :
                   `문단: ${textLimiter(block.content, 10) || '(내용 없음)'}`}
           </span>
         </div>
@@ -266,85 +269,27 @@ export default function BlockCanvas({ blocks, setBlocks }: BlockCanvasProps) {
           </svg>
         )}
 
-        {/* 🎨 확장된 포스트잇 스타일 및 내용 편집 패널 */}
-        {activeStyleId && targetBlock && (
-          <div 
-            className="absolute z-30 w-80 bg-amber-50/95 backdrop-blur-sm shadow-2xl border border-amber-200 text-slate-800 p-5 rounded-br-3xl rounded-tr-xl rounded-l-xl"
-            style={{ top: popupPos.y, left: popupPos.x }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex justify-between items-center mb-4 border-b border-amber-200/60 pb-2">
-              <h3 className="font-bold text-sm flex items-center gap-2">
-                <span className="text-xl">⚙️</span> 블록 설정 창
-              </h3>
-              <div className="flex items-center gap-1.5">
-                {/* 🗑️ 블록 삭제 버튼 */}
-                <button 
-                  onClick={deleteCurrentBlock} 
-                  title="블록 삭제"
-                  className="p-1.5 bg-red-100 text-red-600 rounded hover:bg-red-200 transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                </button>
-                <button onClick={() => setActiveStyleId(null)} className="text-amber-500 hover:text-slate-700 font-bold px-2 py-1 bg-amber-100/50 rounded text-xs">✕</button>
-              </div>
-            </div>
-            
-            <div className="flex flex-col gap-4 text-sm font-medium">
-              {/* 📝 일반 텍스트 수정 영역 (H1, P 노드 대상) */}
-              {targetBlock.type !== 'CONTAINER' && targetBlock.type !== 'IMAGE' && (
-                <label className="flex flex-col gap-1.5">
-                  <span className="text-xs text-amber-800/70 font-bold uppercase">글 내용 수정</span>
-                  <input 
-                    type="text" 
-                    value={targetBlock.content || ''} 
-                    onChange={(e) => updateCurrentBlock({ content: e.target.value })}
-                    className="bg-white border border-amber-200 rounded-lg px-3 py-2 outline-none focus:ring-2 ring-sky-300 text-xs text-slate-800 shadow-inner" 
-                  />
-                </label>
-              )}
-
-              {/* 🖼️ 이미지 주소 수정 영역 (IMAGE 노드 대상) */}
-              {targetBlock.type === 'IMAGE' && (
-                <label className="flex flex-col gap-1.5">
-                  <span className="text-xs text-amber-800/70 font-bold uppercase">이미지 주소(URL)</span>
-                  <input 
-                    type="text" 
-                    value={targetBlock.src || ''} 
-                    onChange={(e) => updateCurrentBlock({ src: e.target.value })}
-                    className="bg-white border border-amber-200 rounded-lg px-3 py-2 outline-none focus:ring-2 ring-sky-300 text-xs font-mono text-slate-700 shadow-inner" 
-                  />
-                </label>
-              )}
-
-              {targetBlock.type === 'PASSWORD_ZONE' && (
-                <label className="flex flex-col gap-1.5 bg-amber-100 p-2.5 rounded-lg border border-amber-200">
-                  <span className="text-xs font-bold text-amber-900">🔑 정답 암호문 설정</span>
-                  <input type="text" value={targetBlock.correctAnswer || ''} onChange={(e) => updateCurrentBlock({ correctAnswer: e.target.value })} className="bg-white border border-amber-300 rounded px-2 py-1 text-xs font-mono" />
-                </label>
-              )}
-
-              <label className="flex flex-col gap-1.5">
-                <span className="text-xs text-amber-800/70 font-bold uppercase">Tailwind CSS 클래스</span>
-                <input 
-                  type="text" 
-                  value={targetBlock.styles?.className || ''} 
-                  onChange={(e) => updateCurrentBlock({ styles: { ...targetBlock.styles, className: e.target.value } })}
-                  placeholder="예: text-center bg-blue-500" 
-                  className="bg-white border border-amber-200 rounded-lg px-3 py-2 outline-none focus:ring-2 ring-sky-300 font-mono text-xs text-slate-600 shadow-inner" 
-                />
-              </label>
-
-              <label className="mt-1 flex items-start gap-3 bg-amber-100/30 p-3 rounded-lg border border-amber-200 cursor-pointer">
-                <input type="checkbox" className="mt-0.5 w-4 h-4 accent-sky-500 rounded" />
-                <div className="flex flex-col">
-                  <span className="text-xs font-bold text-slate-700 leading-tight">하위 블록에 공통으로 적용</span>
-                  <span className="text-[10px] text-amber-700/60 mt-1 leading-tight">CSS 상속 기능을 활성화합니다.</span>
-                </div>
-              </label>
-            </div>
-          </div>
-        )}
+        {/* 🎨 전역 포스트잇 에디터 패널 내부 마크업 구역 */}
+{activeStyleId && targetBlock && (
+  <div 
+    className="absolute z-30 w-80 bg-amber-50/95 backdrop-blur-sm shadow-2xl border border-amber-200 text-slate-800 p-5 rounded-br-3xl rounded-tr-xl rounded-l-xl"
+    style={{ top: popupPos.y, left: popupPos.x }}
+    onClick={e => e.stopPropagation()}
+  >
+    {/* 상단 타이틀 및 삭제 액션 바 생략 */}
+    
+    <div className="flex flex-col gap-4 text-sm font-medium">
+      {/* (도메인별 글 내용 인풋창 위치) */}
+      
+      {/* 🌟 [의존성 주입 실행] 복잡한 GUI 연산을 컴포넌트 위임 후, 코어 핸들러(updateCurrentBlock)를 수혈함 */}
+      <BlockStylePanel 
+        targetBlock={targetBlock} 
+        onUpdate={updateCurrentBlock} 
+        onDelete={deleteCurrentBlock}
+      />
+    </div>
+  </div>
+)}
       </div>
 
       <style>{`@keyframes dash { to { stroke-dashoffset: -20; } }`}</style>

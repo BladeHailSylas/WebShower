@@ -99,7 +99,7 @@ export default function BlockStudioPage() {
           defaultChildren: newType === 'PASSWORD_ZONE' ? [] : undefined,
           conditionalChildren: newType === 'PASSWORD_ZONE' ? [] : undefined,
           children: newType === 'CONTAINER' ? [] : undefined,
-        };
+        };  
       } else {
         const findNode = (nodes: HtmlBlock[], id: string): HtmlBlock | null => {
           for (const n of nodes) {

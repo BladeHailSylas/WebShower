@@ -108,6 +108,19 @@ export default function BlockRenderer({blocks} : BlockRendererProps) {
         case 'CONTAINER': return <div key={block.id} className={classes}>{block.children?.map(renderBlockToReact)}</div>;
         case 'H1': return <h1 key={block.id} className={classes}>{block.content}</h1>;
         case 'P': return <p key={block.id} className={classes}>{block.content}</p>;
+        case 'A':
+        return (
+          <a 
+            key={block.id} 
+            href={block.link || '#'} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            style={{textDecoration: 'underline'}}
+            className={classes}
+          >
+            {block.content}(링크)
+          </a>
+        );
         // [신규] 이미지 변환 케이스
         case 'IMAGE': return <img key={block.id} src={block.src} alt="학원 안내" className={classes} />;
         case 'PASSWORD_ZONE':
@@ -128,6 +141,7 @@ export default function BlockRenderer({blocks} : BlockRendererProps) {
         case 'P': return `<p class="${classes}">${block.content || ''}</p>`;
         // [신규] 이미지 HTML 태그 변환 케이스
         case 'IMAGE': return `<img src="${block.src || ''}" alt="학원 안내" class="${classes}" />`;
+        case 'A': return `<a href="${block.link || '#'}" target="_blank" rel="noopener noreferrer" style="text-decoration: underline;" class="${classes}">${block.content + '(링크)' || ''}</a>`;
         case 'PASSWORD_ZONE':{
         // 명세서 사양: 고유 해시 모듈화 및 DOM 탐색용 클래스 바인딩 출력
         console.log(block.id);

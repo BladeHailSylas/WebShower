@@ -24,5 +24,6 @@ dist-ssr
 *.sw?
 #only for simple debugging
 runner.cmd
+hoster.cmd
 
 public/
