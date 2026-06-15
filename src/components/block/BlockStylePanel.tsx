@@ -65,6 +65,20 @@ export default function BlockStylePanel({ targetBlock, onUpdate, onDelete }: Blo
         </select>
       </label>
 
+      <label className="flex items-center justify-between gap-2">
+        <span className="text-xs text-slate-600 font-bold">글자 크기</span>
+        <select 
+          value={targetBlock.styles?.fontSize || 'normal'}
+          onChange={(e) => handleStyleChange('fontSize', e.target.value)}
+          className="bg-white border border-amber-300 rounded-lg px-2 py-1.5 text-xs text-slate-700 outline-none cursor-pointer"
+        >
+          <option value="small">🔍 작게</option>
+          <option value="normal">📄 보통</option>
+          <option value="large">🔎 크게</option>
+          <option value="xlarge">📢 더 크게</option>
+        </select>
+      </label>
+
       {/* 3. 배경 색상 드롭다운 */}
       <label className="flex items-center justify-between gap-2">
         <span className="text-xs text-slate-600 font-bold">배경 색상</span>

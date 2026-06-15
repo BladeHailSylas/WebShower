@@ -8,6 +8,7 @@ export interface StyleProps {
   textColor?: 'black' | 'gray' | 'red' | 'blue' | 'green';
   bgColor?: 'none' | 'white' | 'slate' | 'red' | 'blue' | 'green' | 'yellow';
   textAlign?: 'left' | 'center' | 'right';
+  fontSize?: 'small' | 'normal' | 'large' | 'xlarge';
   isBold?: boolean;    // 두껍게 여부
   isRounded?: boolean; // 테두리 둥글게 여부
 }
