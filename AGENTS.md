@@ -221,3 +221,23 @@ At the same time, keep the work reviewable and phase-based. Each phase should ai
 - which following step will fix it.
 
 Do not water down the refactor into superficial extraction only. If the current structure conflicts with the target architecture, propose a real replacement plan.
+
+Repository scope warning:
+This repository is not only the Block Coding Studio. It is a collection of multiple small projects/features, and Block Coding Studio is one new large feature added to it.
+
+Therefore, do not reorganize the entire repository to match the proposed Block Studio architecture.
+
+The new blocks/, features/block-studio/, and components/block/ structure should be applied only to Block Studio-related code.
+
+Before creating the Plan, inspect the repo and determine the actual scope of Block Studio. The Plan must clearly separate:
+- Block Studio files to refactor
+- shared files that require minimal changes
+- unrelated mini-project files that must not be touched
+
+Do not move or rewrite unrelated project pages, routes, layouts, components, or utilities.
+
+Avoid broad import path churn across the whole app. Prefer creating new Block Studio-specific folders and migrating only directly related files.
+
+If a shared file must be changed, explain why and keep the change minimal.
+
+Treat this as a feature-scoped refactor, not an app-wide architecture migration.
