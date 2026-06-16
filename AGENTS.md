@@ -207,3 +207,17 @@ Non-goals for first implementation:
 - Do not put JSX, mutation logic, or HTML compiler functions directly inside blockDefinitions.
 - Do not change visible behavior unless required by the refactor.
 - Do not start coding before producing the Plan.
+
+Refactoring strength guidance:
+This should be a real architecture refactor, not a minimal cleanup.
+
+Prioritize the target architecture over preserving old implementation details. You may remove, replace, or substantially rewrite existing code when it clearly serves the blockDefinitions-driven architecture.
+
+Do not keep obsolete code paths or duplicate systems just to reduce diff size.
+
+At the same time, keep the work reviewable and phase-based. Each phase should aim to end in a buildable and type-safe state. If a temporary broken state is unavoidable, explicitly document:
+- what is broken,
+- why it is temporarily acceptable,
+- which following step will fix it.
+
+Do not water down the refactor into superficial extraction only. If the current structure conflicts with the target architecture, propose a real replacement plan.
