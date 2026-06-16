@@ -1,14 +1,19 @@
-import { useDraggable } from '@dnd-kit/core';
-import type { BlockType } from '../../types/types';
+import { useDraggable } from "@dnd-kit/core";
+import type { BlockType } from "../../types/types";
+import { visiblePaletteDefinitions } from "../../features/block-studio/blocks/definitions";
+import type { BlockDefinition } from "../../features/block-studio/blocks/types/blockDefinition.types";
 
-// [신규] 재사용 가능한 팔레트 드래그 아이템 컴포넌트
-function PaletteItem({ type, label, icon }: { type: BlockType; label: string; icon?: string }) {
+interface PaletteItemProps {
+  definition: BlockDefinition;
+}
+
+function PaletteItem({ definition }: PaletteItemProps) {
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({
-    id: `palette-${type}`, // 고유 ID
+    id: `palette-${definition.type}`,
     data: {
-      type: 'PALETTE_ITEM',
-      blockType: type,
-      label,
+      type: "PALETTE_ITEM",
+      blockType: definition.type as BlockType,
+      label: definition.palette.label,
     },
   });
 
@@ -18,16 +23,30 @@ function PaletteItem({ type, label, icon }: { type: BlockType; label: string; ic
       {...listeners}
       {...attributes}
       className={`bg-slate-700 p-3 rounded-lg border border-slate-600 cursor-grab hover:bg-slate-600 transition-colors shadow-sm flex items-center gap-2 ${
-        isDragging ? 'opacity-50 border-dashed' : ''
+        isDragging ? "opacity-50 border-dashed" : ""
       }`}
     >
-      {icon && <span className="text-lg">{icon}</span>}
-      <span className="text-sm font-medium text-slate-200">{label}</span>
+      {definition.palette.icon && (
+        <span className="text-[11px] font-black text-emerald-300 min-w-8">{definition.palette.icon}</span>
+      )}
+      <span className="text-sm font-medium text-slate-200">{definition.palette.label}</span>
     </div>
   );
 }
 
+function groupDefinitions() {
+  return visiblePaletteDefinitions.reduce<Record<string, BlockDefinition[]>>((groups, definition) => {
+    const key = definition.categoryLabel;
+    return {
+      ...groups,
+      [key]: [...(groups[key] ?? []), definition],
+    };
+  }, {});
+}
+
 export default function BlockPalette() {
+  const groupedDefinitions = groupDefinitions();
+
   return (
     <div className="flex flex-col h-full w-full">
       <div className="p-5 border-b border-slate-700 bg-slate-800/50">
@@ -36,24 +55,14 @@ export default function BlockPalette() {
       </div>
 
       <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-6">
-        <div className="flex flex-col gap-3">
-          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">구조 요소</h3>
-          <PaletteItem type="CONTAINER" label="일반 구역 만들기" icon="📦" />
-          <PaletteItem type="GRID_ZONE" label="바둑판 구역 만들기" icon="🏁" />
-        </div>
-
-        <div className="flex flex-col gap-3">
-          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">일반 요소</h3>
-          <PaletteItem type="H1" label="제목 쓰기 (H1)" icon="🔠" />
-          <PaletteItem type="P" label="문단 쓰기 (P)" icon="📝" />
-          <PaletteItem type="IMAGE" label="이미지 넣기 (Image)" icon="🖼️" />
-        </div>
-        <div className="flex flex-col gap-3">
-          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">기능 요소</h3>
-          <PaletteItem type="TOGGLE_ZONE" label="여닫는 구역 만들기" icon="📂" />
-          <PaletteItem type="PASSWORD_ZONE" label="비밀번호 구역 만들기" icon="🔒" />
-          <PaletteItem type="A" label="링크 이동 버튼 만들기 (A)" icon="🔗" />
-        </div>
+        {Object.entries(groupedDefinitions).map(([categoryLabel, definitions]) => (
+          <div key={categoryLabel} className="flex flex-col gap-3">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">{categoryLabel}</h3>
+            {definitions.map((definition) => (
+              <PaletteItem key={definition.type} definition={definition} />
+            ))}
+          </div>
+        ))}
       </div>
     </div>
   );
