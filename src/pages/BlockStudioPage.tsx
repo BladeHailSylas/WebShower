@@ -79,27 +79,30 @@ export default function BlockStudioPage() {
     setActiveDragLabel(null);
     setActiveDragBlock(null);
     if (!over || active.id === over.id) return;
-
+    
     const activeId = active.id as string;
     const overId = over.id as string;
     const isPaletteItem = active.data.current?.type === 'PALETTE_ITEM';
-    console.log(overId);
+    
     setBlocks((prev) => {
       let nextBlocks = [...prev];
       let movingBlock: HtmlBlock;
-
-      // 1. 블록 인스턴스 확보 및 기존 위치에서 안전 적출 (2중 슬롯 지원)
+    
+      // 1. 블록 인스턴스 확보 및 적출 (GRID_ZONE 초기 스펙 등록 추가)
       if (isPaletteItem) {
         const newType = active.data.current?.blockType as BlockType;
         movingBlock = {
           id: `block-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
           type: newType,
-          correctAnswer: newType === 'PASSWORD_ZONE' ? '12345' : undefined, // 명세서 기본값 실시간 인젝션
-          styles: { className: newType === 'PASSWORD_ZONE' ? 'p-6 bg-white rounded-2xl shadow-md border' : 'mb-2 text-slate-800' },
-          defaultChildren: newType === 'PASSWORD_ZONE' ? [] : undefined,
-          conditionalChildren: newType === 'PASSWORD_ZONE' ? [] : undefined,
-          children: newType === 'CONTAINER' ? [] : undefined,
-        };  
+          correctAnswer: newType === 'PASSWORD_ZONE' ? '12345' : undefined,
+          styles: { 
+            gridCols: newType === 'GRID_ZONE' ? 2 : undefined, // 바둑판 디폴트 2칸 세팅
+            className: newType === 'PASSWORD_ZONE' || newType === 'TOGGLE_ZONE' || newType === 'GRID_ZONE' ? 'border border-slate-200 rounded-xl p-4 bg-white shadow-sm' : 'mb-2 text-slate-800' 
+          },
+          defaultChildren: newType === 'PASSWORD_ZONE' || newType === 'TOGGLE_ZONE' ? [] : undefined,
+          conditionalChildren: newType === 'PASSWORD_ZONE' || newType === 'TOGGLE_ZONE' ? [] : undefined,
+          children: newType === 'CONTAINER' || newType === 'GRID_ZONE' ? [] : undefined, // GRID_ZONE은 선형 정렬용 children 셰어링
+        };
       } else {
         const findNode = (nodes: HtmlBlock[], id: string): HtmlBlock | null => {
           for (const n of nodes) {
@@ -112,8 +115,8 @@ export default function BlockStudioPage() {
         };
         const foundBlock = findNode(nextBlocks, activeId);
         if (!foundBlock) return prev;
-        movingBlock = foundBlock;
-
+        movingBlock = { ...foundBlock };
+      
         const removeNode = (nodes: HtmlBlock[], id: string): HtmlBlock[] => {
           return nodes.filter(n => n.id !== id).map(n => ({
             ...n,
@@ -124,9 +127,36 @@ export default function BlockStudioPage() {
         };
         nextBlocks = removeNode(nextBlocks, activeId);
       }
-
-      // 2. 새로운 2중 슬롯 타일 목적지 해석 및 강제 주입
-      if (overId === 'canvas-droppable') {
+    
+      // 🌟 2. [Phase 3 의심지점 1순위] SPACER 목적지 가로채기 스왑 알고리즘 
+      const findNodeRaw = (nodes: HtmlBlock[], id: string): HtmlBlock | undefined => {
+        for (const n of nodes) {
+          if (n.id === id) return n;
+          if (n.children) { const f = findNodeRaw(n.children, id); if (f) return f; }
+          if (n.defaultChildren) { const f = findNodeRaw(n.defaultChildren, id); if (f) return f; }
+          if (n.conditionalChildren) { const f = findNodeRaw(n.conditionalChildren, id); if (f) return f; }
+        }
+        return undefined;
+      };
+      
+      const checkTargetSpacer = findNodeRaw(nextBlocks, overId);
+    
+      if (checkTargetSpacer && checkTargetSpacer.type === 'SPACER') {
+        const swapSpacerToBlock = (nodes: HtmlBlock[]): HtmlBlock[] => {
+          return nodes.map(n => {
+            if (n.id === overId) return movingBlock; // 유령 칸 추적 성공 시 밀어내지 않고 1:1 완전 스왑 치환
+            return {
+              ...n,
+              children: n.children ? swapSpacerToBlock(n.children) : n.children,
+              defaultChildren: n.defaultChildren ? swapSpacerToBlock(n.defaultChildren) : n.defaultChildren,
+              conditionalChildren: n.conditionalChildren ? swapSpacerToBlock(n.conditionalChildren) : n.conditionalChildren,
+            };
+          });
+        };
+        nextBlocks = swapSpacerToBlock(nextBlocks);
+      }
+      // 3. 목적지가 SPACER가 아닌 일반 슬롯/형제 레이어일 경우 정상 경로 방출
+      else if (overId === 'canvas-droppable') {
         nextBlocks.push(movingBlock);
       } else if (overId.startsWith('droppable-container-')) {
         const targetContainerId = overId.replace('droppable-container-', '');
@@ -143,25 +173,23 @@ export default function BlockStudioPage() {
         };
         nextBlocks = insertIntoContainer(nextBlocks);
       } else if (overId.startsWith('droppable-default-') || overId.startsWith('droppable-conditional-')) {
-        // 🌟 [명세서 분기] 독립된 2중 자식 슬롯 내부로 정밀 조립
-        const isLockedSlot = overId.startsWith('droppable-default-');
-        const targetBlockId = overId.replace(isLockedSlot ? 'droppable-default-' : 'droppable-conditional-', '');
-
-        const insertIntoPasswordSlot = (nodes: HtmlBlock[]): HtmlBlock[] => {
+        const isDefaultSlot = overId.startsWith('droppable-default-');
+        const targetBlockId = overId.replace(isDefaultSlot ? 'droppable-default-' : 'droppable-conditional-', '');
+        const insertIntoMacroSlot = (nodes: HtmlBlock[]): HtmlBlock[] => {
           return nodes.map(n => {
             if (n.id === targetBlockId) {
-              if (isLockedSlot) return { ...n, defaultChildren: [...(n.defaultChildren || []), movingBlock] };
+              if (isDefaultSlot) return { ...n, defaultChildren: [...(n.defaultChildren || []), movingBlock] };
               return { ...n, conditionalChildren: [...(n.conditionalChildren || []), movingBlock] };
             }
             return {
               ...n,
-              children: n.children ? insertIntoPasswordSlot(n.children) : n.children,
-              defaultChildren: n.defaultChildren ? insertIntoPasswordSlot(n.defaultChildren) : n.defaultChildren,
-              conditionalChildren: n.conditionalChildren ? insertIntoPasswordSlot(n.conditionalChildren) : n.conditionalChildren,
+              children: n.children ? insertIntoMacroSlot(n.children) : n.children,
+              defaultChildren: n.defaultChildren ? insertIntoMacroSlot(n.defaultChildren) : n.defaultChildren,
+              conditionalChildren: n.conditionalChildren ? insertIntoMacroSlot(n.conditionalChildren) : n.conditionalChildren,
             };
           });
         };
-        nextBlocks = insertIntoPasswordSlot(nextBlocks);
+        nextBlocks = insertIntoMacroSlot(nextBlocks);
       } else {
         const insertSibling = (nodes: HtmlBlock[]): HtmlBlock[] => {
           const targetIndex = nodes.findIndex(n => n.id === overId);
@@ -173,13 +201,13 @@ export default function BlockStudioPage() {
           return nodes.map(n => ({
             ...n,
             children: n.children ? insertSibling(n.children) : n.children,
-            lockedChildren: n.defaultChildren ? insertSibling(n.defaultChildren) : n.defaultChildren,
-            unlockedChildren: n.conditionalChildren ? insertSibling(n.conditionalChildren) : n.conditionalChildren,
+            defaultChildren: n.defaultChildren ? insertSibling(n.defaultChildren) : n.defaultChildren,
+            conditionalChildren: n.conditionalChildren ? insertSibling(n.conditionalChildren) : n.conditionalChildren,
           }));
         };
         nextBlocks = insertSibling(nextBlocks);
       }
-      console.log(nextBlocks);
+    
       return nextBlocks;
     });
   };

@@ -119,6 +119,20 @@ export default function BlockStylePanel({ targetBlock, onUpdate, onDelete }: Blo
           <span className="text-xs font-bold text-slate-700">모서리 둥글게</span>
         </label>
       </div>
+      {targetBlock.type === 'GRID_ZONE' && (
+          <label className="flex items-center justify-between gap-2 bg-indigo-50/70 p-2.5 rounded-xl border border-indigo-200 mt-1">
+            <span className="text-xs text-indigo-950 font-black flex items-center gap-1">📊 한 줄 가로 칸수</span>
+            <select 
+              value={targetBlock.styles?.gridCols || 2}
+              onChange={(e) => handleStyleChange('gridCols', parseInt(e.target.value))}
+              className="bg-white border border-indigo-300 rounded-lg px-2 py-1.5 text-xs font-bold text-indigo-900 outline-none cursor-pointer hover:border-indigo-400"
+            >
+              <option value={2}>가로로 2줄씩 보기</option>
+              <option value={3}>가로로 3줄씩 보기</option>
+              <option value={4}>가로로 4줄씩 보기</option>
+            </select>
+          </label>
+        )}
     </div>
   );
 }

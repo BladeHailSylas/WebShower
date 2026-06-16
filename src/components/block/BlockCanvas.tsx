@@ -2,7 +2,7 @@ import { useState, useRef, type MouseEvent } from 'react';
 import type { HtmlBlock } from '../../types/types';
 import { useDroppable } from '@dnd-kit/core'; // [추가]
 import { CSS } from '@dnd-kit/utilities';
-import { SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { rectSortingStrategy, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import textLimiter from '../../utils/textLimiter';
 import BlockStylePanel from './BlockStylePanel';
 
@@ -24,7 +24,14 @@ function SortableBlockItem({ block, activeStyleId, onStyleClick }: { block: Html
   const { setNodeRef: setUnlockedRef, isOver: isUnlockedOver } = useDroppable({
     id: `droppable-conditional-${block.id}`,
   });
+  const { setNodeRef: setGridRef, isOver: isGridOver } = useDroppable({
+    id: `droppable-container-${block.id}`
+  });
 
+  const stopProp = (e: React.PointerEvent | React.MouseEvent) => e.stopPropagation();
+  const DragHandle = () => (
+    <div {...attributes} {...listeners} onPointerDown={stopProp} className="w-6 bg-slate-700 hover:bg-slate-600 rounded-l-xl border-y-2 border-slate-700 flex items-center justify-center cursor-grab text-slate-400 text-xs select-none">⠿</div>
+  );
   // 🎯 [인접 블록 애니메이션 버그 패치] 
   // dnd-kit이 연산하는 레이아웃 타이밍 꼬임 현상을 방지하기 위해, 드래그 중이 아닐 때는 브라우저에게 하드코딩된 변환 애니메이션을 강제합니다.
   const style = {
@@ -41,7 +48,7 @@ function SortableBlockItem({ block, activeStyleId, onStyleClick }: { block: Html
 
   const isContainer = block.type === 'CONTAINER';
   const isZone = block.type.toString().split("_")[1] === 'ZONE';
-
+  {
   return (
     <div 
       ref={setNodeRef} 
@@ -65,6 +72,10 @@ function SortableBlockItem({ block, activeStyleId, onStyleClick }: { block: Html
                   block.type === 'TOGGLE_ZONE' ? 
                   '여닫는 구역'
                   :
+                  block.type === 'GRID_ZONE' ? 
+                  `${block.styles?.gridCols}줄 바둑판 구역` :
+                  block.type === 'SPACER' ? 
+                  null :
                   block.type === 'A' ? 
                   `링크: ${block.content || '(글 없음)'} (${block.link || '링크 없음'})` :
                   `문단: ${textLimiter(block.content, 10) || '(내용 없음)'}`}
@@ -145,7 +156,32 @@ function SortableBlockItem({ block, activeStyleId, onStyleClick }: { block: Html
               </div>
             </div>
           </div>
-          ) : null)}
+          ) : 
+          block.type === "GRID_ZONE" ? (
+            <div ref={setNodeRef} style={style} className="mb-3 relative flex items-stretch w-full max-w-xl" onPointerDown={stopProp}>
+              <div className="flex flex-col border-2 border-l-0 border-indigo-500 bg-slate-800 p-4 flex-1 rounded-r-none gap-2">
+                <div className="text-xs font-black text-indigo-300 flex items-center justify-between">
+                  <span>🏁 바둑판 구역 만들기</span>
+                  <span className="text-[10px] bg-indigo-950 px-2 py-0.5 rounded border border-indigo-500/40 text-indigo-400">한 줄에 {block.styles?.gridCols}칸</span>
+                </div>
+
+                {/* 순차 배치 단일 드롭 바구니 */}
+                <div ref={setGridRef} style={{
+                  display: 'grid',
+                  gridTemplateColumns: `repeat(${(block.styles?.gridCols)}, minmax(0, 1fr))`,
+                  gap: '12px'
+                }} className={`p-3 rounded-xl bg-slate-900/50 min-h-20 border-2 border-dashed transition-colors ${isGridOver ? 'border-indigo-400 bg-slate-900/90' : 'border-slate-700'}`}>
+                  <SortableContext items={(block.children || []).map(c => c.id)} strategy={rectSortingStrategy}>
+                    {block.children?.map(child => <SortableBlockItem key={child.id} block={child} activeStyleId={activeStyleId} onStyleClick={onStyleClick} />)}
+                  </SortableContext>
+                </div>
+              </div>
+              <div onClick={(e) => onStyleClick(e, block.id)} className="w-8 bg-indigo-500 rounded-r-xl border-y-2 border-r-2 border-indigo-500 cursor-pointer hover:bg-indigo-400 flex items-center justify-center shrink-0">
+                <div className="w-1.5 h-1.5 rounded-full bg-white/70" />
+              </div>
+            </div>
+          ) :
+          null)}
       </div>
 
       <div 
@@ -157,6 +193,7 @@ function SortableBlockItem({ block, activeStyleId, onStyleClick }: { block: Html
       </div>
     </div>
   );
+}
 }
 
 export default function BlockCanvas({ blocks, setBlocks }: BlockCanvasProps) {

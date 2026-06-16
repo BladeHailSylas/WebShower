@@ -39,6 +39,7 @@ export default function BlockPalette() {
         <div className="flex flex-col gap-3">
           <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">구조 요소</h3>
           <PaletteItem type="CONTAINER" label="일반 구역 만들기" icon="📦" />
+          <PaletteItem type="GRID_ZONE" label="바둑판 구역 만들기" icon="🏁" />
         </div>
 
         <div className="flex flex-col gap-3">
@@ -48,7 +49,7 @@ export default function BlockPalette() {
           <PaletteItem type="IMAGE" label="이미지 넣기 (Image)" icon="🖼️" />
         </div>
         <div className="flex flex-col gap-3">
-          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">기능 요스</h3>
+          <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">기능 요소</h3>
           <PaletteItem type="TOGGLE_ZONE" label="여닫는 구역 만들기" icon="📂" />
           <PaletteItem type="PASSWORD_ZONE" label="비밀번호 구역 만들기" icon="🔒" />
           <PaletteItem type="A" label="링크 이동 버튼 만들기 (A)" icon="🔗" />

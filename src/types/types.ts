@@ -1,5 +1,5 @@
 // types.ts (또는 전역 타입 정의부)
-export type BlockType = 'CONTAINER' | 'H1' | 'P' | 'A' | 'IMAGE' | 'PASSWORD_ZONE' | 'TOGGLE_ZONE'; // IMAGE 추가
+export type BlockType = 'CONTAINER' | 'H1' | 'P' | 'A' | 'IMAGE' | 'PASSWORD_ZONE' | 'TOGGLE_ZONE' | 'GRID_ZONE' | 'SPACER'; // IMAGE 추가
 
 export interface StyleProps {
   className?: string; // 예: 'text-red-500 bg-slate-100' (Tailwind 기반)
@@ -11,6 +11,7 @@ export interface StyleProps {
   fontSize?: 'small' | 'normal' | 'large' | 'xlarge';
   isBold?: boolean;    // 두껍게 여부
   isRounded?: boolean; // 테두리 둥글게 여부
+  gridCols?: 2 | 3 | 4;
 }
 
 export interface HtmlBlock {
