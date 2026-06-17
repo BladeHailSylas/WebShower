@@ -1,236 +1,346 @@
-현재 목표는 Block Studio에 Code View 프로토타입을 추가하는 것입니다.
+현재 목표는 Block Studio의 zone-like block들이 스타일을 어떻게 처리하는지 조사하고, 그 선례를 `GRID_ZONE`에도 적용할 수 있는지 평가하는 것입니다.
 
 중요:
 
-* 이번 작업은 “프로토타입”입니다.
-* 아직 UI 스타일링에 많은 시간을 쓰지 마세요.
-* 목적은 블록 트리가 기존 HTML compiler 경로를 통해 제대로 HTML 코드로 변환되는지 확인하는 것입니다.
-* Code View를 위해 block type별로 HTML을 새로 만드는 generator/component를 만들면 안 됩니다.
-* 기존 export/compiler 경로를 반드시 재사용하세요.
-* 관련 없는 mini-project, route, layout, shared app 구조는 수정하지 마세요.
-* Block Studio 관련 파일만 수정하세요.
+* 아직 코드를 수정하지 마세요.
+* 구현 계획을 너무 앞서가지 마세요.
+* 먼저 repo를 읽고, 실제 파일 기준으로 진단 보고서를 작성해 주세요.
+* 관련 없는 mini-project, route, layout, shared app 구조는 건드리지 마세요.
+* Block Studio 관련 파일만 조사하세요.
+* AGENTS.md의 feature-scoped refactor 원칙을 유지하세요.
 
-## 핵심 원칙
+## 배경
 
-Code View는 새로운 HTML 생성기가 아닙니다.
+현재 `GRID_ZONE`은 다음 원칙으로 정리되어 있습니다.
 
-Code View의 역할:
+> `GRID_ZONE` is a generic grid layout container over its direct children.
 
-```text
-HtmlBlock[]
-→ 기존 compiler 경로
-→ HTML string
-→ read-only display
-```
+즉:
 
-금지:
+* `GRID_ZONE.children`의 각 direct child는 하나의 grid item입니다.
+* `styles.gridCols`는 한 행에 배치할 grid item 수를 의미합니다.
+* `GRID_ZONE`은 `children` 단일 배열만 사용합니다.
+* `columns`, `gridChildren`, 2차원 배열, slots 모델은 도입하지 않습니다.
+* column별 독립 drop target은 현재 도입하지 않습니다.
+* 향후 `GRID_DROPPER`가 도입되더라도, 그것은 `GRID_ZONE.children`의 direct child/grid item일 뿐입니다.
 
-```text
-CodeViewPanel 내부에서 block.type별 switch로 HTML 생성
-PreviewBlockRenderer의 React JSX를 읽어서 HTML로 재구성
-Code View 전용 H1/P/IMAGE/GRID_ZONE/PASSWORD_ZONE HTML 생성기 작성
-escapeHtml / escapeAttribute / style transform 로직 재구현
-QR/export/deploy flow 변경
-HTML → block tree 역변환
-코드 편집 기능
-Monaco 등 무거운 editor dependency 추가
-```
+최근 작업:
 
-허용:
+* `GRID_ZONE` 자체 drag는 일반 블록처럼 drag handle로 이동 가능하게 정리되었습니다.
+* preview/export에도 `styles.gridCols ?? 2`가 CSS grid inline style로 반영되었습니다.
+* Code View prototype이 추가되었고, 기존 `compileBlockHtml` / `compileBlocksForCodeView` 경로를 재사용하여 HTML fragment를 표시합니다.
+* Code View에서 생성된 HTML을 빈 HTML 파일에 넣었을 때 실제 작동하는 것을 수동 확인했습니다.
 
-```text
-기존 compileBlockHtml을 호출하는 얇은 adapter
-HtmlBlock[]를 fragment string으로 변환하는 wrapper
-컴파일 결과 문자열을 그대로 보여주는 CodeViewPanel
-기본적인 <pre><code> 표시
-복사 버튼
-빈 canvas 안내 문구
-```
+현재 논의:
 
-## 기존 조사 결과 요약
+* `GRID_ZONE` grid style rule은 canvas / preview / export compiler에 중복되어 있습니다.
+* 현재 중복은 작지만, 앞으로 `grid gap` 같은 옵션을 style panel에 추가한다면 중복 위험이 커질 수 있습니다.
+* 가능한 한 기존 zone-like block들의 스타일 처리 선례를 따르고, 필요할 때만 구조를 확장하고 싶습니다.
+* 따라서 `CONTAINER`, `PASSWORD_ZONE`, `TOGGLE_ZONE`, `GRID_ZONE` 등 zone-like block의 스타일 처리 방식을 비교해야 합니다.
 
-이전 보고서 기준:
+## 이번 진단에서 반드시 답해야 할 6가지 질문
 
-* `src/features/block-studio/blocks/html/blockHtmlCompiler.ts`
+아래 6가지 질문에 명확히 답해 주세요.
 
-  * `compileBlockHtml(block)`는 block-level HTML fragment를 생성합니다.
-  * `compilePageHtml(blocks)`는 full HTML document를 생성합니다.
-* Code View v1/prototype은 `compileBlockHtml` 기반 body fragment를 보여주는 것이 가장 안전합니다.
-* `QrExportPanel.tsx`는 `compilePageHtml(blocks)`를 호출하지만, QR/export UI 자체는 Code View 재사용 대상이 아닙니다.
-* `PreviewBlockRenderer.tsx`는 React preview renderer이며 Code View의 source of truth가 아닙니다.
-* `htmlSchema` 기반 블록은 기존 compiler에 의해 자동 반영됩니다.
-* `htmlExporterKey` 기반 블록은 기존 custom exporter를 통해 반영됩니다.
-* `GRID_ZONE` export에는 `styles.gridCols ?? 2` 기반 inline grid style이 이미 반영되어야 합니다.
+### 1. 다른 zone들은 스타일을 어디서 정의하고 어디서 실행하는가?
 
-## 이번 구현 범위
+대상:
 
-### 1. Code View prototype UI 추가
+* `CONTAINER`
+* `PASSWORD_ZONE`
+* `TOGGLE_ZONE`
+* `GRID_ZONE`
+* 필요하면 `SPACER` 또는 기타 container-like/internal block
 
-Preview 영역에 간단한 “미리보기 / 코드 보기” 전환 UI를 추가해 주세요.
+각 block에 대해 다음을 확인해 주세요.
 
-권장 위치:
+* definition template의 `styles`
+* `editableFields`
+* `childFields`
+* canvas rendering에서 style 적용 위치
+* preview rendering에서 style 적용 위치
+* export/html compiler에서 style 적용 위치
+* Code View 반영 경로
+* `transformGuiToTailwind` 사용 여부
+* `htmlSchema` 또는 `htmlExporterKey` 사용 여부
 
-* `src/components/block/preview/BlockRenderer.tsx`
+### 2. canvas / preview / export / Code View 사이의 style parity를 어떻게 유지하고 있는가?
 
-요구:
+각 zone-like block에 대해 다음을 비교해 주세요.
 
-* 기본값은 기존 미리보기
-* “코드 보기”를 선택하면 현재 blocks의 HTML fragment가 표시됨
-* 스타일링은 최소화
-* DaisyUI/Tailwind를 과하게 꾸미지 말 것
-* 일단 사용자가 변환 결과를 확인할 수 있으면 충분함
+* canvas에서 보이는 style
+* preview에서 보이는 style
+* export HTML에서 나오는 style/class
+* Code View에서 보이는 code
+* 이 네 경로가 같은 source of truth를 쓰는지
+* 불일치가 있는지
+* 불일치가 있다면 의도된 차이인지, 기술 부채인지
 
-예상 UI 수준:
+특히:
 
-```tsx
-<button>미리보기</button>
-<button>코드 보기</button>
-```
+* `transformGuiToTailwind`가 parity를 보장하는 역할을 하는지
+* canvas는 별도 editor shell/style을 쓰는지
+* preview와 export가 같은 style transform을 쓰는지
+* Code View는 export/compiler 결과를 그대로 보여주는지 확인해 주세요.
 
-```tsx
-<pre>
-  <code>{code}</code>
-</pre>
-```
+### 3. GRID_ZONE은 그 방식과 얼마나 다르게 처리되고 있는가?
 
-### 2. CodeViewPanel 컴포넌트 추가
-
-새 컴포넌트를 만든다면 다음 위치를 권장합니다.
-
-```text
-src/components/block/preview/CodeViewPanel.tsx
-```
-
-역할:
-
-* `blocks: HtmlBlock[]`를 받음
-* 기존 compiler adapter를 통해 HTML string을 얻음
-* read-only로 표시
-* copy button 제공 가능
-* 빈 canvas면 안내 문구 표시
-
-주의:
-
-* `CodeViewPanel`은 block type을 알면 안 됩니다.
-* `CodeViewPanel` 안에 block type별 switch/if를 만들지 마세요.
-* HTML 생성은 반드시 기존 compiler를 통해 수행하세요.
-
-### 3. compiler adapter 추가
-
-`compileBlockHtml(block)`는 단일 block 입력이므로, `HtmlBlock[]`를 fragment string으로 바꾸는 얇은 adapter를 추가해 주세요.
-
-가능한 위치:
-
-* `src/features/block-studio/blocks/html/blockHtmlCompiler.ts`에 exported helper 추가
-  또는
-* `src/features/block-studio/blocks/html/compileBlocksForCodeView.ts`
-
-권장 형태:
-
-```ts
-export function compileBlocksForCodeView(blocks: HtmlBlock[]): string {
-  return blocks.map(compileBlockHtml).join("\n");
-}
-```
-
-이 함수는 새 generator가 아닙니다. 기존 `compileBlockHtml`을 호출하는 wrapper여야 합니다.
-
-주의:
-
-* `compileBlocksForCodeView` 안에서 block type별 HTML을 만들지 마세요.
-* escaping/class/style 변환을 다시 구현하지 마세요.
-* full document가 아니라 body fragment를 기본으로 반환하세요.
-* `compilePageHtml`는 QR/export flow에 그대로 두세요.
-
-### 4. formatter는 이번에는 선택 사항
-
-이번 프로토타입에서는 “변환 결과 확인”이 목표입니다.
-
-따라서 HTML pretty formatter는 필수가 아닙니다.
-
-가능하면:
-
-* 단순히 `join("\n")` 정도만 적용
-* 추가 formatter가 너무 커지면 이번 작업에서 제외
-* formatter를 추가하더라도 HTML 의미를 바꾸지 않는 표시용 helper로만 구현
-
-이번 작업에서는 미려한 syntax highlighting이나 완성도 높은 formatting을 하지 마세요.
-
-### 5. QR/export flow는 변경하지 않기
-
-`QrExportPanel.tsx`와 기존 배포/export 동작은 가능한 한 변경하지 마세요.
+`GRID_ZONE`을 다른 zone-like block과 비교해 주세요.
 
 확인할 것:
 
-* QR/export는 계속 `compilePageHtml(blocks)`를 사용
-* Code View는 fragment display를 위해 adapter를 사용
-* 두 경로 모두 기존 `compileBlockHtml`를 공유
+* `GRID_ZONE`만 inline grid style을 별도 계산하는지
+* `GRID_ZONE`만 canvas trigger가 `childFields.variant === "grid"`이고 preview/export trigger가 `block.type === "GRID_ZONE"`인지
+* `GRID_ZONE`만 `gridCols ?? 2`, `gap: 12px`, `repeat(n, minmax(0, 1fr))` rule을 여러 곳에서 반복하는지
+* `GRID_ZONE`이 기존 `transformGuiToTailwind` 흐름에서 벗어나 있는지
+* `GRID_ZONE`의 차이가 layout block 특성상 자연스러운 예외인지
 
-## 구현 전 확인 파일
+### 4. GRID_ZONE의 차이는 정당한 예외인가, 아니면 정리할 필요가 있는 불일치인가?
 
-작업 전 다음 파일을 확인해 주세요.
+다음 기준으로 판단해 주세요.
 
-* `src/components/block/preview/BlockRenderer.tsx`
+* 현재 동작 안정성
+* 코드 중복 위험
+* data-driven architecture와의 정합성
+* 향후 `gridGap` 같은 옵션 추가 가능성
+* 향후 `GRID_DROPPER` 도입 가능성
+* 새 layout block 추가 가능성
+* canvas / preview / export drift 가능성
+
+결론은 다음 중 하나로 내려 주세요.
+
+* A. 현재 차이는 정당한 예외이므로 유지
+* B. 현재는 유지 가능하지만, 다음 grid style 확장 전 helper화 권장
+* C. 지금 바로 helper화하는 것이 적절
+* D. helper화보다 definition metadata 정리가 먼저
+* E. 기존 zone style 처리 체계에 맞춰 더 큰 정리가 필요
+
+### 5. gap option을 추가한다면 기존 editableFields/style transform 체계에 자연스럽게 들어가는가?
+
+가정:
+
+* 아직 구현하지 않습니다.
+* 다만 향후 `GRID_ZONE`에 grid gap 옵션을 추가할 수 있습니다.
+* UI는 숫자 입력보다 교육용 select가 좋을 수 있습니다.
+* 예: `좁게`, `보통`, `넓게`
+* 내부 값 후보:
+
+  * `gridGap?: "narrow" | "normal" | "wide"`
+  * 또는 `gridGapPx?: 8 | 12 | 16`
+  * 또는 기존 style 체계에 맞는 더 적절한 구조
+
+확인할 것:
+
+* `StyleProps`에 어떤 필드를 추가하는 것이 자연스러운지
+* `editableFieldPresets.ts`에 추가하는 것이 자연스러운지
+* `EditableFieldControl`이 현재 enum/select 값을 처리할 수 있는지
+* canvas / preview / export / Code View에 반영하려면 어느 파일을 수정해야 하는지
+* `transformGuiToTailwind`에 넣는 것이 맞는지, 별도 layout helper가 맞는지
+* 기존 `commonStyleFields`와 충돌하지 않는지
+* gap option이 `GRID_ZONE` 전용이어야 하는지, 향후 layout block 공용이 될 수 있는지
+
+### 6. helper를 만든다면 기존 선례에 맞춘 helper인가, GRID_ZONE만을 위한 새 패턴인가?
+
+다음을 비교해 주세요.
+
+후보 A: 기존 style transform 체계 확장
+
+* 예: `transformGuiToTailwind` 또는 유사 공통 style 경로에 grid 관련 값을 반영
+* 장점/단점
+* canvas/preview/export에 모두 적용 가능한지
+
+후보 B: `GRID_ZONE` 전용 layout helper
+
+* 예:
+
+```ts id="gszljh"
+getGridZoneLayoutStyle(gridCols?, gridGap?): React.CSSProperties
+serializeGridZoneLayoutStyle(gridCols?, gridGap?): string
+```
+
+* 장점/단점
+* 기존 구조와 충돌 여부
+* future `GRID_DROPPER`와 호환성
+
+후보 C: grid container 공용 helper
+
+* 예:
+
+```ts id="j31qce"
+getGridContainerLayoutStyle({ columns, gap }): React.CSSProperties
+serializeGridContainerLayoutStyle({ columns, gap }): string
+```
+
+* 장점/단점
+* 현재는 과추상화인지 여부
+* future layout block과 호환성
+
+후보 D: definition-driven layout metadata
+
+* 예:
+
+```ts id="mfel9a"
+layout: {
+  kind: "grid",
+  columnsPath: "styles.gridCols",
+  gapPath: "styles.gridGap",
+  fallbackColumns: 2,
+  fallbackGap: "normal"
+}
+```
+
+* 장점/단점
+* 지금 도입하기 적절한지
+* blockDefinitions에 로직을 넣지 않는 원칙과 충돌하지 않는지
+
+각 후보에 대해 다음을 평가해 주세요.
+
+* 기존 선례를 따르는가
+* 변경 범위
+* 과추상화 위험
+* data-driven architecture에 주는 이점
+* canvas/preview/export parity에 주는 이점
+* 향후 `GRID_DROPPER`와 충돌 여부
+* 이번 단계에서 추천 여부
+
+## 조사 대상 파일
+
+실제 repo 기준으로 관련 파일을 확인하고, 정확한 경로를 보고해 주세요.
+
+우선 확인할 것으로 예상되는 파일:
+
+* `src/features/block-studio/blocks/definitions/container.definition.ts`
+* `src/features/block-studio/blocks/definitions/gridZone.definition.ts`
+* `src/features/block-studio/blocks/definitions/passwordZone.definition.ts`
+* `src/features/block-studio/blocks/definitions/toggleZone.definition.ts`
+* `src/features/block-studio/blocks/definitions/editableFieldPresets.ts`
+* `src/features/block-studio/blocks/definitions/index.ts`
+* `src/features/block-studio/blocks/types/blockDefinition.types.ts`
+* `src/features/block-studio/blocks/types/editableField.types.ts`
+* `src/features/block-studio/blocks/types/childField.types.ts`
+* `src/features/block-studio/blocks/types/htmlSchema.types.ts`
+* `src/types/types.ts`
+* `src/components/block/canvas/CanvasBlockBody.tsx`
+* `src/components/block/canvas/CanvasBlockSlot.tsx`
+* `src/components/block/canvas/CanvasBlockItem.tsx`
 * `src/components/block/preview/PreviewBlockRenderer.tsx`
-* `src/components/block/preview/QrExportPanel.tsx`
+* `src/components/block/preview/CodeViewPanel.tsx`
+* `src/components/block/preview/BlockRenderer.tsx`
+* `src/components/block/editor/BlockStylePanel.tsx`
+* `src/components/block/editor/EditableFieldControl.tsx`
 * `src/features/block-studio/blocks/html/blockHtmlCompiler.ts`
 * `src/features/block-studio/blocks/html/htmlSchemaCompiler.ts`
 * `src/features/block-studio/blocks/html/interactiveExporters.ts`
-* `src/features/block-studio/blocks/html/escapeHtml.ts`
 * `src/features/block-studio/blocks/html/transformGuiToTailwind.ts`
-* `src/types/types.ts`
+* `src/features/block-studio/blocks/html/escapeHtml.ts`
 
-## 수동 검증 목표
+실제 파일 구조가 다르면 실제 경로 기준으로 보고해 주세요.
 
-구현 후 다음을 확인해 주세요.
+## 특별히 주의할 제약
 
-### 기본 표시
+* 코드를 수정하지 마세요.
+* `GRID_DROPPER`는 이번 범위에서 구현하지 마세요.
+* `columns`, `gridChildren`, 2차원 배열, slots, column별 drop target은 도입하지 마세요.
+* `GRID_ZONE`의 현재 원칙, 즉 “direct children을 grid item으로 배치하는 layout container”를 유지하세요.
+* blockDefinitions에 JSX, mutation logic, compiler function을 넣는 방향은 피하세요.
+* 기존 작동 중인 canvas / preview / export / Code View 동작을 깨는 방향은 추천하지 마세요.
+* 필요하다면 기존 처리 로직을 파괴하지 않는 수준의 작은 수정이나 확장만 제안하세요.
+* 추측과 확인된 사실을 구분하세요.
 
-* 빈 canvas에서 Code View가 안내 문구를 표시
-* H1/P 블록이 HTML로 표시
-* IMAGE 블록이 `<img ...>` 형태로 표시
-* A/link 블록이 `<a ...>` 형태로 표시
-* CONTAINER children이 중첩 HTML로 표시
-* GRID_ZONE이 `display: grid`, `grid-template-columns`, `gap: 12px`를 포함해 표시
-* PASSWORD_ZONE / TOGGLE_ZONE이 기존 exporter 경로의 결과로 표시
+## 출력 형식
 
-### 경로 재사용
+다음 형식으로 보고서를 작성해 주세요.
 
-* Code View가 `compileBlockHtml` 또는 그 wrapper를 사용
-* CodeViewPanel에 block type별 HTML 생성 로직이 없음
-* PreviewBlockRenderer를 HTML source로 사용하지 않음
-* QR/export flow가 변경되지 않음
+# Zone Style Consistency Report
 
-### 회귀
+## 1. Executive Summary
 
-* 기존 미리보기는 계속 동작
-* QR/export 버튼은 기존처럼 동작
-* 일반 block drag/edit 동작에 영향 없음
+* 다른 zone들의 스타일 처리 방식 요약
+* GRID_ZONE이 선례와 얼마나 다른지
+* grid gap option 추가 전 helper화 필요 여부
+* 최종 추천
 
-## 검증 명령
+## 2. File Map
 
-가능하면 다음을 실행해 주세요.
+표 형식:
+| Area | File | Responsibility | Notes |
 
-```bash
-npx.cmd tsc --noEmit
-```
+## 3. Zone-by-Zone Style Flow
 
-전체 lint는 기존 unrelated 오류가 있을 수 있으므로, 가능하면 변경 파일 중심 lint를 실행하고 결과를 보고해 주세요.
+각 zone별로 작성:
 
-## 출력 요청
+### CONTAINER
 
-작업 후 다음 형식으로 보고해 주세요.
+* Definition
+* Editable fields
+* Canvas style
+* Preview style
+* Export style
+* Code View path
+* Notes
 
-1. 변경 요약
-2. 수정/추가한 파일 목록
-3. Code View가 기존 compiler를 어떻게 재사용하는지
-4. CodeViewPanel에 block type별 HTML 생성 로직이 없는지 확인
-5. QR/export flow 변경 여부
-6. 실행한 검증 명령과 결과
-7. 수동 테스트 체크리스트 결과
-8. 남은 위험 또는 후속 과제
+### PASSWORD_ZONE
 
-다시 강조:
-이번 작업은 Code View prototype입니다.
-목표는 “예쁘게 보이기”가 아니라 “기존 compiler 경로로 블록이 코드로 전사되는지 확인하기”입니다.
-Code View 전용 HTML generator를 만들지 마세요.
+...
+
+### TOGGLE_ZONE
+
+...
+
+### GRID_ZONE
+
+...
+
+필요하면 SPACER 등 기타 block 포함.
+
+## 4. Style Parity Analysis
+
+표 형식:
+
+| Block | Canvas | Preview | Export | Code View | Source of Truth | Parity Risk |
+| ----- | ------ | ------- | ------ | --------- | --------------- | ----------- |
+
+## 5. GRID_ZONE Difference Analysis
+
+* 다른 zone들과 다른 점
+* 정당한 예외인지
+* 정리할 필요가 있는 불일치인지
+
+## 6. Grid Gap Option Feasibility
+
+* 권장 데이터 모델
+* editableFields 반영 가능성
+* canvas/preview/export/code view 영향
+* transformGuiToTailwind vs layout helper 판단
+* 위험
+
+## 7. Helper Strategy Comparison
+
+후보 A/B/C/D 비교 표:
+| Option | Description | Follows Existing Pattern? | Scope | Pros | Cons | Recommendation |
+
+## 8. Data-driven Assessment
+
+* 현재 zone style 처리와 blockDefinitions-driven 구조의 관계
+* `GRID_ZONE` helper 또는 metadata가 필요한지
+* 지금 어느 수준이 적절한지
+
+## 9. Recommendation
+
+반드시 다음 중 하나를 선택:
+
+* A. 현 구조 유지
+* B. 다음 grid style 확장 전 `GRID_ZONE` helper화
+* C. 지금 바로 `GRID_ZONE` helper화
+* D. 기존 style transform 체계 확장
+* E. definition-driven layout metadata 도입
+* F. 다른 선행 안정화 필요
+
+선택 이유와 최소 변경 범위를 설명해 주세요.
+
+## 10. Regression Checklist
+
+* canvas / preview / export / Code View parity 검증
+* `GRID_ZONE.children` 단일 배열 유지 검증
+* `GRID_DROPPER`, columns, gridChildren, slots 미도입 확인
+* gap option을 나중에 추가할 경우 확인할 항목
