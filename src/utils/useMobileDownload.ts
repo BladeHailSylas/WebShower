@@ -1,13 +1,15 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function useMobileDownload() {
   const hasDownloaded = useRef(false);
+  const [foundCode, setFoundCode] = useState(false);
+  useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const key = params.get('key');
     const storage = sessionStorage.getItem('downloaded');
-    let foundCode = false;
+
     if (key && !hasDownloaded.current && !storage) {
-      foundCode = true;
+      setFoundCode(true);
       hasDownloaded.current = true; // 최초 진입 시 즉시 가드 활성화
       sessionStorage.setItem('downloaded', 'true');
       const fetchAndDownloadFile = async () => {
@@ -40,5 +42,6 @@ export function useMobileDownload() {
 
       fetchAndDownloadFile();
     }
+    }, []);
     return foundCode;
 }
