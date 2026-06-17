@@ -1,243 +1,277 @@
-You are working on a React + TypeScript + Tailwind CSS + DaisyUI educational web builder project.
+현재 목표는 Block Studio에 “Code View” 기능을 추가하기 전에, 기존 HTML export / deploy / compiler 경로를 재사용할 수 있는지 조사하는 것입니다.
 
-Before modifying code, inspect the repository and create a refactoring Plan only. Do not start implementation yet.
+중요:
 
-Current context:
-This project lets students build web pages using draggable blocks. Existing blocks include simple elements such as heading, paragraph, image, and structural/function blocks such as container, password zone, toggle zone, and grid zone.
+* 아직 코드를 수정하지 마세요.
+* 구현 계획을 너무 앞서가지 마세요.
+* 먼저 repo를 읽고, 기존 HTML 생성 경로가 Code View에 재사용 가능한지 보고서로 정리해 주세요.
+* 관련 없는 mini-project, route, layout, shared app 구조는 건드리지 마세요.
+* Block Studio 관련 파일만 조사하세요.
+* AGENTS.md의 feature-scoped refactor 원칙을 유지하세요.
 
-The main issue is not the HtmlBlock data structure itself. The problem is that the code that creates, renders, edits, moves, drops, previews, and exports blocks is currently scattered or concentrated in large components.
+## 배경
 
-Likely high-complexity files:
-- BlockStudioPage.tsx
-- BlockCanvas.tsx
-- BlockPalette.tsx
-- BlockRenderer.tsx
-- BlockStylePanel.tsx, if present
+이 프로젝트는 React + TypeScript + Tailwind CSS + DaisyUI 기반의 교육용 웹 빌더입니다.
 
-Primary goal:
-Refactor toward a blockDefinitions-driven architecture.
+사용자는 팔레트에서 블록을 끌어와 페이지를 만들고, preview에서 렌더링 결과를 확인할 수 있습니다. 프로젝트의 교육적 목적은 학생이 웹 프로그래밍과 친해지고, 블록으로 만든 페이지가 실제 HTML/CSS와 어떻게 연결되는지 이해하게 만드는 것입니다.
 
-Core principle:
-blockDefinitions must be declarative data only. They must not execute logic, render JSX, mutate state, or compile HTML directly.
+현재는 주로 “렌더링 결과 보기” 중심입니다. 다음 기능으로 “Code View”를 추가하려고 합니다.
 
-Executors should read blockDefinitions and perform the actual work.
+Code View의 기본 아이디어:
 
-Target architecture:
+* 사용자가 만든 block tree를 실제 HTML 코드로 전사한 결과를 보여준다.
+* 가능하면 기존 배포/export 알고리즘을 재사용한다.
+* 배포용 HTML과 Code View HTML이 서로 다른 생성 경로를 갖지 않게 한다.
+* Code View는 v1에서 read-only viewer로 둔다.
+* HTML을 다시 block tree로 역변환하는 기능은 이번 범위가 아니다.
 
-blockDefinitions:
-- Define each block type declaratively.
-- Include:
-  - type
-  - label
-  - category
-  - template
-  - palette metadata
-  - childFields
-  - editableFields
-  - dropPolicy
-  - dragPreview
-  - htmlSchema or htmlExporterKey
+최근 작업 맥락:
 
-Executors:
-- blockFactory: clones definition.template and assigns new ids
-- BlockPalette: renders palette items from blockDefinitions
-- BlockCanvas: renders editable canvas using definitions
-- BlockStylePanel: renders controls from editableFields
-- blockDropEngine: handles drops using childFields/dropPolicy
-- blockHtmlCompiler: exports HTML using htmlSchema/exporterKey
-- DragPreviewOverlay: renders drag preview using dragPreview
+* `GRID_ZONE`은 direct children을 CSS grid item으로 자동 배치하는 layout container로 정리되었습니다.
+* 데이터 모델은 `HtmlBlock.children` 단일 배열과 `styles.gridCols`만 유지합니다.
+* `GRID_ZONE`의 preview/export에도 `styles.gridCols ?? 2`가 inline grid style로 반영되도록 수정되었습니다.
+* 이 변경은 Code View가 export/compiler 경로를 제대로 재사용하는지 검증하기 좋은 사례입니다.
 
-Important constraint:
-Do not immediately replace children/defaultChildren/conditionalChildren with a new slots model.
-For now, keep the current data structure and introduce childFields as a declarative bridge.
+## 이번 조사에서 가장 중요한 질문
 
-Example childFields:
-- children
-- defaultChildren
-- conditionalChildren
+Code View는 새 HTML 생성기를 만들면 안 됩니다.
 
-Future slots migration can be considered later, but should not be part of the first implementation Plan unless the current code absolutely requires it.
+핵심 질문은 다음입니다.
 
-Recommended new structure:
+> 기존 HTML export/deploy/compiler 경로 중 어느 부분을 Code View가 재사용해야 하는가?
 
-src/
-  blocks/
-    definitions/
-      heading.definition.ts
-      paragraph.definition.ts
-      image.definition.ts
-      container.definition.ts
-      gridZone.definition.ts
-      passwordZone.definition.ts
-      toggleZone.definition.ts
-      index.ts
+특히 다음을 구분해 주세요.
 
-    types/
-      blockDefinition.types.ts
-      editableField.types.ts
-      childField.types.ts
-      htmlSchema.types.ts
-      dropPolicy.types.ts
+1. block tree → HTML fragment/string compiler
+2. full HTML document generator
+3. QR/export/download/deploy UI flow
+4. preview React renderer
+5. HTML formatting / escaping / pretty-printing logic
 
-    factory/
-      createBlockFromDefinition.ts
-      assignBlockIdsDeep.ts
+Code View가 재사용해야 하는 것은 주로 1번입니다.
+2번은 필요하다면 옵션으로 검토하고, 3번은 재사용 대상이 아닐 가능성이 큽니다.
+4번 preview renderer는 Code View의 source of truth가 아니어야 합니다.
 
-    tree/
-      blockTreeOperations.ts
-      blockChildFields.ts
+## 조사 대상 파일
 
-    drop/
-      dropTargetIds.ts
-      resolveDropTarget.ts
-      blockDropEngine.ts
+먼저 실제 repo를 확인한 뒤, 관련 파일을 실제 경로 기준으로 정리해 주세요.
 
-    html/
-      blockHtmlCompiler.ts
-      htmlSchemaCompiler.ts
-      interactiveExporters.ts
-      escapeHtml.ts
+우선적으로 확인할 것으로 예상되는 파일:
 
-  features/
-    block-studio/
-      hooks/
-        useBlockStudio.ts
-        useBlockDragAndDrop.ts
-        useSelectedBlockEditor.ts
-        useBlockMutations.ts
+* `src/pages/BlockStudioPage.tsx`
+* `src/components/block/preview/BlockRenderer.tsx`
+* `src/components/block/preview/PreviewBlockRenderer.tsx`
+* `src/components/block/preview/QrExportPanel.tsx`
+* `src/features/block-studio/blocks/html/blockHtmlCompiler.ts`
+* `src/features/block-studio/blocks/html/htmlSchemaCompiler.ts`
+* `src/features/block-studio/blocks/html/interactiveExporters.ts`
+* `src/features/block-studio/blocks/html/escapeHtml.ts`
+* `src/features/block-studio/blocks/html/transformGuiToTailwind.ts`
+* `src/features/block-studio/blocks/definitions/*.definition.ts`
+* `src/features/block-studio/blocks/types/htmlSchema.types.ts`
+* `src/features/block-studio/hooks/useBlockStudio.ts`
+* block state가 정의/관리되는 파일
+* export/download/QR 관련 UI 파일
 
-      components/
-        BlockStudioLayout.tsx
-        DragPreviewOverlay.tsx
+실제 파일 구조가 다르면 실제 경로를 기준으로 보고해 주세요.
 
-  components/
-    block/
-      BlockPalette.tsx
+## 조사 내용
 
-      canvas/
-        BlockCanvas.tsx
-        CanvasRootDropZone.tsx
-        CanvasBlockList.tsx
-        CanvasBlockItem.tsx
-        CanvasBlockBody.tsx
-        CanvasBlockSlot.tsx
-        BlockDragHandle.tsx
-        BlockEditHandle.tsx
-        BlockEditorPopover.tsx
-        EditorConnectorLine.tsx
+### 1. 현재 HTML 생성 경로 요약
 
-      preview/
-        BlockRenderer.tsx
-        PreviewBlockRenderer.tsx
-        PasswordPreviewItem.tsx
-        TogglePreviewItem.tsx
-        QrExportPanel.tsx
+현재 사용자가 만든 block tree가 HTML로 변환되는 흐름을 정리해 주세요.
 
-      editor/
-        BlockStylePanel.tsx
-        EditableFieldControl.tsx
+다음을 포함해 주세요.
 
-Expected responsibilities:
+* entry point 함수
+* 입력 타입
+* 출력 타입
+* block tree를 받는 위치
+* page-level wrapper를 만드는지 여부
+* block-level HTML fragment만 만드는지 여부
+* interactive blocks(password/toggle 등)를 어떻게 export하는지
+* GRID_ZONE export 결과가 어디에서 만들어지는지
+* escaping은 어디서 처리하는지
+* className/style 변환은 어디서 처리하는지
 
-BlockStudioPage:
-- Should become a page-level orchestrator only.
-- It should connect DndContext, layout, palette, canvas, preview, and drag overlay.
-- Move block creation, tree mutation, drop resolution, and drag state logic out.
+### 2. Export/deploy UI 흐름과 compiler 분리 정도
 
-BlockCanvas:
-- Should become an editable canvas host.
-- Split sortable block item, child drop zones, editor popover, connector line, and block body rendering into smaller components.
-- It should use blockDefinitions.childFields to render container-like blocks where possible.
+다음을 확인해 주세요.
 
-BlockPalette:
-- Should render from blockDefinitions instead of hardcoded block lists.
+* QR/export/download UI가 compiler와 얼마나 결합되어 있는지
+* 순수 함수로 재사용 가능한 compiler가 이미 있는지
+* React component 안에서 HTML 문자열을 직접 조립하는 부분이 있는지
+* DOM API, Blob, QR, download 로직과 HTML generation이 섞여 있는지
+* Code View가 import해서 사용할 수 있는 안전한 함수가 있는지
 
-BlockStylePanel:
-- Should render controls from editableFields where possible.
-- Use custom editor escape hatches only when needed.
+### 3. Code View 재사용 가능성 평가
 
-BlockRenderer:
-- Should separate preview rendering from HTML export and QR/export UI.
+다음 기준으로 평가해 주세요.
 
-Factory:
-- createBlockFromDefinition(type) should:
-  1. Read blockDefinitions[type].template
-  2. structuredClone it
-  3. Assign new ids recursively
-  4. Return a new HtmlBlock instance
-- Adding a new block should not require changing blockFactory.
+* 기존 compiler를 그대로 사용할 수 있는가?
+* 약간의 adapter/helper만 있으면 가능한가?
+* compiler 분리가 먼저 필요한가?
+* Code View 전용 HTML 생성기를 새로 만들 위험이 있는가?
+* 현재 compiler output이 사람이 읽을 수 있는가?
+* pretty-print/formatting이 필요한가?
+* Code View에서 보여줄 HTML은 body fragment가 좋은가, full document가 좋은가?
+* v1에서 어떤 범위가 가장 안전한가?
 
-Drop:
-- String drop target ids should be centralized.
-- resolveDropTarget should parse ids.
-- blockDropEngine should decide how to insert/move blocks.
+### 4. Data-driven 구조 검증
 
-Tree:
-- find, update, remove, insert, replace operations should be pure functions.
-- UI components should not manually recurse through block trees.
+Code View는 data-driven 구조를 검증하는 기능이어야 합니다.
 
-Plan requirements:
-Create a detailed refactoring Plan before coding.
+다음을 확인해 주세요.
 
-The Plan must include:
-1. Current architecture summary after inspecting the repo
-2. Main complexity problems found in actual files
-3. Target architecture adapted to this repo
-4. Phase-by-phase implementation order
-5. Files to create
-6. Files to modify
-7. Types to introduce or change
-8. Risk assessment
-9. Regression test checklist
-10. What should explicitly not be changed in the first phase
+* 새 blockDefinition을 추가하면 Code View가 자동 반영되는 구조인가?
+* `htmlSchema` 기반 블록은 Code View에 자동 반영되는가?
+* `htmlExporterKey` 또는 custom exporter가 필요한 블록은 어디서 처리되는가?
+* Code View UI가 block type별 분기를 몰라도 되는가?
+* 현재 `GRID_ZONE`처럼 renderer/exporter 특수 처리가 필요한 블록이 어디에 있는가?
+* preview와 export가 불일치할 위험이 있는 블록은 무엇인가?
 
-Preferred implementation phases:
-Phase 0: Inspect current repo and verify build/typecheck.
-Phase 1: Introduce blockDefinitions, templates, and generic blockFactory.
-Phase 2: Extract tree operations and drop resolution/engine.
-Phase 3: Simplify BlockStudioPage into an orchestrator.
-Phase 4: Split BlockCanvas into smaller SRP-based components.
-Phase 5: Convert BlockPalette and BlockStylePanel to definition-driven behavior.
-Phase 6: Separate preview rendering from HTML export in BlockRenderer.
-Phase 7: Consider future improvements such as slots, runtime validation, versioning, and migration.
+### 5. Code View v1 범위 제안
 
-Non-goals for first implementation:
-- Do not rewrite the entire HtmlBlock model unless unavoidable.
-- Do not migrate to slots immediately.
-- Do not put JSX, mutation logic, or HTML compiler functions directly inside blockDefinitions.
-- Do not change visible behavior unless required by the refactor.
-- Do not start coding before producing the Plan.
+아직 구현하지 말고, 안전한 v1 범위를 제안해 주세요.
 
-Refactoring strength guidance:
-This should be a real architecture refactor, not a minimal cleanup.
+v1 기본 가정:
 
-Prioritize the target architecture over preserving old implementation details. You may remove, replace, or substantially rewrite existing code when it clearly serves the blockDefinitions-driven architecture.
+* read-only HTML viewer
+* 기존 compiler output 재사용
+* preview 옆 또는 preview panel 내부에 Code View 탭 추가
+* copy button 제공
+* syntax highlighting은 optional
+* HTML → block tree 역변환 없음
+* 코드 편집 없음
+* Monaco 같은 무거운 editor 도입 없음
+* QR/download/deploy 흐름 변경 없음
 
-Do not keep obsolete code paths or duplicate systems just to reduce diff size.
+다음을 제안해 주세요.
 
-At the same time, keep the work reviewable and phase-based. Each phase should aim to end in a buildable and type-safe state. If a temporary broken state is unavoidable, explicitly document:
-- what is broken,
-- why it is temporarily acceptable,
-- which following step will fix it.
+* 어느 컴포넌트에 Code View UI를 붙이는 것이 자연스러운지
+* Code View용 새 컴포넌트가 필요하다면 파일 경로 제안
+* 기존 compiler에 adapter가 필요하다면 파일 경로 제안
+* HTML formatter가 필요하다면 파일 경로 제안
+* Code View가 full document와 body fragment 중 무엇을 보여주는 것이 좋을지
+* copy button은 어디에 두는 것이 좋을지
+* empty canvas일 때 어떤 메시지가 적절한지
 
-Do not water down the refactor into superficial extraction only. If the current structure conflicts with the target architecture, propose a real replacement plan.
+### 6. 안정화 패치 필요 여부
 
-Repository scope warning:
-This repository is not only the Block Coding Studio. It is a collection of multiple small projects/features, and Block Coding Studio is one new large feature added to it.
+Code View 구현 전에 선행해야 할 안정화 작업이 있는지 판단해 주세요.
 
-Therefore, do not reorganize the entire repository to match the proposed Block Studio architecture.
+특히:
 
-The new blocks/, features/block-studio/, and components/block/ structure should be applied only to Block Studio-related code.
+* `GRID_ZONE` grid style 계산이 canvas/preview/export에 흩어져 있는지
+* HTML compiler가 Code View에서 재사용하기에 충분히 순수한지
+* export output이 너무 minified되어 있거나 읽기 어려운지
+* escaping/security 문제가 있는지
+* 전체 build/lint가 기존 unrelated 오류 때문에 실패하는 상태가 Code View 작업에 어떤 영향을 주는지
 
-Before creating the Plan, inspect the repo and determine the actual scope of Block Studio. The Plan must clearly separate:
-- Block Studio files to refactor
-- shared files that require minimal changes
-- unrelated mini-project files that must not be touched
+### 7. 위험 평가
 
-Do not move or rewrite unrelated project pages, routes, layouts, components, or utilities.
+위험을 우선순위로 정리해 주세요.
 
-Avoid broad import path churn across the whole app. Prefer creating new Block Studio-specific folders and migrating only directly related files.
+예상 위험:
 
-If a shared file must be changed, explain why and keep the change minimal.
+* Code View가 export 경로와 달라져 중복 source of truth가 생김
+* preview와 Code View/export가 서로 다르게 보임
+* full HTML document와 fragment 구분이 모호함
+* interactive block export 결과가 교육용 Code View에서 너무 복잡함
+* inline style/class escaping 누락
+* syntax highlighting 도입으로 dependency가 커짐
+* unrelated build/lint 오류 때문에 검증이 어려움
 
-Treat this as a feature-scoped refactor, not an app-wide architecture migration.
+### 8. 추천 구현 순서
+
+아직 구현하지 말고, 구현한다면 어떤 순서가 안전한지 제안해 주세요.
+
+예상 방향:
+
+1. 기존 compiler 재사용 가능성 확인
+2. 필요하면 compiler adapter 또는 `compileBlocksForCodeView` 같은 얇은 wrapper 추가
+3. Code View formatter 추가
+4. Code View panel 컴포넌트 추가
+5. Preview panel에 “미리보기 / 코드 보기” 탭 추가
+6. copy button 추가
+7. GRID_ZONE, password/toggle/container 등 export 결과 검증
+8. 수동 테스트 체크리스트 실행
+
+## 출력 형식
+
+다음 형식으로 보고서를 작성해 주세요.
+
+# Code View Reuse Feasibility Report
+
+## 1. Executive Summary
+
+* 기존 compiler 재사용 가능성
+* 바로 구현 가능한지, 선행 정리가 필요한지
+* 추천 v1 범위
+
+## 2. File Map
+
+표 형식:
+| Area | File | Responsibility | Reuse for Code View? | Notes |
+
+## 3. Current HTML Export Flow
+
+* block tree → HTML 흐름
+* full document vs fragment 구분
+* interactive blocks 처리
+* GRID_ZONE 처리
+* escaping/style/class 처리
+
+## 4. Coupling Analysis
+
+* compiler와 QR/download/deploy UI 결합도
+* 순수 함수 여부
+* Code View가 import 가능한 함수
+
+## 5. Reuse Strategy
+
+* 그대로 재사용할 함수
+* adapter가 필요한 함수
+* 분리/이동이 필요한 로직
+* 새로 만들면 안 되는 중복 로직
+
+## 6. Data-driven Assessment
+
+* blockDefinitions/htmlSchema/exporterKey와 Code View의 관계
+* 새 블록 추가 시 Code View 자동 반영 가능성
+* type-specific 분기가 필요한 지점
+
+## 7. Proposed Code View v1 Scope
+
+* UI 위치
+* 보여줄 코드 범위: fragment/full document
+* formatting
+* copy button
+* empty state
+* optional features와 non-goals
+
+## 8. Stabilization Needed Before Implementation
+
+* 선행해야 할 작은 안정화 패치
+* 당장 하지 않아도 되는 작업
+
+## 9. Risk Assessment
+
+우선순위 높은 위험 5~10개
+
+## 10. Recommended Implementation Plan
+
+작고 reviewable한 단계로 제안
+
+## 11. Regression Checklist
+
+수동 검증 항목
+
+제약:
+
+* 코드를 수정하지 마세요.
+* 추측과 확인된 사실을 구분하세요.
+* 실제 파일 경로를 사용하세요.
+* 관련 없는 mini-project 파일은 제외하세요.
+* Code View 전용 HTML generator를 새로 만들지 않는 방향을 우선 검토하세요.
+* Code View는 기존 export/compiler 경로를 검증하는 창이어야 합니다.

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import type { HtmlBlock } from "../../../types/types";
 import { transformGuiToTailwind } from "../../../features/block-studio/blocks/html/transformGuiToTailwind";
 import PasswordPreviewItem from "./PasswordPreviewItem";
@@ -8,14 +8,29 @@ interface PreviewBlockRendererProps {
   block: HtmlBlock;
 }
 
+function getGridZoneStyle(block: HtmlBlock): CSSProperties {
+  const gridCols = block.styles?.gridCols ?? 2;
+
+  return {
+    display: "grid",
+    gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))`,
+    gap: "12px",
+  };
+}
+
 function renderPreviewBlock(block: HtmlBlock): ReactNode {
   const classes = transformGuiToTailwind(block.styles, block.type);
 
   switch (block.type) {
     case "CONTAINER":
-    case "GRID_ZONE":
       return (
         <div key={block.id} className={classes}>
+          {block.children?.map((child) => renderPreviewBlock(child))}
+        </div>
+      );
+    case "GRID_ZONE":
+      return (
+        <div key={block.id} className={classes} style={getGridZoneStyle(block)}>
           {block.children?.map((child) => renderPreviewBlock(child))}
         </div>
       );

@@ -5,12 +5,21 @@ import { transformGuiToTailwind } from "./transformGuiToTailwind";
 
 type CompileBlock = (block: HtmlBlock) => string;
 
+function getInlineStyle(block: HtmlBlock): string {
+  if (block.type !== "GRID_ZONE") return "";
+
+  const gridCols = block.styles?.gridCols ?? 2;
+  return `display: grid; grid-template-columns: repeat(${gridCols}, minmax(0, 1fr)); gap: 12px;`;
+}
+
 export function compileHtmlSchema(
   block: HtmlBlock,
   schema: HtmlSchemaDefinition,
   compileBlock: CompileBlock,
 ): string {
   const classes = escapeAttribute(transformGuiToTailwind(block.styles, block.type));
+  const inlineStyle = getInlineStyle(block);
+  const styleAttribute = inlineStyle ? ` style="${escapeAttribute(inlineStyle)}"` : "";
 
   if (schema.tag === "img") {
     return `<img src="${escapeAttribute(block[schema.srcField ?? "src"])}" class="${classes}" alt="안내" />`;
@@ -23,5 +32,5 @@ export function compileHtmlSchema(
   const children = schema.childField ? block[schema.childField]?.map(compileBlock).join("") ?? "" : "";
   const content = schema.contentField ? escapeHtml(block[schema.contentField]) : children;
 
-  return `<${schema.tag} class="${classes}">${content}</${schema.tag}>`;
+  return `<${schema.tag} class="${classes}"${styleAttribute}>${content}</${schema.tag}>`;
 }

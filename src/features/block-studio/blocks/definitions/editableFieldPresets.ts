@@ -68,12 +68,12 @@ export const commonStyleFields: EditableFieldDefinition[] = [
 
 export const gridColumnField: EditableFieldDefinition = {
   path: "styles.gridCols",
-  label: "가로 칸수",
+  label: "자동 배치 열 수",
   control: "select",
   defaultValue: 2,
   options: [
-    { label: "가로 2칸", value: 2 },
-    { label: "가로 3칸", value: 3 },
-    { label: "가로 4칸", value: 4 },
+    { label: "한 줄 2개", value: 2 },
+    { label: "한 줄 3개", value: 3 },
+    { label: "한 줄 4개", value: 4 },
   ],
 };

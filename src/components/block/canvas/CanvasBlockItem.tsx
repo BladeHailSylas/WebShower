@@ -1,4 +1,4 @@
-import type { MouseEvent, PointerEvent as ReactPointerEvent } from "react";
+import type { MouseEvent } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { HtmlBlock } from "../../../types/types";
@@ -13,11 +13,10 @@ interface CanvasBlockItemProps {
 }
 
 export default function CanvasBlockItem({ block, activeStyleId, onStyleClick }: CanvasBlockItemProps) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } = useSortable({
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, isDragging } = useSortable({
     id: block.id,
     data: { type: "CANVAS_ITEM", block },
   });
-  const stopPointer = (event: ReactPointerEvent) => event.stopPropagation();
   const isGrid = block.type === "GRID_ZONE";
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -33,9 +32,8 @@ export default function CanvasBlockItem({ block, activeStyleId, onStyleClick }: 
       className={`mb-2 relative flex items-stretch ${
         isGrid ? "w-full max-w-xl" : "w-max"
       } active:cursor-grabbing group`}
-      onPointerDown={isGrid ? stopPointer : undefined}
     >
-      {!isGrid && <BlockDragHandle attributes={attributes} listeners={listeners} />}
+      <BlockDragHandle activatorRef={setActivatorNodeRef} attributes={attributes} listeners={listeners} />
       <CanvasBlockBody block={block} activeStyleId={activeStyleId} onStyleClick={onStyleClick} />
       <BlockEditHandle
         blockId={block.id}
