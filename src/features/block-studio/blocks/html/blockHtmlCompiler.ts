@@ -21,6 +21,10 @@ export function compileBlockHtml(block: HtmlBlock): string {
   return "";
 }
 
+export function compileBlocksForCodeView(blocks: HtmlBlock[]): string {
+  return blocks.map(compileBlockHtml).join("\n");
+}
+
 export function compilePageHtml(blocks: HtmlBlock[]): string {
   const bodyContent = blocks.map(compileBlockHtml).join("");
 
