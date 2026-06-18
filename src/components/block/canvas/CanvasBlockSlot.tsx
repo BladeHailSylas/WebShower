@@ -1,7 +1,7 @@
 import type { MouseEvent } from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { rectSortingStrategy, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import type { HtmlBlock } from "../../../types/types";
+import type { BlockType, HtmlBlock } from "../../../types/types";
 import { createChildFieldDropId } from "../../../features/block-studio/blocks/drop/dropTargetIds";
 import { getChildBlocks } from "../../../features/block-studio/blocks/tree/blockChildFields";
 import type { ChildFieldDefinition } from "../../../features/block-studio/blocks/types/childField.types";
@@ -12,6 +12,7 @@ interface CanvasBlockSlotProps {
   fieldDefinition: ChildFieldDefinition;
   activeStyleId: string | null;
   onStyleClick: (event: MouseEvent, id: string) => void;
+  onAppendChild: (parentId: string, field: ChildFieldDefinition["field"], blockType: BlockType) => void;
 }
 
 function getSlotClassName(variant: ChildFieldDefinition["variant"], isOver: boolean): string {
@@ -57,6 +58,7 @@ export default function CanvasBlockSlot({
   fieldDefinition,
   activeStyleId,
   onStyleClick,
+  onAppendChild,
 }: CanvasBlockSlotProps) {
   const children = getChildBlocks(block, fieldDefinition.field);
   const { setNodeRef, isOver } = useDroppable({
@@ -64,6 +66,7 @@ export default function CanvasBlockSlot({
     data: { type: "CHILD_FIELD_DROP_ZONE", blockId: block.id, field: fieldDefinition.field },
   });
   const strategy = fieldDefinition.sortable === "grid" ? rectSortingStrategy : verticalListSortingStrategy;
+  const appendAction = fieldDefinition.appendAction;
 
   return (
     <div
@@ -84,13 +87,31 @@ export default function CanvasBlockSlot({
       )}
       <SortableContext items={children.map((child) => child.id)} strategy={strategy}>
         {children.map((child) => (
-          <CanvasBlockItem key={child.id} block={child} activeStyleId={activeStyleId} onStyleClick={onStyleClick} />
+          <CanvasBlockItem
+            key={child.id}
+            block={child}
+            activeStyleId={activeStyleId}
+            onStyleClick={onStyleClick}
+            onAppendChild={onAppendChild}
+          />
         ))}
       </SortableContext>
       {children.length === 0 && (
         <span className="text-xs text-slate-500 font-medium my-2 text-center pointer-events-none">
           {fieldDefinition.emptyLabel}
         </span>
+      )}
+      {appendAction && (
+        <button
+          type="button"
+          className="mt-2 rounded-md border border-emerald-500/50 bg-emerald-950/40 px-3 py-2 text-xs font-bold text-emerald-300 transition-colors hover:bg-emerald-900/60"
+          onClick={(event) => {
+            event.stopPropagation();
+            onAppendChild(block.id, fieldDefinition.field, appendAction.blockType);
+          }}
+        >
+          + {appendAction.label}
+        </button>
       )}
     </div>
   );

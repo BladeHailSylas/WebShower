@@ -22,6 +22,7 @@ export default function BlockCanvas({ blocks, setBlocks }: BlockCanvasProps) {
     clearSelection,
     updateSelectedBlock,
     deleteSelectedBlock,
+    appendBlockToChildField,
   } = useSelectedBlockEditor(blocks, setBlocks);
 
   return (
@@ -32,7 +33,12 @@ export default function BlockCanvas({ blocks, setBlocks }: BlockCanvasProps) {
 
       <CanvasRootDropZone onClearSelection={clearSelection}>
         <div className="relative z-10 flex flex-col items-start gap-2">
-          <CanvasBlockList blocks={blocks} activeStyleId={selectedBlockId} onStyleClick={selectBlock} />
+          <CanvasBlockList
+            blocks={blocks}
+            activeStyleId={selectedBlockId}
+            onStyleClick={selectBlock}
+            onAppendChild={appendBlockToChildField}
+          />
         </div>
 
         {selectedBlockId && <EditorConnectorLine lineStart={lineStart} popupPos={popupPos} />}

@@ -10,6 +10,11 @@ export type ChildFieldVariant =
   | "toggle-default"
   | "toggle-conditional";
 
+export interface ChildFieldAppendAction {
+  label: string;
+  blockType: BlockType;
+}
+
 export interface ChildFieldDefinition {
   field: BlockChildField;
   label: string;
@@ -17,5 +22,6 @@ export interface ChildFieldDefinition {
   variant: ChildFieldVariant;
   sortable: "vertical" | "grid";
   acceptedBlockTypes?: BlockType[];
+  appendAction?: ChildFieldAppendAction;
   getItems?: (block: HtmlBlock) => HtmlBlock[] | undefined;
 }

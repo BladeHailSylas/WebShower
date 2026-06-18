@@ -11,7 +11,7 @@ export function useSelectedBlockEditor(
   const canvasRef = useRef<HTMLDivElement>(null);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [lineStart, setLineStart] = useState({ x: 0, y: 0 });
-  const { updateBlock, deleteBlock } = useBlockMutations(setBlocks);
+  const { updateBlock, deleteBlock, appendBlockToChildField } = useBlockMutations(setBlocks);
 
   const selectedBlock = selectedBlockId ? findBlockById(blocks, selectedBlockId) : undefined;
   const popupPos = { x: lineStart.x + 180, y: Math.max(20, lineStart.y - 60) };
@@ -58,5 +58,6 @@ export function useSelectedBlockEditor(
     clearSelection,
     updateSelectedBlock,
     deleteSelectedBlock,
+    appendBlockToChildField,
   };
 }

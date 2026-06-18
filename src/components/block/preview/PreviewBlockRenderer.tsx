@@ -38,7 +38,7 @@ function renderPreviewBlock(block: HtmlBlock): ReactNode {
     case "LIST_ITEM":
       return (
         <li key={block.id} className={classes}>
-          {block.content}
+          {block.children?.map((child) => renderPreviewBlock(child))}
         </li>
       );
     case "GRID_ZONE":

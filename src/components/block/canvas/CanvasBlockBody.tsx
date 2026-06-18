@@ -1,6 +1,7 @@
 import type { MouseEvent } from "react";
-import type { HtmlBlock } from "../../../types/types";
+import type { BlockType, HtmlBlock } from "../../../types/types";
 import { getBlockDefinition } from "../../../features/block-studio/blocks/definitions";
+import type { BlockChildField } from "../../../features/block-studio/blocks/types/childField.types";
 import CanvasBlockSlot from "./CanvasBlockSlot";
 import textLimiter from "../../../utils/textLimiter";
 
@@ -8,6 +9,7 @@ interface CanvasBlockBodyProps {
   block: HtmlBlock;
   activeStyleId: string | null;
   onStyleClick: (event: MouseEvent, id: string) => void;
+  onAppendChild: (parentId: string, field: BlockChildField, blockType: BlockType) => void;
 }
 
 function getBlockLabel(block: HtmlBlock): string | null {
@@ -16,7 +18,7 @@ function getBlockLabel(block: HtmlBlock): string | null {
   if (block.type === "H1") return `제목: ${block.content || "(내용 없음)"}`;
   if (block.type === "P") return `문단: ${block.content || "(내용 없음)"}`;
   if (block.type === "LIST") return "글머리 기호 목록";
-  if (block.type === "LIST_ITEM") return `항목: ${block.content || "(내용 없음)"}`;
+  if (block.type === "LIST_ITEM") return `목록 항목 (${block.children?.length ?? 0}개 블록)`;
   if (block.type === "IMAGE") return "이미지";
   if (block.type === "HR") return "구분선";
   if (block.type === "A") return `링크: ${block.content || "(글 없음)"} (${block.link || "링크 없음"})`;
@@ -26,7 +28,12 @@ function getBlockLabel(block: HtmlBlock): string | null {
   return definition.label;
 }
 
-export default function CanvasBlockBody({ block, activeStyleId, onStyleClick }: CanvasBlockBodyProps) {
+export default function CanvasBlockBody({
+  block,
+  activeStyleId,
+  onStyleClick,
+  onAppendChild,
+}: CanvasBlockBodyProps) {
   const definition = getBlockDefinition(block.type);
   const isGrid = block.type === "GRID_ZONE";
   const isContainer = block.type === "CONTAINER" || block.type === "CARD";
@@ -58,6 +65,7 @@ export default function CanvasBlockBody({ block, activeStyleId, onStyleClick }: 
             fieldDefinition={fieldDefinition}
             activeStyleId={activeStyleId}
             onStyleClick={onStyleClick}
+            onAppendChild={onAppendChild}
           />
         ))}
       </div>
@@ -81,6 +89,7 @@ export default function CanvasBlockBody({ block, activeStyleId, onStyleClick }: 
           fieldDefinition={fieldDefinition}
           activeStyleId={activeStyleId}
           onStyleClick={onStyleClick}
+          onAppendChild={onAppendChild}
         />
       ))}
     </div>
