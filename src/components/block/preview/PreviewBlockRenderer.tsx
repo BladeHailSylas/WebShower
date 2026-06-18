@@ -23,6 +23,7 @@ function renderPreviewBlock(block: HtmlBlock): ReactNode {
 
   switch (block.type) {
     case "CONTAINER":
+    case "CARD":
       return (
         <div key={block.id} className={classes}>
           {block.children?.map((child) => renderPreviewBlock(child))}
@@ -46,6 +47,8 @@ function renderPreviewBlock(block: HtmlBlock): ReactNode {
           {block.content}
         </p>
       );
+    case "HR":
+      return <hr key={block.id} className={classes} />;
     case "IMAGE":
       return <img key={block.id} src={block.src} alt="미리보기" className={classes} />;
     case "A":

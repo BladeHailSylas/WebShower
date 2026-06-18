@@ -4,6 +4,8 @@ export function transformGuiToTailwind(styles?: StyleProps, blockType?: BlockTyp
   if (!styles) return "";
   const classes: string[] = [];
 
+  if (styles.className) classes.push(styles.className);
+
   if (styles.textColor === "gray") classes.push("text-slate-500");
   else if (styles.textColor === "red") classes.push("text-red-600");
   else if (styles.textColor === "blue") classes.push("text-blue-600");

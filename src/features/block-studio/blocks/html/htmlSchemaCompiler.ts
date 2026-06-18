@@ -29,6 +29,10 @@ export function compileHtmlSchema(
     return `<a href="${escapeAttribute(block[schema.hrefField ?? "link"] || "#")}" target="_blank" rel="noopener noreferrer" class="${classes}">${escapeHtml(block[schema.contentField ?? "content"])}</a>`;
   }
 
+  if (schema.selfClosing) {
+    return `<${schema.tag} class="${classes}"${styleAttribute} />`;
+  }
+
   const children = schema.childField ? block[schema.childField]?.map(compileBlock).join("") ?? "" : "";
   const content = schema.contentField ? escapeHtml(block[schema.contentField]) : children;
 

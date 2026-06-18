@@ -16,6 +16,7 @@ function getBlockLabel(block: HtmlBlock): string | null {
   if (block.type === "H1") return `제목: ${block.content || "(내용 없음)"}`;
   if (block.type === "P") return `문단: ${block.content || "(내용 없음)"}`;
   if (block.type === "IMAGE") return "이미지";
+  if (block.type === "HR") return "구분선";
   if (block.type === "A") return `링크: ${block.content || "(글 없음)"} (${block.link || "링크 없음"})`;
   if (block.type === "GRID_ZONE") return `${block.styles?.gridCols ?? 2}칸 바둑판 구역`;
   if (block.type === "SPACER") return null;
@@ -26,7 +27,18 @@ function getBlockLabel(block: HtmlBlock): string | null {
 export default function CanvasBlockBody({ block, activeStyleId, onStyleClick }: CanvasBlockBodyProps) {
   const definition = getBlockDefinition(block.type);
   const isGrid = block.type === "GRID_ZONE";
-  const isContainer = block.type === "CONTAINER";
+  const isContainer = block.type === "CONTAINER" || block.type === "CARD";
+
+  if (block.type === "HR") {
+    return (
+      <div className="flex flex-col border-2 border-slate-700 bg-slate-800 shadow-sm min-w-50">
+        <div className="p-3 font-bold text-slate-200 text-sm flex flex-col gap-2">
+          <span>{getBlockLabel(block)}</span>
+          <div className="border-t border-slate-500" />
+        </div>
+      </div>
+    );
+  }
 
   if (isGrid) {
     return (

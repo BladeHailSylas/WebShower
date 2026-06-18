@@ -1,8 +1,10 @@
 import type { BlockType } from "../../../../types/types";
 import type { BlockDefinition } from "../types/blockDefinition.types";
+import { cardDefinition } from "./card.definition";
 import { containerDefinition } from "./container.definition";
 import { gridZoneDefinition } from "./gridZone.definition";
 import { headingDefinition } from "./heading.definition";
+import { hrDefinition } from "./hr.definition";
 import { imageDefinition } from "./image.definition";
 import { linkDefinition } from "./link.definition";
 import { paragraphDefinition } from "./paragraph.definition";
@@ -12,10 +14,12 @@ import { toggleZoneDefinition } from "./toggleZone.definition";
 
 export const blockDefinitions = {
   CONTAINER: containerDefinition,
+  CARD: cardDefinition,
   GRID_ZONE: gridZoneDefinition,
   H1: headingDefinition,
   P: paragraphDefinition,
   IMAGE: imageDefinition,
+  HR: hrDefinition,
   TOGGLE_ZONE: toggleZoneDefinition,
   PASSWORD_ZONE: passwordZoneDefinition,
   A: linkDefinition,

@@ -1,363 +1,387 @@
-현재 목표는 Block Studio에서 **StylePanel을 통한 content editing 기능을 복구**하는 것입니다.
+현재 목표는 기존 `LIST Block Design Proposal`을 참고하되, 수정된 설계 기준에 따라 **LIST v1 구현 계획서**를 작성하는 것입니다.
 
 중요:
 
-* 이번 작업에서는 inline input을 구현하지 마세요.
-* CanvasBlockBody 안에 input을 넣지 마세요.
-* DragHandle / EditHandle / Canvas UI 스타일은 건드리지 마세요.
-* GRID_ZONE 안정화, gridGap, GRID_DROPPER는 이번 범위가 아닙니다.
-* Code View 전용 HTML generator를 만들지 마세요.
+* 아직 코드를 수정하지 마세요.
+* 아직 LIST를 구현하지 마세요.
+* 이번 요청은 구현 계획서 작성입니다.
+* 기존 `list-block-design-proposal.md`를 참고하되, 아래 수정된 설계 기준을 우선 적용하세요.
 * 관련 없는 mini-project, route, layout, shared app 구조는 건드리지 마세요.
-* Block Studio 관련 파일만 수정하세요.
+* Block Studio 관련 파일만 조사하세요.
 * AGENTS.md의 최신 원칙을 따르세요.
 
 ## 배경
 
-이 프로젝트는 React + TypeScript + Tailwind CSS + DaisyUI 기반의 교육용 웹 빌더입니다.
+현재 Block Studio에는 다음 요소가 있습니다.
 
-Block Studio의 목표는:
+### 구조 요소
 
-* 학생이 블록으로 웹 페이지를 만들고,
-* 블록의 내용과 스타일을 수정하며,
-* Preview / Code View / Export를 통해 실제 HTML/CSS와의 연결을 이해하는 것입니다.
+* 일반 구역 만들기: `CONTAINER` / `div`
+* 바둑판 구역 만들기: `GRID_ZONE` / grid-div
+* 카드 구역 만들기: `CARD` / card-like div
 
-현재 문제:
+### 일반 요소
 
-* 어느 시점부터 요소의 내용을 수정하는 기능이 빠진 것으로 보입니다.
-* StylePanel 도입 전에는 블록 선택 후 패널에서 content를 수정할 수 있었습니다.
-* 최근 진단에 따르면 content update/mutation 경로는 대부분 살아 있고, 문제는 각 block definition의 `editableFields`에서 content 관련 field가 빠진 것에 가까워 보입니다.
-* 따라서 먼저 StylePanel에서 content-like field를 다시 노출하여, `HtmlBlock` data update → Preview → Code View → Export 흐름이 정상인지 확인하고 싶습니다.
+* 제목 넣기: `HEADING` / h1
+* 본문 넣기: `PARAGRAPH` / p
+* 이미지 넣기: `IMAGE`
+* 구분선 넣기: `HR`
 
-## 이번 작업의 목적
+### 기능 요소
 
-이번 작업은 inline input 전 단계입니다.
+* 비밀번호 구역 만들기: `PASSWORD_ZONE`
+* 여닫는 구역 만들기: `TOGGLE_ZONE`
+* 링크 이동 버튼 만들기: `LINK` / a
 
-목표:
+최근 작업:
 
-1. StylePanel에서 content-bearing block의 주요 content/attribute field를 수정할 수 있게 복구합니다.
-2. 수정값이 실제 `HtmlBlock` state에 저장되게 합니다.
-3. Preview에 반영되게 합니다.
-4. Code View에 반영되게 합니다.
-5. Export HTML에도 반영되게 합니다.
-6. inline input 구현 전, content update path가 정상임을 검증합니다.
+* StylePanel content editing이 복구되었습니다.
+* HR와 CARD가 구현되었습니다.
+* Code View는 기존 compiler/export 경로를 재사용합니다.
+* GRID_ZONE은 잘 작동하므로 이번 범위가 아닙니다.
+* inline input은 아직 구현하지 않습니다.
 
-## 우선 복구할 범위
+## 기존 LIST 보고서 요약
 
-먼저 다음 범위만 복구해 주세요.
+기존 보고서는 LIST 구현 방향으로 다음을 추천했습니다.
 
-### 1. Heading 계열
+* `LIST` + internal `LIST_ITEM`
+* `LIST_ITEM`은 palette에 노출하지 않음
+* `LIST` 내부에서만 item을 추가하는 방식 선호
+* `items: string[]` 같은 별도 배열 모델은 피함
+* Code View 전용 generator를 만들지 않음
+* 기존 compiler/export 경로 사용
+* `ul/ol`은 `listKind` 같은 semantic field로 전환할 수 있다고 제안
 
-* visible text field
-* 예상 path: `content`
-* control: `text`
-* label 예: `제목 내용`
+## 수정된 설계 기준
 
-### 2. Paragraph 계열
+아래 기준을 기존 보고서보다 우선 적용하세요.
 
-* visible text field
-* 예상 path: `content`
-* control: `text`
-* label 예: `본문 내용`
+### 1. LIST v1은 unordered list만 지원합니다
 
-### 3. Link / Anchor 계열
+v1에서는 `ul`만 지원합니다.
 
-* visible text field
-* 예상 path: `content`
-* control: `text`
-* label 예: `링크 글자`
-* URL field
-* 예상 path: `link`
-* control: `url`
-* label 예: `링크 주소`
+즉:
 
-### 4. Image 계열
+```text
+LIST
+→ always <ul>
 
-* image source field
-* 예상 path: `src`
-* control: `url`
-* label 예: `이미지 주소`
+LIST_ITEM
+→ always <li>
+```
 
-### 5. Password Zone
+이번 v1 계획에서 `ol`은 구현하지 않습니다.
 
-* correct answer field
-* 예상 path: `correctAnswer`
-* control: `text`
-* label 예: `정답`
+### 2. listKind 또는 ordered/unordered 전환 field를 넣지 않습니다
 
-## 이번 범위에서 제외할 것
+v1에서는 다음을 추가하지 마세요.
 
-다음은 이번 작업에서 제외해 주세요.
+* `listKind`
+* `ordered`
+* `isOrdered`
+* `styles.listType`
+* `ul/ol` 전환 select
+* ordered list start value
+* marker style option
 
-* H1/P inline input
-* Link inline input
-* Image alt 추가
-* textarea control 추가
-* button block 추가
-* toggle zone 신규 field 추가
-* GRID_ZONE 관련 변경
-* gridGap 추가
-* GRID_DROPPER
+이유:
+
+* `listKind`에 따라 `ul/ol`을 바꾸려면 preview/compiler/renderer에 semantic 분기가 생길 수 있습니다.
+* 이번 단계에서는 definition 밖의 예외 처리를 늘리지 않는 것이 더 중요합니다.
+* v1의 목표는 LIST/LIST_ITEM의 block structure와 HTML mapping을 검증하는 것입니다.
+
+### 3. ol이 필요해지면 후속 별도 blockDefinition으로 검토합니다
+
+나중에 ordered list가 정말 필요해지면 다음 방식이 더 적절한 후보입니다.
+
+```text
+UNORDERED_LIST
+→ htmlSchema.tag = "ul"
+
+ORDERED_LIST
+→ htmlSchema.tag = "ol"
+
+LIST_ITEM
+→ htmlSchema.tag = "li"
+```
+
+즉, `ul/ol` 차이는 compiler나 renderer의 runtime semantic switch가 아니라, blockDefinition의 declarative tag 차이로 표현하는 방향을 우선 검토합니다.
+
+다만 이건 후속 후보일 뿐, 이번 LIST v1에는 포함하지 않습니다.
+
+### 4. v1의 핵심은 tag/structure 우선입니다
+
+v1은 스타일 확장이 아니라 HTML 구조 학습을 우선합니다.
+
+핵심 목표:
+
+* `LIST`가 `<ul>`이 된다.
+* `LIST_ITEM`이 `<li>`가 된다.
+* Code View에서 `ul > li` 구조가 보인다.
+* Export HTML도 같은 구조를 쓴다.
+* DnD와 tree update가 안정적으로 동작한다.
+
+이번 v1에서 과도한 스타일 옵션은 넣지 마세요.
+
+허용:
+
+* 기본적으로 보기 무너지지 않는 최소 class preset
+* 기존 common style field 재사용
+
+비허용:
+
+* list marker style option
+* ordered/unordered option
+* complex spacing model
+* nested list behavior
+* list item rich editor
+* inline input
+
+## 이번 계획서에서 반드시 답해야 할 질문
+
+### 1. LIST v1의 최소 block model
+
+다음을 계획해 주세요.
+
+* public block: `LIST`
+* internal block: `LIST_ITEM`
+* LIST는 `children` 단일 배열을 가지는가?
+* LIST의 childFields는 `LIST_ITEM`만 허용할 수 있는가?
+* LIST_ITEM은 `content`를 가지는가?
+* LIST_ITEM은 children을 가지지 않는 단순 text item으로 시작하는가?
+* LIST_ITEM이 internal block이면 palette에는 노출하지 않는가?
+* LIST 생성 시 기본 LIST_ITEM을 몇 개 넣을 것인가?
+
+  * 예: 2개 또는 3개
+* item 추가/삭제 UX는 v1에서 구현할 것인가, 아니면 기본 items만 제공하고 편집은 StylePanel로 할 것인가?
+
+### 2. LIST_ITEM 추가/삭제 UX의 v1 범위
+
+v1에서 item 추가/삭제를 어느 수준까지 할지 제안해 주세요.
+
+가능 후보:
+
+* A. v1에서는 LIST 생성 시 기본 LIST_ITEM 3개만 제공하고, item 추가/삭제는 후속
+* B. StylePanel 또는 canvas에 간단한 “항목 추가” 버튼 제공
+* C. LIST 내부 canvas에만 item 추가 버튼 제공
+* D. LIST_ITEM을 palette에는 노출하지 않되 내부 action으로만 추가
+* E. item 삭제는 기존 block delete로 처리
+
+각 후보의 구현 난이도, DnD 영향, UX, data-driven 구조와의 관계를 비교하고 추천하세요.
+
+### 3. StylePanel editing
+
+다음을 계획해 주세요.
+
+* LIST_ITEM content는 StylePanel에서 수정하는가?
+* LIST 자체는 어떤 editableFields를 가지는가?
+* LIST_ITEM은 어떤 editableFields를 가지는가?
+* inline input은 이번에 제외하는가?
+* textarea는 제외하는가?
+* content edit이 Preview / Code View / Export에 반영되는 경로는 기존 구조를 따르는가?
+
+### 4. Preview / Code View / Export
+
+다음을 계획해 주세요.
+
+* LIST는 어떻게 `<ul>`로 preview/export되는가?
+* LIST_ITEM은 어떻게 `<li>`로 preview/export되는가?
+* htmlSchema만으로 처리 가능한가?
+* htmlSchema가 `ul` / `li` tag를 지원하지 않는다면 어떤 최소 타입 확장이 필요한가?
+* compiler에 `if block.type === "LIST"` 같은 special case를 추가하지 않고 처리 가능한가?
+* Code View는 기존 compiler 결과만 보여주는가?
+* HR 구현 때 추가된 selfClosing 처리와 충돌하지 않는가?
+
+### 5. Canvas rendering / DnD
+
+다음을 계획해 주세요.
+
+* CanvasBlockBody에 LIST/LIST_ITEM 분기가 필요한가?
+* 필요하다면 최소 분기인가?
+* LIST의 child slot은 기존 CanvasBlockSlot을 쓸 수 있는가?
+* LIST_ITEM은 일반 block처럼 sortable item으로 동작하는가?
+* LIST_ITEM이 LIST 밖으로 나가거나, LIST가 아닌 부모에 drop되는 것을 막을 수 있는가?
+* 현재 dropPolicy/childFields 구조만으로 가능한가?
+* 불가능하다면 어떤 최소 확장이 필요한가?
+* LIST_ITEM이 root canvas나 CARD/CONTAINER에 drop되지 않게 하려면 어디서 제한해야 하는가?
+
+### 6. 기존 구조에 미치는 영향
+
+다음을 확인하고 계획에 포함하세요.
+
+* BlockType 추가 범위
+* HtmlBlock model 변경 필요 여부
+* editableField types 변경 필요 여부
+* childFields/dropPolicy 변경 필요 여부
+* htmlSchema tag union 확장 필요 여부
+* PreviewBlockRenderer 변경 필요 여부
+* CanvasBlockBody 변경 필요 여부
+* blockDropEngine 변경 필요 여부
+* Code View 변경 필요 여부
+
+### 7. 추천 구현 순서
+
+작고 검증 가능한 phase로 계획하세요.
+
+예상 후보:
+
+```text
+Phase 1:
+LIST/LIST_ITEM definition + types + htmlSchema tag 지원
+
+Phase 2:
+Preview/Code View/Export 연결
+
+Phase 3:
+Canvas/DnD/drop restriction 연결
+
+Phase 4:
+StylePanel에서 LIST_ITEM content 수정
+
+Phase 5:
+선택한 item 추가/삭제 UX 구현, 또는 후속으로 보류
+```
+
+실제 repo 구조를 보고 더 적절한 순서를 제안해도 됩니다.
+
+## 명시적 제외 범위
+
+이번 v1 계획에서 다음은 제외하세요.
+
+* ordered list / `ol`
+* `listKind`
+* marker style option
+* ordered start value
+* nested list
+* arbitrary `items: string[]`
+* textarea 기반 multi-line list
+* inline input
+* LIST_ITEM palette 노출
 * slots migration
-* HtmlBlock 모델 대수정
-* Code View generator 재작성
-* preview renderer 대규모 리팩터링
-* CanvasBlockBody UI 구조 변경
-* DragHandle / EditHandle 이벤트 변경
+* Code View 전용 generator
+* compiler special-case explosion
+* GRID_ZONE 관련 변경
+* gridGap
+* GRID_DROPPER
 
-특히 IMAGE `alt`는 현재 `HtmlBlock` 모델에 없다면 이번 작업에서 추가하지 마세요. 별도 모델 변경이 필요하므로 후속 작업으로 남깁니다.
+## 조사 대상 파일
 
-## 구현 방향
+실제 repo 기준으로 확인하고, 정확한 경로를 보고하세요.
 
-가능하면 기존 `editableFields` 기반 구조를 사용해 주세요.
+우선 확인할 것으로 예상되는 파일:
 
-우선 확인할 것:
-
-* `EditableFieldPath`가 `content`, `src`, `link`, `correctAnswer`, `styles.*`를 이미 허용하는지
-* `EditableFieldControl`이 `text`와 `url`을 이미 지원하는지
-* `BlockStylePanel`이 selected block definition의 `editableFields`를 렌더링하는지
-* root-level path update가 가능한지
-* nested block도 update 가능한지
-
-예상되는 최소 변경:
-
-* content-related editable field preset 추가 또는 기존 preset 복구
-* heading/paragraph/link/image/password zone definition의 `editableFields`에 해당 field 추가
-* 필요하다면 label/help text 정리
-* 필요하다면 type import/export 정리
-
-가능하면 다음처럼 reusable field preset을 정의해 주세요.
-
-예시 형태:
-
-```ts id="d92sxt"
-export const contentField = {
-  path: "content",
-  label: "내용",
-  control: "text",
-};
-
-export const linkHrefField = {
-  path: "link",
-  label: "링크 주소",
-  control: "url",
-};
-
-export const imageSrcField = {
-  path: "src",
-  label: "이미지 주소",
-  control: "url",
-};
-
-export const correctAnswerField = {
-  path: "correctAnswer",
-  label: "정답",
-  control: "text",
-};
-```
-
-실제 타입명과 control 타입은 현재 repo 기준에 맞춰 주세요.
-
-## 중요한 제약
-
-### 1. StylePanel 복구만 하세요
-
-이번 작업의 목적은 먼저 다음 경로를 검증하는 것입니다.
-
-```text id="bsy2tm"
-StylePanel input
-→ HtmlBlock update
-→ Preview update
-→ Code View update
-→ Export HTML update
-```
-
-inline input은 이 경로가 정상임을 확인한 뒤 후속 작업으로 진행합니다.
-
-### 2. Code View는 건드리지 마세요
-
-Code View는 기존 compiler/export 결과를 보여주는 viewer입니다.
-
-수정된 content가 Code View에 반영되어야 하지만, 이를 위해 Code View 전용 변환을 만들면 안 됩니다.
-
-정상 흐름:
-
-```text id="j4v5hn"
-StylePanel edits HtmlBlock
-→ compileBlocksForCodeView reads updated HtmlBlock
-→ Code View updates
-```
-
-### 3. Compiler/export를 새로 만들지 마세요
-
-기존 compiler가 이미 `content`, `src`, `link`, `correctAnswer` 등을 읽고 있다면 그대로 사용하세요.
-
-필요한 경우만 매우 작은 수정으로 current data path와 맞추세요.
-
-### 4. Definition-driven 구조를 유지하세요
-
-block type별로 StylePanel 내부에서 하드코딩하지 마세요.
-
-좋은 방향:
-
-```text id="gsx1y0"
-block definition editableFields에 field 추가
-→ BlockStylePanel이 generic하게 렌더링
-```
-
-나쁜 방향:
-
-```text id="k4oqos"
-BlockStylePanel 안에서 if block.type === "HEADING" ...
-```
-
-### 5. 현재 잘 작동하는 기능을 건드리지 마세요
-
-특히 다음은 회귀가 없어야 합니다.
-
-* palette에서 canvas로 block 추가
-* 기존 block drag
-* nested block drag
-* StylePanel style editing
-* Preview
-* Code View
-* Export
-* GRID_ZONE
-
-## 조사 및 구현 단계
-
-### Step 1. 현재 구조 확인
-
-먼저 관련 파일을 확인하고, 실제 field/path/control 이름을 repo 기준으로 파악해 주세요.
-
-예상 파일:
-
+* `AGENTS.md`
 * `src/types/types.ts`
-* `src/features/block-studio/blocks/definitions/heading.definition.ts`
-* `src/features/block-studio/blocks/definitions/paragraph.definition.ts`
-* `src/features/block-studio/blocks/definitions/link.definition.ts`
-* `src/features/block-studio/blocks/definitions/image.definition.ts`
-* `src/features/block-studio/blocks/definitions/passwordZone.definition.ts`
-* `src/features/block-studio/blocks/definitions/editableFieldPresets.ts`
+* `src/features/block-studio/blocks/definitions/index.ts`
+* `src/features/block-studio/blocks/definitions/*.definition.ts`
+* `src/features/block-studio/blocks/types/blockDefinition.types.ts`
+* `src/features/block-studio/blocks/types/childField.types.ts`
+* `src/features/block-studio/blocks/types/htmlSchema.types.ts`
 * `src/features/block-studio/blocks/types/editableField.types.ts`
+* `src/features/block-studio/blocks/drop/*`
+* `src/features/block-studio/blocks/tree/*`
+* `src/components/block/BlockPalette.tsx`
+* `src/components/block/canvas/CanvasBlockBody.tsx`
+* `src/components/block/canvas/CanvasBlockSlot.tsx`
+* `src/components/block/canvas/CanvasBlockItem.tsx`
+* `src/components/block/preview/PreviewBlockRenderer.tsx`
 * `src/components/block/editor/BlockStylePanel.tsx`
 * `src/components/block/editor/EditableFieldControl.tsx`
-* `src/features/block-studio/hooks/useSelectedBlockEditor.ts`
 * `src/features/block-studio/hooks/useBlockMutations.ts`
-* `src/features/block-studio/blocks/tree/blockTreeOperations.ts`
-* `src/components/block/preview/PreviewBlockRenderer.tsx`
 * `src/features/block-studio/blocks/html/blockHtmlCompiler.ts`
 * `src/features/block-studio/blocks/html/htmlSchemaCompiler.ts`
-* `src/features/block-studio/blocks/html/interactiveExporters.ts`
 
 실제 파일 구조가 다르면 실제 경로를 따르세요.
 
-### Step 2. 최소 변경 구현
+## 출력 형식
 
-StylePanel에서 content-like fields가 다시 보이도록 block definitions를 수정하세요.
+다음 형식으로 계획서를 작성하세요.
 
-가능하면:
+# LIST v1 Implementation Plan
 
-* field preset을 재사용 가능하게 만들고,
-* block definitions에서 `commonStyleFields`와 함께 조합하세요.
+## 1. Executive Summary
 
-예:
+* v1 scope
+* unordered-only decision
+* expected complexity
+* biggest risk
 
-```ts id="m72xzw"
-editableFields: [
-  contentField,
-  ...commonStyleFields,
-]
-```
+## 2. Design Corrections from Previous Proposal
 
-또는 link:
+* `listKind` 제거
+* ordered list 제외
+* `ol`은 future separate blockDefinition 후보
+* v1은 `<ul>/<li>` structure 검증
 
-```ts id="085z9m"
-editableFields: [
-  linkTextField,
-  linkHrefField,
-  ...commonStyleFields,
-]
-```
+## 3. File Map
 
-실제 명칭은 repo에 맞춰 주세요.
+표 형식:
+| Area | File | Responsibility | Change Needed? | Notes |
 
-### Step 3. 검증
+## 4. Proposed Data Model
 
-가능한 명령을 실행하세요.
+* LIST
+* LIST_ITEM
+* default template shape
+* internal/public 여부
+* childFields
+* editableFields
+* dropPolicy
 
-우선:
+## 5. Preview / Code View / Export Plan
 
-* `npx.cmd tsc --noEmit`
+* htmlSchema 가능 여부
+* 필요한 tag union 확장
+* compiler special case 필요 여부
+* Code View 영향
 
-가능하면:
+## 6. Canvas / DnD Plan
 
-* `npm.cmd run build`
-* changed-file lint
+* canvas rendering
+* sortable behavior
+* LIST_ITEM parent restriction
+* add/delete/reorder behavior
+* 필요한 drop engine 변경
 
-full build/lint가 unrelated mini-project 오류로 실패하면, 관련/무관 오류를 구분해서 보고하세요.
+## 7. StylePanel Plan
 
-## 완료 보고서에 포함할 내용
+* LIST fields
+* LIST_ITEM fields
+* content editing path
+* inline input 제외 확인
 
-작업 완료 후 다음을 보고해 주세요.
+## 8. Item Add/Delete UX Options
 
-1. 변경한 파일 목록
-2. 추가/복구한 editable field 목록
-3. 각 block에서 새로 StylePanel에 표시되는 field
-4. StylePanel 수정값이 Preview / Code View / Export에 반영되는 경로
-5. 실행한 검증 명령과 결과
-6. unrelated build/lint 오류가 있다면 구분
-7. 수동 테스트 체크리스트
+표 형식:
+| Option | Description | Scope | Pros | Cons | Recommendation |
 
-## 수동 테스트 체크리스트
+## 9. Implementation Phases
 
-다음을 확인해 주세요.
+작고 검증 가능한 단계별 계획
 
-### Heading
+## 10. Risks
 
-* heading block 선택
-* StylePanel에서 제목 내용 수정
-* Canvas label 또는 표시가 갱신되는지 확인
-* Preview 갱신
-* Code View 갱신
-* Export HTML 갱신
+* DnD restriction
+* internal block handling
+* compiler/schema limits
+* preview/canvas branch
+* Code View parity
 
-### Paragraph
+## 11. Regression Checklist
 
-* paragraph block 선택
-* StylePanel에서 본문 내용 수정
-* Preview 갱신
-* Code View 갱신
-* Export HTML 갱신
+* LIST add
+* LIST_ITEM default 생성
+* LIST_ITEM content edit
+* reorder
+* invalid parent drop prevention
+* Preview / Code View / Export
+* existing HR/CARD/H1/P/IMAGE/A/GRID_ZONE behavior
 
-### Link
+제약:
 
-* link block 선택
-* StylePanel에서 링크 글자 수정
-* StylePanel에서 링크 주소 수정
-* Preview 갱신
-* Code View의 `<a href="...">...</a>` 갱신
-* Export HTML 갱신
-
-### Image
-
-* image block 선택
-* StylePanel에서 이미지 주소 수정
-* Preview 이미지 변경
-* Code View의 `<img src="...">` 갱신
-* Export HTML 갱신
-
-### Password Zone
-
-* password zone 선택
-* StylePanel에서 정답 수정
-* Preview/export 동작에 반영되는지 확인
-* Code View/export HTML에 관련 값이 반영되는지 확인
-
-### Regression
-
-* 기존 style editing 유지
-* palette에서 block 추가 가능
-* 기존 block drag 가능
-* nested block drag 가능
-* GRID_ZONE 기존 동작 유지
-* Code View가 별도 generator 없이 compiler output을 표시
+* 코드를 수정하지 마세요.
+* LIST를 구현하지 마세요.
+* 계획서만 작성하세요.
+* 추측과 확인된 사실을 구분하세요.
+* 기존 보고서를 참고하되, 수정된 설계 기준을 우선 적용하세요.
