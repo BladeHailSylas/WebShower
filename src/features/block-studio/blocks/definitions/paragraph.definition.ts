@@ -1,5 +1,5 @@
 import type { BlockDefinition } from "../types/blockDefinition.types";
-import { commonStyleFields } from "./editableFieldPresets";
+import { commonStyleFields, paragraphContentField } from "./editableFieldPresets";
 
 export const paragraphDefinition = {
   type: "P",
@@ -14,7 +14,7 @@ export const paragraphDefinition = {
   },
   palette: { label: "문단 넣기 (P)", icon: "P", order: 20 },
   childFields: [],
-  editableFields: commonStyleFields,
+  editableFields: [paragraphContentField, ...commonStyleFields],
   dropPolicy: { allowRoot: true },
   dragPreview: { label: "문단", contentField: "content" },
   htmlSchema: { tag: "p", contentField: "content" },

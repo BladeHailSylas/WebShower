@@ -1,5 +1,41 @@
 import type { EditableFieldDefinition } from "../types/editableField.types";
 
+export const headingContentField: EditableFieldDefinition = {
+  path: "content",
+  label: "제목 내용",
+  control: "text",
+};
+
+export const paragraphContentField: EditableFieldDefinition = {
+  path: "content",
+  label: "본문 내용",
+  control: "text",
+};
+
+export const linkTextField: EditableFieldDefinition = {
+  path: "content",
+  label: "링크 글자",
+  control: "text",
+};
+
+export const linkHrefField: EditableFieldDefinition = {
+  path: "link",
+  label: "링크 주소",
+  control: "url",
+};
+
+export const imageSrcField: EditableFieldDefinition = {
+  path: "src",
+  label: "이미지 주소",
+  control: "url",
+};
+
+export const correctAnswerField: EditableFieldDefinition = {
+  path: "correctAnswer",
+  label: "정답",
+  control: "text",
+};
+
 export const commonStyleFields: EditableFieldDefinition[] = [
   {
     path: "styles.textAlign",
