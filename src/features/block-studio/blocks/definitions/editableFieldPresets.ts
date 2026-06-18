@@ -12,6 +12,12 @@ export const paragraphContentField: EditableFieldDefinition = {
   control: "text",
 };
 
+export const listItemContentField: EditableFieldDefinition = {
+  path: "content",
+  label: "목록 항목 내용",
+  control: "text",
+};
+
 export const linkTextField: EditableFieldDefinition = {
   path: "content",
   label: "링크 글자",

@@ -1,4 +1,4 @@
-import type { HtmlBlock } from "../../../../types/types";
+import type { BlockType, HtmlBlock } from "../../../../types/types";
 
 export type BlockChildField = "children" | "defaultChildren" | "conditionalChildren";
 
@@ -16,5 +16,6 @@ export interface ChildFieldDefinition {
   emptyLabel: string;
   variant: ChildFieldVariant;
   sortable: "vertical" | "grid";
+  acceptedBlockTypes?: BlockType[];
   getItems?: (block: HtmlBlock) => HtmlBlock[] | undefined;
 }

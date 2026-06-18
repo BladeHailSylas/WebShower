@@ -15,6 +15,8 @@ function getBlockLabel(block: HtmlBlock): string | null {
 
   if (block.type === "H1") return `제목: ${block.content || "(내용 없음)"}`;
   if (block.type === "P") return `문단: ${block.content || "(내용 없음)"}`;
+  if (block.type === "LIST") return "글머리 기호 목록";
+  if (block.type === "LIST_ITEM") return `항목: ${block.content || "(내용 없음)"}`;
   if (block.type === "IMAGE") return "이미지";
   if (block.type === "HR") return "구분선";
   if (block.type === "A") return `링크: ${block.content || "(글 없음)"} (${block.link || "링크 없음"})`;

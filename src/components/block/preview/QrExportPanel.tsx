@@ -19,7 +19,7 @@ export default function QrExportPanel({ blocks }: QrExportPanelProps) {
         body: compilePageHtml(blocks),
       });
       const data = (await response.json()) as { key: string };
-      setQrUrl(`${window.location.origin}/?key=${data.key}`);
+      setQrUrl(`${window.location.origin}/code?key=${data.key}`);
       setIsModalOpen(true);
     } catch (error) {
       console.error("로컬 서버 저장 중 오류:", error);

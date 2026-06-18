@@ -7,6 +7,8 @@ import { headingDefinition } from "./heading.definition";
 import { hrDefinition } from "./hr.definition";
 import { imageDefinition } from "./image.definition";
 import { linkDefinition } from "./link.definition";
+import { listDefinition } from "./list.definition";
+import { listItemDefinition } from "./listItem.definition";
 import { paragraphDefinition } from "./paragraph.definition";
 import { passwordZoneDefinition } from "./passwordZone.definition";
 import { spacerDefinition } from "./spacer.definition";
@@ -15,6 +17,8 @@ import { toggleZoneDefinition } from "./toggleZone.definition";
 export const blockDefinitions = {
   CONTAINER: containerDefinition,
   CARD: cardDefinition,
+  LIST: listDefinition,
+  LIST_ITEM: listItemDefinition,
   GRID_ZONE: gridZoneDefinition,
   H1: headingDefinition,
   P: paragraphDefinition,

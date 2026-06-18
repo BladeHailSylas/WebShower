@@ -29,6 +29,18 @@ function renderPreviewBlock(block: HtmlBlock): ReactNode {
           {block.children?.map((child) => renderPreviewBlock(child))}
         </div>
       );
+    case "LIST":
+      return (
+        <ul key={block.id} className={classes}>
+          {block.children?.map((child) => renderPreviewBlock(child))}
+        </ul>
+      );
+    case "LIST_ITEM":
+      return (
+        <li key={block.id} className={classes}>
+          {block.content}
+        </li>
+      );
     case "GRID_ZONE":
       return (
         <div key={block.id} className={classes} style={getGridZoneStyle(block)}>

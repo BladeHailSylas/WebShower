@@ -1,9 +1,11 @@
+import type { BlockType } from "../../../../types/types";
 import type { BlockChildField } from "./childField.types";
 
 export interface DropPolicyDefinition {
   acceptsChildren?: boolean;
   childFields?: BlockChildField[];
   allowRoot?: boolean;
+  allowedParentTypes?: BlockType[];
   internalOnly?: boolean;
 }
 

@@ -2,12 +2,36 @@ import type { HtmlBlock } from "../../../../types/types";
 import type { BlockChildField } from "../types/childField.types";
 import { getExistingChildFields, setChildBlocks } from "./blockChildFields";
 
+export interface BlockLocation {
+  block: HtmlBlock;
+  parent?: HtmlBlock;
+  field?: BlockChildField;
+}
+
 export function findBlockById(nodes: HtmlBlock[], targetId: string): HtmlBlock | undefined {
   for (const node of nodes) {
     if (node.id === targetId) return node;
 
     for (const field of getExistingChildFields(node)) {
       const found = findBlockById(node[field] ?? [], targetId);
+      if (found) return found;
+    }
+  }
+
+  return undefined;
+}
+
+export function findBlockLocationById(
+  nodes: HtmlBlock[],
+  targetId: string,
+  parent?: HtmlBlock,
+  field?: BlockChildField,
+): BlockLocation | undefined {
+  for (const node of nodes) {
+    if (node.id === targetId) return { block: node, parent, field };
+
+    for (const childField of getExistingChildFields(node)) {
+      const found = findBlockLocationById(node[childField] ?? [], targetId, node, childField);
       if (found) return found;
     }
   }

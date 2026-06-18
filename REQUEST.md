@@ -1,269 +1,268 @@
-현재 목표는 기존 `LIST Block Design Proposal`을 참고하되, 수정된 설계 기준에 따라 **LIST v1 구현 계획서**를 작성하는 것입니다.
+현재 목표는 Block Studio의 LIST v1을 확장할 수 있는지 진단하고, 다음 구현 계획을 세우는 것입니다.
+
+이번 요청은 **보고서/계획서 작성**입니다.
 
 중요:
 
 * 아직 코드를 수정하지 마세요.
-* 아직 LIST를 구현하지 마세요.
-* 이번 요청은 구현 계획서 작성입니다.
-* 기존 `list-block-design-proposal.md`를 참고하되, 아래 수정된 설계 기준을 우선 적용하세요.
+* 아직 구현하지 마세요.
+* 이번 요청은 두 가지 가능성을 함께 검토하되, 실제 구현은 반드시 순차적으로 진행할 계획입니다.
 * 관련 없는 mini-project, route, layout, shared app 구조는 건드리지 마세요.
 * Block Studio 관련 파일만 조사하세요.
 * AGENTS.md의 최신 원칙을 따르세요.
 
 ## 배경
 
-현재 Block Studio에는 다음 요소가 있습니다.
+현재 Block Studio에는 `LIST`와 `LIST_ITEM`이 구현되어 있습니다.
 
-### 구조 요소
+현재 확인된 상태:
 
-* 일반 구역 만들기: `CONTAINER` / `div`
-* 바둑판 구역 만들기: `GRID_ZONE` / grid-div
-* 카드 구역 만들기: `CARD` / card-like div
+* `LIST`는 unordered list입니다.
+* `LIST`는 `<ul>`로 export/Code View에 반영됩니다.
+* `LIST_ITEM`은 `<li>`로 export/Code View에 반영됩니다.
+* `LIST_ITEM`은 현재 text-only item입니다.
+* `LIST_ITEM`은 palette에 노출되지 않는 internal block입니다.
+* 현재는 `LIST_ITEM`만 `LIST` 안에 들어갈 수 있습니다.
+* `LIST_ITEM`은 다른 block에 영향을 주지 않습니다.
+* `LIST_ITEM`의 상호작용 가능한 부모는 현재 `LIST`뿐입니다.
+* `LIST_ITEM`이 root, CARD, CONTAINER, GRID_ZONE, PASSWORD_ZONE, TOGGLE_ZONE 등에 들어가지 않는 것이 확인되었습니다.
+* Code View와 Export도 현재까지 이상 없이 동작합니다.
 
-### 일반 요소
-
-* 제목 넣기: `HEADING` / h1
-* 본문 넣기: `PARAGRAPH` / p
-* 이미지 넣기: `IMAGE`
-* 구분선 넣기: `HR`
-
-### 기능 요소
-
-* 비밀번호 구역 만들기: `PASSWORD_ZONE`
-* 여닫는 구역 만들기: `TOGGLE_ZONE`
-* 링크 이동 버튼 만들기: `LINK` / a
-
-최근 작업:
-
-* StylePanel content editing이 복구되었습니다.
-* HR와 CARD가 구현되었습니다.
-* Code View는 기존 compiler/export 경로를 재사용합니다.
-* GRID_ZONE은 잘 작동하므로 이번 범위가 아닙니다.
-* inline input은 아직 구현하지 않습니다.
-
-## 기존 LIST 보고서 요약
-
-기존 보고서는 LIST 구현 방향으로 다음을 추천했습니다.
-
-* `LIST` + internal `LIST_ITEM`
-* `LIST_ITEM`은 palette에 노출하지 않음
-* `LIST` 내부에서만 item을 추가하는 방식 선호
-* `items: string[]` 같은 별도 배열 모델은 피함
-* Code View 전용 generator를 만들지 않음
-* 기존 compiler/export 경로 사용
-* `ul/ol`은 `listKind` 같은 semantic field로 전환할 수 있다고 제안
-
-## 수정된 설계 기준
-
-아래 기준을 기존 보고서보다 우선 적용하세요.
-
-### 1. LIST v1은 unordered list만 지원합니다
-
-v1에서는 `ul`만 지원합니다.
-
-즉:
+현재 LIST v1의 핵심 구조:
 
 ```text
 LIST
-→ always <ul>
-
-LIST_ITEM
-→ always <li>
+└─ LIST_ITEM
 ```
 
-이번 v1 계획에서 `ol`은 구현하지 않습니다.
+현재 HTML 구조:
 
-### 2. listKind 또는 ordered/unordered 전환 field를 넣지 않습니다
+```html
+<ul>
+  <li>목록 항목</li>
+</ul>
+```
 
-v1에서는 다음을 추가하지 마세요.
+## 이번에 검토할 두 가지 확장
 
-* `listKind`
-* `ordered`
-* `isOrdered`
-* `styles.listType`
-* `ul/ol` 전환 select
-* ordered list start value
-* marker style option
+### 확장 1. LIST_ITEM을 container-like li로 만들 수 있는가?
 
-이유:
-
-* `listKind`에 따라 `ul/ol`을 바꾸려면 preview/compiler/renderer에 semantic 분기가 생길 수 있습니다.
-* 이번 단계에서는 definition 밖의 예외 처리를 늘리지 않는 것이 더 중요합니다.
-* v1의 목표는 LIST/LIST_ITEM의 block structure와 HTML mapping을 검증하는 것입니다.
-
-### 3. ol이 필요해지면 후속 별도 blockDefinition으로 검토합니다
-
-나중에 ordered list가 정말 필요해지면 다음 방식이 더 적절한 후보입니다.
+목표 구조:
 
 ```text
-UNORDERED_LIST
-→ htmlSchema.tag = "ul"
-
-ORDERED_LIST
-→ htmlSchema.tag = "ol"
-
-LIST_ITEM
-→ htmlSchema.tag = "li"
+LIST
+└─ LIST_ITEM
+   └─ children
+      ├─ PARAGRAPH
+      ├─ IMAGE
+      └─ LINK
 ```
 
-즉, `ul/ol` 차이는 compiler나 renderer의 runtime semantic switch가 아니라, blockDefinition의 declarative tag 차이로 표현하는 방향을 우선 검토합니다.
+목표 HTML:
 
-다만 이건 후속 후보일 뿐, 이번 LIST v1에는 포함하지 않습니다.
+```html
+<ul>
+  <li>
+    <p>...</p>
+    <img ...>
+    <a ...>...</a>
+  </li>
+</ul>
+```
 
-### 4. v1의 핵심은 tag/structure 우선입니다
+중요한 방향:
 
-v1은 스타일 확장이 아니라 HTML 구조 학습을 우선합니다.
+* `LIST`는 계속 `LIST_ITEM`만 받아야 합니다.
+* 일반 블록을 `LIST`에 직접 drop하게 만들지 마세요.
+* compiler가 “LIST의 자식을 자동으로 li로 감싸는” 예외를 만들면 안 됩니다.
+* `LIST_ITEM` 자체가 `<li>`에 대응하는 block이어야 합니다.
+* block tree와 HTML structure가 최대한 일치해야 합니다.
 
-핵심 목표:
+### 확장 2. LIST 내부에 “항목 추가” 버튼을 둘 수 있는가?
 
-* `LIST`가 `<ul>`이 된다.
-* `LIST_ITEM`이 `<li>`가 된다.
-* Code View에서 `ul > li` 구조가 보인다.
-* Export HTML도 같은 구조를 쓴다.
-* DnD와 tree update가 안정적으로 동작한다.
+목표:
 
-이번 v1에서 과도한 스타일 옵션은 넣지 마세요.
+* `LIST_ITEM`을 palette에 노출하지 않고도 새 item을 추가할 수 있게 합니다.
+* `LIST` canvas 영역 안에 “항목 추가” 같은 contextual action을 둘 수 있는지 검토합니다.
+* 버튼을 누르면 새 `LIST_ITEM`이 해당 `LIST.children`에 추가됩니다.
+* 가능하면 새로 추가된 `LIST_ITEM`을 선택하거나, 최소한 바로 StylePanel에서 편집 가능한 흐름을 제안해 주세요.
 
-허용:
+중요한 방향:
 
-* 기본적으로 보기 무너지지 않는 최소 class preset
-* 기존 common style field 재사용
+* `LIST_ITEM`은 여전히 internal block입니다.
+* `LIST_ITEM`을 구조 요소 palette에 등록하지 마세요.
+* `LIST_ITEM`을 root나 다른 container에 추가할 수 있게 만들지 마세요.
+* 자동 wrapping, 즉 “LIST 빈 공간에 일반 block을 drop하면 LIST_ITEM을 자동 생성하고 그 안에 넣는 방식”은 이번 범위에서 제외합니다.
+* inline input도 이번 범위에서 제외합니다.
 
-비허용:
+## 이번 요청의 핵심 질문
 
-* list marker style option
-* ordered/unordered option
-* complex spacing model
-* nested list behavior
-* list item rich editor
-* inline input
+다음 질문에 답해 주세요.
 
-## 이번 계획서에서 반드시 답해야 할 질문
+### 1. LIST_ITEM을 container-like로 바꾸는 것이 현재 구조와 맞는가?
 
-### 1. LIST v1의 최소 block model
+확인할 것:
 
-다음을 계획해 주세요.
+* 현재 `LIST_ITEM` template은 어떤 구조인가?
+* `LIST_ITEM`에 `children: []`을 추가해도 `HtmlBlock` 모델 변경 없이 가능한가?
+* `LIST_ITEM`에 `childFields`를 추가할 수 있는가?
+* `LIST_ITEM`이 어떤 block type들을 children으로 받을 수 있어야 하는가?
+* 처음에는 H1/P/IMAGE/A/HR/CARD/CONTAINER 같은 일반 block을 모두 허용해도 되는가?
+* PASSWORD_ZONE, TOGGLE_ZONE, GRID_ZONE 같은 zone-like block도 허용할지, 아니면 후속으로 둘지 판단해 주세요.
+* nested LIST 또는 LIST_ITEM을 허용하지 않으려면 어디에서 제한해야 하는가?
 
-* public block: `LIST`
-* internal block: `LIST_ITEM`
-* LIST는 `children` 단일 배열을 가지는가?
-* LIST의 childFields는 `LIST_ITEM`만 허용할 수 있는가?
-* LIST_ITEM은 `content`를 가지는가?
-* LIST_ITEM은 children을 가지지 않는 단순 text item으로 시작하는가?
-* LIST_ITEM이 internal block이면 palette에는 노출하지 않는가?
-* LIST 생성 시 기본 LIST_ITEM을 몇 개 넣을 것인가?
+### 2. text-only LIST_ITEM에서 container-like LIST_ITEM으로 바꿀 때 content field는 어떻게 처리해야 하는가?
 
-  * 예: 2개 또는 3개
-* item 추가/삭제 UX는 v1에서 구현할 것인가, 아니면 기본 items만 제공하고 편집은 StylePanel로 할 것인가?
+가능한 후보를 비교해 주세요.
 
-### 2. LIST_ITEM 추가/삭제 UX의 v1 범위
+#### 후보 A: content 유지 + children 추가
 
-v1에서 item 추가/삭제를 어느 수준까지 할지 제안해 주세요.
+```ts
+LIST_ITEM {
+  content: "목록 항목",
+  children: []
+}
+```
 
-가능 후보:
+질문:
 
-* A. v1에서는 LIST 생성 시 기본 LIST_ITEM 3개만 제공하고, item 추가/삭제는 후속
-* B. StylePanel 또는 canvas에 간단한 “항목 추가” 버튼 제공
-* C. LIST 내부 canvas에만 item 추가 버튼 제공
-* D. LIST_ITEM을 palette에는 노출하지 않되 내부 action으로만 추가
-* E. item 삭제는 기존 block delete로 처리
+* content와 children이 동시에 있을 때 export 우선순위가 모호해지는가?
+* canvas/preview/code/export에서 content와 children을 함께 보여줄 것인가?
+* 이 방식이 예외 처리를 늘리는가?
 
-각 후보의 구현 난이도, DnD 영향, UX, data-driven 구조와의 관계를 비교하고 추천하세요.
+#### 후보 B: content 제거 또는 사용 중단 + children만 사용
 
-### 3. StylePanel editing
+```ts
+LIST_ITEM {
+  children: [PARAGRAPH]
+}
+```
 
-다음을 계획해 주세요.
+질문:
 
-* LIST_ITEM content는 StylePanel에서 수정하는가?
-* LIST 자체는 어떤 editableFields를 가지는가?
-* LIST_ITEM은 어떤 editableFields를 가지는가?
-* inline input은 이번에 제외하는가?
-* textarea는 제외하는가?
-* content edit이 Preview / Code View / Export에 반영되는 경로는 기존 구조를 따르는가?
+* 기존 LIST_ITEM content edit과 호환성을 어떻게 처리할 것인가?
+* default LIST_ITEM 안에 기본 PARAGRAPH child를 넣는 방식이 적절한가?
+* Code View에서 `<li><p>목록 항목</p></li>`가 되는 것이 교육적으로 괜찮은가?
 
-### 4. Preview / Code View / Export
+#### 후보 C: v2에서는 content-only를 유지하고, container-like 전환은 후속으로 보류
 
-다음을 계획해 주세요.
+질문:
 
-* LIST는 어떻게 `<ul>`로 preview/export되는가?
-* LIST_ITEM은 어떻게 `<li>`로 preview/export되는가?
-* htmlSchema만으로 처리 가능한가?
-* htmlSchema가 `ul` / `li` tag를 지원하지 않는다면 어떤 최소 타입 확장이 필요한가?
-* compiler에 `if block.type === "LIST"` 같은 special case를 추가하지 않고 처리 가능한가?
+* 지금 굳이 container-like로 바꿀 필요가 있는가?
+* 현재 text-only LIST_ITEM이 충분한가?
+
+각 후보에 대해:
+
+* 구현 범위
+* 기존 데이터와의 호환성
+* preview/export/code parity
+* 교육적 명확성
+* compiler 예외 위험
+* 추천 여부
+
+를 비교해 주세요.
+
+### 3. LIST_ITEM의 child/drop policy는 어떻게 되어야 하는가?
+
+확인할 것:
+
+* `LIST`는 여전히 `LIST_ITEM`만 받을 수 있는가?
+* `LIST_ITEM`은 어떤 block을 받을 수 있는가?
+* `LIST_ITEM`이 또 다른 `LIST_ITEM`을 받을 수 없도록 할 수 있는가?
+* `LIST_ITEM`이 `LIST`를 받을 수 있게 할지, 즉 nested list를 허용할지 판단해 주세요.
+* v2에서 nested list는 제외하는 것이 적절한가?
+* 현재 `acceptedBlockTypes` / `allowedParentTypes` 확장으로 충분한가?
+* `blockDropEngine` 추가 수정이 필요한가?
+* sibling drop 시 parent validation은 이미 충분한가?
+
+### 4. Preview / Code View / Export는 어떻게 바뀌는가?
+
+확인할 것:
+
+* `LIST_ITEM`을 `{ tag: "li", childField: "children" }`로 바꾸면 htmlSchema만으로 처리 가능한가?
+* `contentField`에서 `childField`로 바꿀 때 compiler 수정이 필요한가?
+* `<li><p>...</p></li>` 같은 구조가 정상 출력되는가?
 * Code View는 기존 compiler 결과만 보여주는가?
-* HR 구현 때 추가된 selfClosing 처리와 충돌하지 않는가?
+* Code View 전용 generator가 필요 없는가?
+* PreviewBlockRenderer에는 어떤 최소 case 수정이 필요한가?
+* compiler에 LIST/LIST_ITEM 전용 special case가 생기지 않는가?
 
-### 5. Canvas rendering / DnD
+### 5. Canvas rendering은 어떻게 바뀌는가?
 
-다음을 계획해 주세요.
+확인할 것:
 
-* CanvasBlockBody에 LIST/LIST_ITEM 분기가 필요한가?
-* 필요하다면 최소 분기인가?
-* LIST의 child slot은 기존 CanvasBlockSlot을 쓸 수 있는가?
-* LIST_ITEM은 일반 block처럼 sortable item으로 동작하는가?
-* LIST_ITEM이 LIST 밖으로 나가거나, LIST가 아닌 부모에 drop되는 것을 막을 수 있는가?
-* 현재 dropPolicy/childFields 구조만으로 가능한가?
-* 불가능하다면 어떤 최소 확장이 필요한가?
-* LIST_ITEM이 root canvas나 CARD/CONTAINER에 drop되지 않게 하려면 어디서 제한해야 하는가?
+* `LIST_ITEM`이 child slot을 가지면 `CanvasBlockBody`에서 어떻게 보여야 하는가?
+* 기존 container-like block의 `CanvasBlockSlot`을 재사용할 수 있는가?
+* LIST_ITEM 안의 empty state는 어떻게 보여야 하는가?
+* LIST_ITEM이 너무 무겁게 보이지 않게 하려면 어떤 최소 UI가 적절한가?
+* 이번 단계에서 inline input은 제외해도 되는가?
+* `LIST_ITEM` 내부에 기본 PARAGRAPH child를 넣는 경우 canvas 표시가 자연스러운가?
 
-### 6. 기존 구조에 미치는 영향
+### 6. LIST 내부 “항목 추가” 버튼은 구현 가능한가?
 
-다음을 확인하고 계획에 포함하세요.
+확인할 것:
 
-* BlockType 추가 범위
-* HtmlBlock model 변경 필요 여부
-* editableField types 변경 필요 여부
-* childFields/dropPolicy 변경 필요 여부
-* htmlSchema tag union 확장 필요 여부
-* PreviewBlockRenderer 변경 필요 여부
-* CanvasBlockBody 변경 필요 여부
-* blockDropEngine 변경 필요 여부
-* Code View 변경 필요 여부
+* `LIST` canvas body 또는 slot 주변에 contextual action button을 둘 수 있는가?
+* 버튼은 `LIST`에만 표시되어야 하는가?
+* 선택된 LIST에 대해서만 표시할지, 항상 표시할지 판단해 주세요.
+* 버튼 클릭 시 새 `LIST_ITEM`을 해당 `LIST.children` 끝에 추가할 수 있는 mutation helper가 있는가?
+* 현재 `useBlockMutations` / tree operations로 parent block에 child를 추가할 수 있는가?
+* 없다면 어떤 최소 helper가 필요한가?
+* 새 item 추가 후 selection을 새 LIST_ITEM으로 옮길 수 있는가?
+* 버튼 클릭이 canvas deselect, DnD, selection과 충돌할 위험이 있는가?
+* 버튼이 drop zone이나 sortable context와 충돌하지 않는가?
 
-### 7. 추천 구현 순서
+### 7. 항목 추가 버튼과 LIST_ITEM 구역화는 같은 구현 작업으로 묶어도 되는가?
 
-작고 검증 가능한 phase로 계획하세요.
+반드시 판단해 주세요.
 
-예상 후보:
+선택지:
+
+* A. 같은 작업으로 구현해도 안전
+* B. 하나의 큰 작업 안에서 Phase 1 / Phase 2로 순차 구현 가능
+* C. 별도 구현 작업으로 분리해야 함
+
+추천 이유:
+
+* 변경 파일 중복 여부
+* DnD 위험
+* mutation helper 위험
+* review/debug 난이도
+* 기능 검증 순서
+
+현재 선호는 다음입니다.
 
 ```text
 Phase 1:
-LIST/LIST_ITEM definition + types + htmlSchema tag 지원
+LIST_ITEM container-like 전환
 
 Phase 2:
-Preview/Code View/Export 연결
-
-Phase 3:
-Canvas/DnD/drop restriction 연결
-
-Phase 4:
-StylePanel에서 LIST_ITEM content 수정
-
-Phase 5:
-선택한 item 추가/삭제 UX 구현, 또는 후속으로 보류
+LIST 내부 항목 추가 버튼
 ```
 
-실제 repo 구조를 보고 더 적절한 순서를 제안해도 됩니다.
+하지만 실제 repo를 보고 다른 판단이 있으면 설명해 주세요.
 
 ## 명시적 제외 범위
 
-이번 v1 계획에서 다음은 제외하세요.
+이번 계획에서 다음은 제외하세요.
 
-* ordered list / `ol`
-* `listKind`
-* marker style option
-* ordered start value
-* nested list
-* arbitrary `items: string[]`
-* textarea 기반 multi-line list
-* inline input
+* 자동 wrapping
+
+  * 예: LIST 빈 공간에 일반 block을 drop하면 자동으로 LIST_ITEM을 만들고 그 안에 넣는 기능
 * LIST_ITEM palette 노출
+* ordered list / ol
+* listKind
+* marker style option
+* textarea list editing
+* inline input
+* nested list
 * slots migration
 * Code View 전용 generator
 * compiler special-case explosion
 * GRID_ZONE 관련 변경
 * gridGap
 * GRID_DROPPER
+* HtmlBlock 모델 대수정
 
 ## 조사 대상 파일
 
@@ -273,22 +272,23 @@ Phase 5:
 
 * `AGENTS.md`
 * `src/types/types.ts`
+* `src/features/block-studio/blocks/definitions/list.definition.ts`
+* `src/features/block-studio/blocks/definitions/listItem.definition.ts`
 * `src/features/block-studio/blocks/definitions/index.ts`
-* `src/features/block-studio/blocks/definitions/*.definition.ts`
 * `src/features/block-studio/blocks/types/blockDefinition.types.ts`
 * `src/features/block-studio/blocks/types/childField.types.ts`
+* `src/features/block-studio/blocks/types/dropPolicy.types.ts`
 * `src/features/block-studio/blocks/types/htmlSchema.types.ts`
-* `src/features/block-studio/blocks/types/editableField.types.ts`
-* `src/features/block-studio/blocks/drop/*`
-* `src/features/block-studio/blocks/tree/*`
-* `src/components/block/BlockPalette.tsx`
+* `src/features/block-studio/blocks/tree/blockTreeOperations.ts`
+* `src/features/block-studio/blocks/drop/blockDropEngine.ts`
+* `src/features/block-studio/blocks/drop/resolveDropTarget.ts`
+* `src/features/block-studio/hooks/useBlockMutations.ts`
+* `src/features/block-studio/hooks/useSelectedBlockEditor.ts`
 * `src/components/block/canvas/CanvasBlockBody.tsx`
 * `src/components/block/canvas/CanvasBlockSlot.tsx`
 * `src/components/block/canvas/CanvasBlockItem.tsx`
 * `src/components/block/preview/PreviewBlockRenderer.tsx`
 * `src/components/block/editor/BlockStylePanel.tsx`
-* `src/components/block/editor/EditableFieldControl.tsx`
-* `src/features/block-studio/hooks/useBlockMutations.ts`
 * `src/features/block-studio/blocks/html/blockHtmlCompiler.ts`
 * `src/features/block-studio/blocks/html/htmlSchemaCompiler.ts`
 
@@ -296,92 +296,102 @@ Phase 5:
 
 ## 출력 형식
 
-다음 형식으로 계획서를 작성하세요.
+다음 형식으로 보고서를 작성하세요.
 
-# LIST v1 Implementation Plan
+# LIST_ITEM Containerization and Add-Item Feasibility Report
 
 ## 1. Executive Summary
 
-* v1 scope
-* unordered-only decision
-* expected complexity
-* biggest risk
+* LIST_ITEM container-like 전환 가능 여부
+* 항목 추가 버튼 가능 여부
+* 추천 구현 순서
+* 가장 큰 위험
 
-## 2. Design Corrections from Previous Proposal
-
-* `listKind` 제거
-* ordered list 제외
-* `ol`은 future separate blockDefinition 후보
-* v1은 `<ul>/<li>` structure 검증
-
-## 3. File Map
+## 2. File Map
 
 표 형식:
-| Area | File | Responsibility | Change Needed? | Notes |
+| Area | File | Responsibility | Relevant Change | Notes |
 
-## 4. Proposed Data Model
+## 3. Current LIST/LIST_ITEM Model
 
-* LIST
-* LIST_ITEM
-* default template shape
-* internal/public 여부
-* childFields
-* editableFields
-* dropPolicy
+* current LIST template
+* current LIST_ITEM template
+* current childFields/dropPolicy
+* current preview/export/code behavior
+* current DnD restriction status
 
-## 5. Preview / Code View / Export Plan
+## 4. LIST_ITEM Containerization Options
 
-* htmlSchema 가능 여부
-* 필요한 tag union 확장
-* compiler special case 필요 여부
-* Code View 영향
-
-## 6. Canvas / DnD Plan
-
-* canvas rendering
-* sortable behavior
-* LIST_ITEM parent restriction
-* add/delete/reorder behavior
-* 필요한 drop engine 변경
-
-## 7. StylePanel Plan
-
-* LIST fields
-* LIST_ITEM fields
-* content editing path
-* inline input 제외 확인
-
-## 8. Item Add/Delete UX Options
-
-표 형식:
+후보 A/B/C 비교:
 | Option | Description | Scope | Pros | Cons | Recommendation |
 
-## 9. Implementation Phases
+## 5. Recommended LIST_ITEM Model
 
-작고 검증 가능한 단계별 계획
+* template shape
+* childFields
+* editableFields
+* htmlSchema
+* default children strategy
+* content field 처리
+* excluded behavior
 
-## 10. Risks
+## 6. Drop Policy / DnD Impact
 
-* DnD restriction
-* internal block handling
-* compiler/schema limits
-* preview/canvas branch
-* Code View parity
+* LIST accepts only LIST_ITEM
+* LIST_ITEM accepts which blocks
+* forbidden drops
+* existing drop engine sufficiency
+* required minimal changes
 
-## 11. Regression Checklist
+## 7. Preview / Code View / Export Impact
 
-* LIST add
-* LIST_ITEM default 생성
-* LIST_ITEM content edit
-* reorder
-* invalid parent drop prevention
+* htmlSchema change
+* compiler special case 여부
+* Code View 영향
+* Preview renderer 최소 변경
+
+## 8. Canvas UX Plan
+
+* LIST_ITEM visual body
+* child slot behavior
+* empty state
+* selection/edit behavior
+* inline input 제외 확인
+
+## 9. Add-Item Button Feasibility
+
+* button location
+* visibility rule
+* mutation helper requirement
+* selection behavior after add
+* event/DnD/deselect risks
+
+## 10. Scope Decision
+
+반드시 하나 선택:
+
+* A. 같은 작업으로 구현해도 안전
+* B. 한 작업 안에서 Phase 1 LIST_ITEM container-like, Phase 2 add-item button으로 순차 구현
+* C. 별도 구현 작업으로 분리
+
+## 11. Implementation Plan
+
+작고 검증 가능한 phase로 제안
+
+## 12. Regression Checklist
+
+* existing LIST behavior
+* LIST_ITEM inside LIST only
+* LIST_ITEM children add/move/reorder
 * Preview / Code View / Export
-* existing HR/CARD/H1/P/IMAGE/A/GRID_ZONE behavior
+* add-item button, if implemented later
+* existing H1/P/IMAGE/A/HR/CARD/CONTAINER/GRID_ZONE behavior
 
 제약:
 
 * 코드를 수정하지 마세요.
-* LIST를 구현하지 마세요.
-* 계획서만 작성하세요.
+* 구현하지 마세요.
 * 추측과 확인된 사실을 구분하세요.
-* 기존 보고서를 참고하되, 수정된 설계 기준을 우선 적용하세요.
+* 자동 wrapping은 이번 범위에서 제외하세요.
+* LIST_ITEM palette 노출은 제외하세요.
+* ordered list / listKind / inline input / nested list는 제외하세요.
