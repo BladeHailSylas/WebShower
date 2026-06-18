@@ -2,6 +2,7 @@ import type { MouseEvent } from "react";
 import type { HtmlBlock } from "../../../types/types";
 import { getBlockDefinition } from "../../../features/block-studio/blocks/definitions";
 import CanvasBlockSlot from "./CanvasBlockSlot";
+import textLimiter from "../../../utils/textLimiter";
 
 interface CanvasBlockBodyProps {
   block: HtmlBlock;
@@ -51,12 +52,13 @@ export default function CanvasBlockBody({ block, activeStyleId, onStyleClick }: 
 
   return (
     <div
-      className={`flex flex-col border-2 border-slate-700 bg-slate-800 rounded-l-xl shadow-sm ${
+      className={`flex flex-col border-2 border-slate-700 bg-slate-800 shadow-sm ${
         isContainer || definition.childFields.length > 0 ? "min-w-70" : "min-w-50"
       }`}
     >
       <div className="p-3 font-bold text-slate-200 text-sm flex justify-between items-center">
-        <span>{getBlockLabel(block)}</span>
+        <span>{textLimiter(getBlockLabel(block), 14)}</span>
+        {/*textLimiter를 getBlockLabel 내부에서 적용하는 것이 더 깔끔하지만, 개발 효율성을 위해 일부러 이렇게 처리함 */}
       </div>
       {definition.childFields.map((fieldDefinition) => (
         <CanvasBlockSlot

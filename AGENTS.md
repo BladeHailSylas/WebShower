@@ -1,346 +1,484 @@
-현재 목표는 Block Studio의 zone-like block들이 스타일을 어떻게 처리하는지 조사하고, 그 선례를 `GRID_ZONE`에도 적용할 수 있는지 평가하는 것입니다.
+# AGENTS.md
 
-중요:
+You are working on a React + TypeScript + Tailwind CSS + DaisyUI educational web builder project.
 
-* 아직 코드를 수정하지 마세요.
-* 구현 계획을 너무 앞서가지 마세요.
-* 먼저 repo를 읽고, 실제 파일 기준으로 진단 보고서를 작성해 주세요.
-* 관련 없는 mini-project, route, layout, shared app 구조는 건드리지 마세요.
-* Block Studio 관련 파일만 조사하세요.
-* AGENTS.md의 feature-scoped refactor 원칙을 유지하세요.
+This repository contains multiple small projects/features. Block Studio is one feature inside the repository, not the whole application.
 
-## 배경
+When working on Block Studio:
 
-현재 `GRID_ZONE`은 다음 원칙으로 정리되어 있습니다.
+* Scope changes to Block Studio-related files only.
+* Do not reorganize the entire repository.
+* Do not modify unrelated mini-projects, routes, layouts, pages, or shared utilities unless the task explicitly requires it.
+* If a shared file must change, explain why and keep the change minimal.
+* Prefer scalable and maintainable changes over quick local patches when the task is architectural.
+* Prefer small, reviewable phases over broad rewrites.
 
-> `GRID_ZONE` is a generic grid layout container over its direct children.
+## Product Direction
 
-즉:
+Block Studio is an educational web builder, not a general-purpose no-code platform.
 
-* `GRID_ZONE.children`의 각 direct child는 하나의 grid item입니다.
-* `styles.gridCols`는 한 행에 배치할 grid item 수를 의미합니다.
-* `GRID_ZONE`은 `children` 단일 배열만 사용합니다.
-* `columns`, `gridChildren`, 2차원 배열, slots 모델은 도입하지 않습니다.
-* column별 독립 drop target은 현재 도입하지 않습니다.
-* 향후 `GRID_DROPPER`가 도입되더라도, 그것은 `GRID_ZONE.children`의 direct child/grid item일 뿐입니다.
+The main goal is:
 
-최근 작업:
+* Students build web pages with draggable blocks.
+* Students understand how block structure becomes real HTML/CSS.
+* Preview, Code View, and export should reinforce the connection between blocks and web code.
+* The editing experience should be beginner-friendly, visually clear, and predictable.
 
-* `GRID_ZONE` 자체 drag는 일반 블록처럼 drag handle로 이동 가능하게 정리되었습니다.
-* preview/export에도 `styles.gridCols ?? 2`가 CSS grid inline style로 반영되었습니다.
-* Code View prototype이 추가되었고, 기존 `compileBlockHtml` / `compileBlocksForCodeView` 경로를 재사용하여 HTML fragment를 표시합니다.
-* Code View에서 생성된 HTML을 빈 HTML 파일에 넣었을 때 실제 작동하는 것을 수동 확인했습니다.
+Prefer features that improve:
 
-현재 논의:
+* block manipulation clarity,
+* visible cause-and-effect between edits and rendered output,
+* transparency between blocks, preview, Code View, and exported HTML,
+* beginner-friendly web programming concepts.
 
-* `GRID_ZONE` grid style rule은 canvas / preview / export compiler에 중복되어 있습니다.
-* 현재 중복은 작지만, 앞으로 `grid gap` 같은 옵션을 style panel에 추가한다면 중복 위험이 커질 수 있습니다.
-* 가능한 한 기존 zone-like block들의 스타일 처리 선례를 따르고, 필요할 때만 구조를 확장하고 싶습니다.
-* 따라서 `CONTAINER`, `PASSWORD_ZONE`, `TOGGLE_ZONE`, `GRID_ZONE` 등 zone-like block의 스타일 처리 방식을 비교해야 합니다.
+Avoid expanding Block Studio into a broad no-code editor unless the feature clearly supports the educational web-building goal.
 
-## 이번 진단에서 반드시 답해야 할 6가지 질문
+## Current Architecture Direction
 
-아래 6가지 질문에 명확히 답해 주세요.
+The desired direction is a `blockDefinitions`-driven architecture.
 
-### 1. 다른 zone들은 스타일을 어디서 정의하고 어디서 실행하는가?
+Adding a new block should require changing as few executor/UI files as reasonably possible.
 
-대상:
+Preferred flow:
 
-* `CONTAINER`
-* `PASSWORD_ZONE`
-* `TOGGLE_ZONE`
-* `GRID_ZONE`
-* 필요하면 `SPACER` 또는 기타 container-like/internal block
-
-각 block에 대해 다음을 확인해 주세요.
-
-* definition template의 `styles`
-* `editableFields`
-* `childFields`
-* canvas rendering에서 style 적용 위치
-* preview rendering에서 style 적용 위치
-* export/html compiler에서 style 적용 위치
-* Code View 반영 경로
-* `transformGuiToTailwind` 사용 여부
-* `htmlSchema` 또는 `htmlExporterKey` 사용 여부
-
-### 2. canvas / preview / export / Code View 사이의 style parity를 어떻게 유지하고 있는가?
-
-각 zone-like block에 대해 다음을 비교해 주세요.
-
-* canvas에서 보이는 style
-* preview에서 보이는 style
-* export HTML에서 나오는 style/class
-* Code View에서 보이는 code
-* 이 네 경로가 같은 source of truth를 쓰는지
-* 불일치가 있는지
-* 불일치가 있다면 의도된 차이인지, 기술 부채인지
-
-특히:
-
-* `transformGuiToTailwind`가 parity를 보장하는 역할을 하는지
-* canvas는 별도 editor shell/style을 쓰는지
-* preview와 export가 같은 style transform을 쓰는지
-* Code View는 export/compiler 결과를 그대로 보여주는지 확인해 주세요.
-
-### 3. GRID_ZONE은 그 방식과 얼마나 다르게 처리되고 있는가?
-
-`GRID_ZONE`을 다른 zone-like block과 비교해 주세요.
-
-확인할 것:
-
-* `GRID_ZONE`만 inline grid style을 별도 계산하는지
-* `GRID_ZONE`만 canvas trigger가 `childFields.variant === "grid"`이고 preview/export trigger가 `block.type === "GRID_ZONE"`인지
-* `GRID_ZONE`만 `gridCols ?? 2`, `gap: 12px`, `repeat(n, minmax(0, 1fr))` rule을 여러 곳에서 반복하는지
-* `GRID_ZONE`이 기존 `transformGuiToTailwind` 흐름에서 벗어나 있는지
-* `GRID_ZONE`의 차이가 layout block 특성상 자연스러운 예외인지
-
-### 4. GRID_ZONE의 차이는 정당한 예외인가, 아니면 정리할 필요가 있는 불일치인가?
-
-다음 기준으로 판단해 주세요.
-
-* 현재 동작 안정성
-* 코드 중복 위험
-* data-driven architecture와의 정합성
-* 향후 `gridGap` 같은 옵션 추가 가능성
-* 향후 `GRID_DROPPER` 도입 가능성
-* 새 layout block 추가 가능성
-* canvas / preview / export drift 가능성
-
-결론은 다음 중 하나로 내려 주세요.
-
-* A. 현재 차이는 정당한 예외이므로 유지
-* B. 현재는 유지 가능하지만, 다음 grid style 확장 전 helper화 권장
-* C. 지금 바로 helper화하는 것이 적절
-* D. helper화보다 definition metadata 정리가 먼저
-* E. 기존 zone style 처리 체계에 맞춰 더 큰 정리가 필요
-
-### 5. gap option을 추가한다면 기존 editableFields/style transform 체계에 자연스럽게 들어가는가?
-
-가정:
-
-* 아직 구현하지 않습니다.
-* 다만 향후 `GRID_ZONE`에 grid gap 옵션을 추가할 수 있습니다.
-* UI는 숫자 입력보다 교육용 select가 좋을 수 있습니다.
-* 예: `좁게`, `보통`, `넓게`
-* 내부 값 후보:
-
-  * `gridGap?: "narrow" | "normal" | "wide"`
-  * 또는 `gridGapPx?: 8 | 12 | 16`
-  * 또는 기존 style 체계에 맞는 더 적절한 구조
-
-확인할 것:
-
-* `StyleProps`에 어떤 필드를 추가하는 것이 자연스러운지
-* `editableFieldPresets.ts`에 추가하는 것이 자연스러운지
-* `EditableFieldControl`이 현재 enum/select 값을 처리할 수 있는지
-* canvas / preview / export / Code View에 반영하려면 어느 파일을 수정해야 하는지
-* `transformGuiToTailwind`에 넣는 것이 맞는지, 별도 layout helper가 맞는지
-* 기존 `commonStyleFields`와 충돌하지 않는지
-* gap option이 `GRID_ZONE` 전용이어야 하는지, 향후 layout block 공용이 될 수 있는지
-
-### 6. helper를 만든다면 기존 선례에 맞춘 helper인가, GRID_ZONE만을 위한 새 패턴인가?
-
-다음을 비교해 주세요.
-
-후보 A: 기존 style transform 체계 확장
-
-* 예: `transformGuiToTailwind` 또는 유사 공통 style 경로에 grid 관련 값을 반영
-* 장점/단점
-* canvas/preview/export에 모두 적용 가능한지
-
-후보 B: `GRID_ZONE` 전용 layout helper
-
-* 예:
-
-```ts id="gszljh"
-getGridZoneLayoutStyle(gridCols?, gridGap?): React.CSSProperties
-serializeGridZoneLayoutStyle(gridCols?, gridGap?): string
+```text
+blockDefinitions
+→ factory
+→ canvas renderers
+→ editor controls
+→ drop engine/tree operations
+→ preview renderer
+→ HTML compiler/export
+→ Code View
 ```
 
-* 장점/단점
-* 기존 구조와 충돌 여부
-* future `GRID_DROPPER`와 호환성
+The main architectural problem is not the `HtmlBlock` model itself. The problem is scattered logic across large UI components.
 
-후보 C: grid container 공용 helper
+Likely complexity areas:
 
-* 예:
+* `BlockStudioPage`
+* `BlockCanvas`
+* canvas block item/body/slot components
+* `BlockPalette`
+* `BlockStylePanel`
+* preview/code/export components
+* HTML compiler/export files
+* drag/drop hooks and tree mutation helpers
 
-```ts id="j31qce"
-getGridContainerLayoutStyle({ columns, gap }): React.CSSProperties
-serializeGridContainerLayoutStyle({ columns, gap }): string
+## Block Definitions Principle
+
+`blockDefinitions` must remain declarative data.
+
+Definitions may include:
+
+* type,
+* label,
+* category,
+* template,
+* palette metadata,
+* childFields,
+* editableFields,
+* dropPolicy,
+* dragPreview,
+* htmlSchema,
+* htmlExporterKey.
+
+Definitions must not:
+
+* render JSX,
+* mutate state,
+* contain React components,
+* execute drag/drop logic,
+* compile HTML directly,
+* contain custom compiler functions,
+* perform tree mutation.
+
+Executors should read definitions and perform the work.
+
+Expected executors include:
+
+* `blockFactory`
+* `BlockPalette`
+* `BlockCanvas`
+* `BlockStylePanel`
+* `blockDropEngine`
+* tree operation helpers
+* `blockHtmlCompiler`
+* `DragPreviewOverlay`
+* Code View display components
+
+## Data Model Constraint
+
+Do not replace the existing `HtmlBlock` model unless explicitly requested.
+
+For now:
+
+* Keep `children`, `defaultChildren`, and `conditionalChildren`.
+* Use `childFields` as a declarative bridge over the existing fields.
+* Do not migrate to a slots model as part of ordinary feature work.
+* Treat any future slots migration as a separate architectural project.
+
+## Recommended Feature Structure
+
+Prefer feature-scoped files under Block Studio-related folders.
+
+A reasonable target structure may include:
+
+```text
+src/
+  features/
+    block-studio/
+      blocks/
+        definitions/
+        types/
+        factory/
+        tree/
+        drop/
+        html/
+        layout/
+      hooks/
+      components/
+
+  components/
+    block/
+      canvas/
+      preview/
+      editor/
 ```
 
-* 장점/단점
-* 현재는 과추상화인지 여부
-* future layout block과 호환성
+The exact structure should follow the current repository where practical. Avoid unnecessary path churn.
 
-후보 D: definition-driven layout metadata
+## Code View Principles
 
-* 예:
+Code View is an educational transparency feature.
 
-```ts id="mfel9a"
-layout: {
-  kind: "grid",
-  columnsPath: "styles.gridCols",
-  gapPath: "styles.gridGap",
-  fallbackColumns: 2,
-  fallbackGap: "normal"
-}
-```
+Code View must not introduce a second HTML generation system.
 
-* 장점/단점
-* 지금 도입하기 적절한지
-* blockDefinitions에 로직을 넣지 않는 원칙과 충돌하지 않는지
+Code View should:
 
-각 후보에 대해 다음을 평가해 주세요.
+* reuse the existing HTML compiler/export path,
+* show read-only HTML generated from the current `HtmlBlock[]`,
+* default to body fragment output unless full document output is explicitly requested,
+* remain separate from `PreviewBlockRenderer`,
+* avoid block-type-specific HTML generation inside UI components.
 
-* 기존 선례를 따르는가
-* 변경 범위
-* 과추상화 위험
-* data-driven architecture에 주는 이점
-* canvas/preview/export parity에 주는 이점
-* 향후 `GRID_DROPPER`와 충돌 여부
-* 이번 단계에서 추천 여부
+Allowed:
 
-## 조사 대상 파일
+* a thin adapter such as `compileBlocksForCodeView(blocks)` that calls `compileBlockHtml`,
+* display-only formatting helpers that do not change HTML meaning,
+* copy-to-clipboard UI,
+* empty-state guidance.
 
-실제 repo 기준으로 관련 파일을 확인하고, 정확한 경로를 보고해 주세요.
+Forbidden:
 
-우선 확인할 것으로 예상되는 파일:
+* Code View-specific generators for H1/P/IMAGE/A/GRID_ZONE/etc.,
+* rebuilding HTML from React preview JSX,
+* reimplementing escaping, class transformation, or style serialization in Code View,
+* HTML-to-block reverse parsing,
+* editable code editor behavior unless explicitly requested later,
+* large editor dependencies for the prototype phase.
 
-* `src/features/block-studio/blocks/definitions/container.definition.ts`
-* `src/features/block-studio/blocks/definitions/gridZone.definition.ts`
-* `src/features/block-studio/blocks/definitions/passwordZone.definition.ts`
-* `src/features/block-studio/blocks/definitions/toggleZone.definition.ts`
-* `src/features/block-studio/blocks/definitions/editableFieldPresets.ts`
-* `src/features/block-studio/blocks/definitions/index.ts`
-* `src/features/block-studio/blocks/types/blockDefinition.types.ts`
-* `src/features/block-studio/blocks/types/editableField.types.ts`
-* `src/features/block-studio/blocks/types/childField.types.ts`
-* `src/features/block-studio/blocks/types/htmlSchema.types.ts`
-* `src/types/types.ts`
-* `src/components/block/canvas/CanvasBlockBody.tsx`
-* `src/components/block/canvas/CanvasBlockSlot.tsx`
-* `src/components/block/canvas/CanvasBlockItem.tsx`
-* `src/components/block/preview/PreviewBlockRenderer.tsx`
-* `src/components/block/preview/CodeViewPanel.tsx`
-* `src/components/block/preview/BlockRenderer.tsx`
-* `src/components/block/editor/BlockStylePanel.tsx`
-* `src/components/block/editor/EditableFieldControl.tsx`
-* `src/features/block-studio/blocks/html/blockHtmlCompiler.ts`
-* `src/features/block-studio/blocks/html/htmlSchemaCompiler.ts`
-* `src/features/block-studio/blocks/html/interactiveExporters.ts`
-* `src/features/block-studio/blocks/html/transformGuiToTailwind.ts`
-* `src/features/block-studio/blocks/html/escapeHtml.ts`
+The compiler/export path should remain the source of truth:
 
-실제 파일 구조가 다르면 실제 경로 기준으로 보고해 주세요.
+* `compileBlockHtml` for block fragments,
+* `compilePageHtml` for full export documents,
+* `htmlSchema` for schema-driven blocks,
+* `htmlExporterKey` for custom interactive exporters.
 
-## 특별히 주의할 제약
+## GRID_ZONE Principles
 
-* 코드를 수정하지 마세요.
-* `GRID_DROPPER`는 이번 범위에서 구현하지 마세요.
-* `columns`, `gridChildren`, 2차원 배열, slots, column별 drop target은 도입하지 마세요.
-* `GRID_ZONE`의 현재 원칙, 즉 “direct children을 grid item으로 배치하는 layout container”를 유지하세요.
-* blockDefinitions에 JSX, mutation logic, compiler function을 넣는 방향은 피하세요.
-* 기존 작동 중인 canvas / preview / export / Code View 동작을 깨는 방향은 추천하지 마세요.
-* 필요하다면 기존 처리 로직을 파괴하지 않는 수준의 작은 수정이나 확장만 제안하세요.
-* 추측과 확인된 사실을 구분하세요.
+`GRID_ZONE` is a grid layout container over its direct children.
 
-## 출력 형식
+Current model:
 
-다음 형식으로 보고서를 작성해 주세요.
+* `GRID_ZONE.children` is the only child storage.
+* Each direct child of `GRID_ZONE.children` is a grid item.
+* `styles.gridCols` controls the visual column count.
+* CSS grid auto-placement handles visual layout.
+* The current model does not have per-column child arrays.
 
-# Zone Style Consistency Report
+Do not introduce for `GRID_ZONE` unless explicitly requested:
 
-## 1. Executive Summary
+* `columns`,
+* `gridChildren`,
+* 2D child arrays,
+* slots migration,
+* per-column drop targets,
+* `GRID_DROPPER`.
 
-* 다른 zone들의 스타일 처리 방식 요약
-* GRID_ZONE이 선례와 얼마나 다른지
-* grid gap option 추가 전 helper화 필요 여부
-* 최종 추천
+A future `GRID_DROPPER` may be considered later, but it is not part of the current model. If introduced later, it should still be treated as a direct child/grid item of `GRID_ZONE`, not as a reason to convert `GRID_ZONE` into a column-owning data model.
 
-## 2. File Map
+`GRID_ZONE` should remain responsible only for laying out its direct children as grid items.
 
-표 형식:
-| Area | File | Responsibility | Notes |
+### GRID_ZONE style handling
 
-## 3. Zone-by-Zone Style Flow
+It is acceptable for `GRID_ZONE` grid layout style to be handled by canvas, preview, and export/compiler paths while the rule remains small and stable.
 
-각 zone별로 작성:
+If new grid style options are added, such as grid gap, consider a small feature-local layout helper before duplicating the new rule across paths.
 
-### CONTAINER
+Such a helper, if introduced, should only:
 
-* Definition
-* Editable fields
-* Canvas style
-* Preview style
-* Export style
-* Code View path
-* Notes
+* compute equivalent grid layout style for canvas/preview,
+* serialize equivalent grid layout style for export,
+* centralize fallback values,
+* keep canvas/preview/export parity.
 
-### PASSWORD_ZONE
+It must not handle:
 
-...
+* child distribution,
+* column-specific state,
+* drop policy,
+* DnD behavior,
+* `GRID_DROPPER`,
+* migration policy.
 
-### TOGGLE_ZONE
+Do not put layout execution logic into block definitions.
 
-...
+## Canvas Editing UX Principles
+
+Canvas editing should make block manipulation obvious and safe.
+
+Separate responsibilities:
+
+* `BlockDragHandle` starts drag.
+* `BlockEditHandle` opens or focuses editing controls.
+* Inline inputs, if introduced, edit content and must not start drag.
+* DnD listeners from dnd-kit must not be overwritten by local pointer handlers.
+
+When adding pointer or mouse handlers:
+
+* do not accidentally override dnd-kit activator listeners,
+* prefer drag handles as the primary drag activator,
+* avoid making the entire block body draggable if inline inputs are present,
+* prevent edit/input interactions from bubbling only when it does not block drag activators.
+
+Canvas UI should clearly communicate:
+
+* selected state,
+* hover state,
+* draggable affordance,
+* edit affordance,
+* nested drop zones,
+* content-editable areas.
+
+UI polish should not break DnD, selection, editing, preview, Code View, or export behavior.
+
+## Content Editing Direction
+
+Content editing is a core feature of the educational builder.
+
+Preferred direction:
+
+* visible content should be editable close to where it appears,
+* technical attributes should remain editable in the StylePanel or inspector-like UI,
+* both inline editing and StylePanel editing must update the same `HtmlBlock` data path.
+
+Examples:
+
+* H1/P visible text: good candidates for inline input.
+* Link display text: possible inline input candidate.
+* Image `src`/`alt`: better suited for StylePanel.
+* Password answer, toggle behavior, grid columns: StylePanel controls.
+* Styling values: StylePanel controls.
+
+Do not:
+
+* create separate editing state that diverges from `HtmlBlock`,
+* make Code View or export depend on separate UI state,
+* create block-type-specific editing systems when an `editableFields`-driven approach can reasonably support the feature,
+* let inline inputs interfere with DnD activators.
+
+Recommended first steps for content editing work:
+
+1. Diagnose why content editing disappeared.
+2. Restore StylePanel content editing if the current `editableFields` structure supports it.
+3. Consider inline input prototypes only for simple visible text blocks such as H1/P.
+4. Validate DnD, selection, focus, preview, Code View, and export after content edits.
+
+## Style Editing Principles
+
+Common block styles should generally flow through:
+
+* `editableFields`,
+* `StyleProps`,
+* style transformers such as `transformGuiToTailwind`,
+* preview/export/compiler paths.
+
+Canvas may use editor-specific shell styles that differ from preview/export. This is acceptable when the difference clearly supports editing affordance.
+
+When adding a style option:
+
+* decide whether it is a common style or block-specific layout style,
+* avoid duplicating the same rule across canvas/preview/export if the rule is expected to grow,
+* keep Code View tied to export/compiler output.
+
+`transformGuiToTailwind` is appropriate for class-style transformations.
+
+It may not be appropriate for layout rules that need:
+
+* React `CSSProperties` in canvas/preview,
+* serialized inline CSS in HTML export.
+
+For such layout rules, a feature-local helper may be more appropriate.
+
+## Drag and Drop Expectations
+
+DnD behavior is core functionality.
+
+Always preserve:
+
+* dragging from palette to canvas,
+* moving existing root blocks,
+* moving nested blocks,
+* reordering nested blocks,
+* moving blocks in/out of container-like blocks,
+* drag handle behavior,
+* edit handle behavior.
+
+Do not override dnd-kit listeners with local `onPointerDown` handlers.
+
+If propagation must be stopped for edit/input controls, compose handlers carefully and verify that drag activators still work.
+
+Drop logic should be centralized where possible:
+
+* drop target id creation/parsing,
+* drop target resolution,
+* insert/move behavior,
+* pure tree mutation helpers.
+
+UI components should not own complex recursive tree mutation logic.
+
+## Implementation Guidance
+
+For complex work, create a plan before coding.
+
+The plan should include:
+
+1. Current architecture summary after inspecting the repo.
+2. Main complexity problems found in actual files.
+3. Target architecture adapted to the repo.
+4. Phase-by-phase implementation order.
+5. Files to create.
+6. Files to modify.
+7. Types to introduce or change.
+8. Risk assessment.
+9. Regression checklist.
+10. What should explicitly not be changed.
+
+For smaller work, still identify:
+
+* scope,
+* touched files,
+* expected behavior,
+* validation steps.
+
+Prefer phase-based implementation:
+
+* one phase should have one clear purpose,
+* each phase should be reviewable,
+* each phase should end in a buildable/type-safe state when possible.
+
+If a temporary broken state is unavoidable, explicitly document:
+
+* what is broken,
+* why it is temporarily acceptable,
+* which following step will fix it.
+
+## Non-goals Unless Explicitly Requested
+
+Do not:
+
+* rewrite the entire `HtmlBlock` model,
+* migrate to slots,
+* introduce per-column child arrays for `GRID_ZONE`,
+* introduce `GRID_DROPPER`,
+* put JSX or compiler functions in `blockDefinitions`,
+* create a separate Code View compiler,
+* reimplement escaping or style transformation inside UI display components,
+* reorganize unrelated repository areas,
+* change visible behavior unrelated to the current task,
+* add large dependencies for prototype features.
+
+## Validation Expectations
+
+For Block Studio changes, prefer focused validation when full app lint/build is blocked by unrelated mini-project issues.
+
+Always report:
+
+* commands run,
+* whether failures are related or unrelated,
+* changed-file lint/typecheck result if full lint is blocked,
+* manual regression checklist.
+
+Preferred validation commands when available:
+
+* `npx.cmd tsc --noEmit`
+* `npm.cmd run build`
+* changed-file ESLint command if full lint is blocked
+* full lint when unrelated errors do not block validation
+
+If full build/lint fails because of unrelated existing errors, explicitly separate:
+
+* related failures,
+* unrelated known failures,
+* changed-file validation results.
+
+## Manual Regression Checklist
+
+Use the relevant subset for each task.
+
+### DnD and Canvas
+
+* Add block from palette to root canvas.
+* Move existing root block.
+* Move nested block into container-like block.
+* Move nested block back to root.
+* Reorder nested blocks.
+* Drag handle works.
+* Edit handle works.
+* Input/edit controls do not start drag.
+* Root empty area click/deselect behavior still works.
+* Selected state remains clear.
+* Nested drop zones remain usable.
+
+### StylePanel and Content Editing
+
+* Select a block and edit style values.
+* Edit visible content if supported.
+* Edit technical attributes such as image src/alt or link href if supported.
+* Confirm preview updates.
+* Confirm Code View updates.
+* Confirm export HTML updates.
+* Confirm the edited value is stored in `HtmlBlock`, not separate UI state.
 
 ### GRID_ZONE
 
-...
+* Add `GRID_ZONE` to root canvas.
+* Move `GRID_ZONE` itself.
+* Add blocks into `GRID_ZONE`.
+* Move blocks out of `GRID_ZONE`.
+* Reorder blocks inside `GRID_ZONE`.
+* Change `gridCols` 2 → 3 → 4 → 2.
+* Confirm children are preserved.
+* Confirm canvas, preview, Code View, and export reflect the same grid columns.
+* Confirm no `columns`, `gridChildren`, slots, per-column drop targets, or `GRID_DROPPER` were introduced unless explicitly requested.
 
-필요하면 SPACER 등 기타 block 포함.
+### Code View
 
-## 4. Style Parity Analysis
+* Empty canvas shows an empty-state message.
+* H1/P content appears as escaped HTML.
+* Image src/alt appears correctly.
+* Link href/text appears correctly.
+* Container children appear recursively.
+* GRID_ZONE export contains grid inline style.
+* Password/toggle zones use existing exporter output.
+* Copy button copies current code.
+* Code View does not contain block-type-specific generation logic.
+* QR/export still uses `compilePageHtml`.
 
-표 형식:
+### Export
 
-| Block | Canvas | Preview | Export | Code View | Source of Truth | Parity Risk |
-| ----- | ------ | ------- | ------ | --------- | --------------- | ----------- |
-
-## 5. GRID_ZONE Difference Analysis
-
-* 다른 zone들과 다른 점
-* 정당한 예외인지
-* 정리할 필요가 있는 불일치인지
-
-## 6. Grid Gap Option Feasibility
-
-* 권장 데이터 모델
-* editableFields 반영 가능성
-* canvas/preview/export/code view 영향
-* transformGuiToTailwind vs layout helper 판단
-* 위험
-
-## 7. Helper Strategy Comparison
-
-후보 A/B/C/D 비교 표:
-| Option | Description | Follows Existing Pattern? | Scope | Pros | Cons | Recommendation |
-
-## 8. Data-driven Assessment
-
-* 현재 zone style 처리와 blockDefinitions-driven 구조의 관계
-* `GRID_ZONE` helper 또는 metadata가 필요한지
-* 지금 어느 수준이 적절한지
-
-## 9. Recommendation
-
-반드시 다음 중 하나를 선택:
-
-* A. 현 구조 유지
-* B. 다음 grid style 확장 전 `GRID_ZONE` helper화
-* C. 지금 바로 `GRID_ZONE` helper화
-* D. 기존 style transform 체계 확장
-* E. definition-driven layout metadata 도입
-* F. 다른 선행 안정화 필요
-
-선택 이유와 최소 변경 범위를 설명해 주세요.
-
-## 10. Regression Checklist
-
-* canvas / preview / export / Code View parity 검증
-* `GRID_ZONE.children` 단일 배열 유지 검증
-* `GRID_DROPPER`, columns, gridChildren, slots 미도입 확인
-* gap option을 나중에 추가할 경우 확인할 항목
+* Exported full HTML opens as a working HTML page.
+* Tailwind classes or CDN setup still work as expected.
+* Interactive blocks still work after export.
+* Code View fragment and export document remain meaningfully consistent.

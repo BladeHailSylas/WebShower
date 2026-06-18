@@ -1,5 +1,5 @@
-export default function textLimiter(raw : string | undefined, limit: number | undefined) {
-    if(raw === undefined) {
+export default function textLimiter(raw : string | undefined | null, limit: number | undefined) {
+    if(raw === undefined || raw === null) {
         return "";
     }
     if(limit === null || limit === undefined) {
