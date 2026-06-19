@@ -1,5 +1,10 @@
 import type { BlockDefinition } from "../types/blockDefinition.types";
-import { commonStyleFields, linkHrefField, linkTextField } from "./editableFieldPresets";
+import {
+  commonStyleFields,
+  linkHrefField,
+  linkTextField,
+  typographyDetailFields,
+} from "./editableFieldPresets";
 
 export const linkDefinition = {
   type: "A",
@@ -15,7 +20,7 @@ export const linkDefinition = {
   },
   palette: { label: "링크 이동 버튼 만들기 (A)", icon: "A", order: 30 },
   childFields: [],
-  editableFields: [linkTextField, linkHrefField, ...commonStyleFields],
+  editableFields: [linkTextField, linkHrefField, ...commonStyleFields, ...typographyDetailFields],
   dropPolicy: { allowRoot: true },
   dragPreview: { label: "링크", contentField: "content" },
   htmlSchema: { tag: "a", contentField: "content", hrefField: "link" },

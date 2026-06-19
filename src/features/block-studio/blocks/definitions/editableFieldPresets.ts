@@ -42,6 +42,73 @@ export const correctAnswerField: EditableFieldDefinition = {
   section: "behavior",
 };
 
+export const shadowField: EditableFieldDefinition = {
+  path: "styles.shadow",
+  label: "그림자",
+  control: "select",
+  section: "border",
+  defaultValue: "default",
+  options: [
+    { label: "기본", value: "default" },
+    { label: "없음", value: "none" },
+    { label: "작게", value: "small" },
+    { label: "보통", value: "medium" },
+    { label: "크게", value: "large" },
+  ],
+};
+
+export const roundedField: EditableFieldDefinition = {
+  path: "styles.rounded",
+  label: "둥근 모서리",
+  control: "select",
+  section: "border",
+  defaultValue: "default",
+  options: [
+    { label: "기본", value: "default" },
+    { label: "각지게", value: "none" },
+    { label: "조금 둥글게", value: "small" },
+    { label: "둥글게", value: "medium" },
+    { label: "많이 둥글게", value: "large" },
+    { label: "완전히 둥글게", value: "full" },
+  ],
+};
+
+export const borderWidthField: EditableFieldDefinition = {
+  path: "styles.borderWidth",
+  label: "테두리 굵기",
+  control: "select",
+  section: "border",
+  defaultValue: "default",
+  options: [
+    { label: "기본", value: "default" },
+    { label: "없음", value: "none" },
+    { label: "얇게", value: "thin" },
+    { label: "보통", value: "medium" },
+    { label: "두껍게", value: "thick" },
+  ],
+};
+
+export const borderColorField: EditableFieldDefinition = {
+  path: "styles.borderColor",
+  label: "테두리 색상",
+  control: "select",
+  section: "border",
+  defaultValue: "default",
+  options: [
+    { label: "기본", value: "default" },
+    { label: "회색", value: "slate" },
+    { label: "검정색", value: "black" },
+    { label: "빨간색", value: "red" },
+    { label: "파란색", value: "blue" },
+    { label: "초록색", value: "green" },
+  ],
+};
+
+export const hrBorderFields: EditableFieldDefinition[] = [
+  { ...borderWidthField, label: "선 굵기" },
+  { ...borderColorField, label: "선 색상" },
+];
+
 export const commonStyleFields: EditableFieldDefinition[] = [
   {
     path: "styles.textAlign",
@@ -105,12 +172,52 @@ export const commonStyleFields: EditableFieldDefinition[] = [
     section: "text",
     defaultValue: false,
   },
+  shadowField,
+  roundedField,
+  borderWidthField,
+  borderColorField,
+];
+
+export const typographyDetailFields: EditableFieldDefinition[] = [
   {
-    path: "styles.isRounded",
-    label: "둥근 모서리",
-    control: "checkbox",
-    section: "border",
-    defaultValue: false,
+    path: "styles.fontFamily",
+    label: "글꼴",
+    control: "select",
+    section: "text",
+    defaultValue: "default",
+    options: [
+      { label: "기본", value: "default" },
+      { label: "고딕체", value: "sans" },
+      { label: "명조체", value: "serif" },
+      { label: "고정폭 글꼴", value: "mono" },
+    ],
+  },
+  {
+    path: "styles.lineHeight",
+    label: "줄 간격",
+    control: "select",
+    section: "text",
+    defaultValue: "default",
+    options: [
+      { label: "기본", value: "default" },
+      { label: "좁게", value: "tight" },
+      { label: "보통", value: "normal" },
+      { label: "넓게", value: "relaxed" },
+      { label: "아주 넓게", value: "loose" },
+    ],
+  },
+  {
+    path: "styles.letterSpacing",
+    label: "글자 간격",
+    control: "select",
+    section: "text",
+    defaultValue: "default",
+    options: [
+      { label: "기본", value: "default" },
+      { label: "좁게", value: "tight" },
+      { label: "보통", value: "normal" },
+      { label: "넓게", value: "wide" },
+    ],
   },
 ];
 

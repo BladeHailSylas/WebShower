@@ -15,7 +15,7 @@ export default function BlockDragHandle({ attributes, listeners, activatorRef }:
       ref={activatorRef}
       {...attributes}
       {...listeners}
-      className="w-6 bg-emerald-700 hover:bg-emerald-600 rounded-l-xl border-y-2 border-slate-700 flex items-center justify-center cursor-grab text-slate-400 text-xs select-none"
+      className="w-6 bg-emerald-700 hover:bg-emerald-600 rounded-l-xl border-y-2 border-slate-700 flex items-center justify-center cursor-grab text-slate-400 text-xs select-none p-3"
       title="드래그"
     >
       ::

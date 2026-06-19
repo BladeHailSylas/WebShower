@@ -26,5 +26,5 @@ export function transformGuiToTailwind(styles?: StyleProps, blockType?: BlockTyp
     baseClasses.push("mb-1 leading-relaxed");
   }
 
-  return resolveGuiStyleClasses(baseClasses, styles);
+  return resolveGuiStyleClasses(baseClasses, styles, blockType);
 }

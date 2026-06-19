@@ -31,7 +31,7 @@ export default function CanvasBlockItem({ block, activeStyleId, onStyleClick, on
       ref={setNodeRef}
       style={style}
       className={`mb-2 relative flex items-stretch ${
-        "max-w-5xl"
+        "w-full"
       } active:cursor-grabbing group`}
     >
       <BlockDragHandle activatorRef={setActivatorNodeRef} attributes={attributes} listeners={listeners} />

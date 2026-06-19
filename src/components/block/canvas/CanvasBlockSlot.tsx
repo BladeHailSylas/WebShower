@@ -19,8 +19,8 @@ function getSlotClassName(variant: ChildFieldDefinition["variant"], isOver: bool
   const base = "flex flex-col gap-1 transition-colors";
 
   if (variant === "grid") {
-    return `p-3 rounded-xl bg-slate-900/50 min-h-20 border-2 border-dashed ${base} ${
-      isOver ? "border-indigo-400 bg-slate-900/90" : "border-slate-700"
+    return `p-3 border-l-2 bg-indigo-950/50 min-h-20 border-dashed border-indigo-700 ${base} ${
+      isOver ? "ring-2 ring-indigo-400/50 bg-indigo-900/50" : ""
     }`;
   }
 

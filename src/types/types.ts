@@ -9,8 +9,15 @@ export interface StyleProps {
   bgColor?: 'none' | 'white' | 'slate' | 'red' | 'blue' | 'green' | 'yellow';
   textAlign?: 'left' | 'center' | 'right';
   fontSize?: 'small' | 'normal' | 'large' | 'xlarge';
+  fontFamily?: 'default' | 'sans' | 'serif' | 'mono';
+  lineHeight?: 'default' | 'tight' | 'normal' | 'relaxed' | 'loose';
+  letterSpacing?: 'default' | 'tight' | 'normal' | 'wide';
   isBold?: boolean;    // 두껍게 여부
-  isRounded?: boolean; // 테두리 둥글게 여부
+  isRounded?: boolean; // legacy: rounded가 없을 때만 사용
+  shadow?: 'default' | 'none' | 'small' | 'medium' | 'large';
+  rounded?: 'default' | 'none' | 'small' | 'medium' | 'large' | 'full';
+  borderWidth?: 'default' | 'none' | 'thin' | 'medium' | 'thick';
+  borderColor?: 'default' | 'slate' | 'black' | 'red' | 'blue' | 'green';
   gridCols?: 2 | 3 | 4;
 }
 

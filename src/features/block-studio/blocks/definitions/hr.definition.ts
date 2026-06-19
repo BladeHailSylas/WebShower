@@ -1,4 +1,5 @@
 import type { BlockDefinition } from "../types/blockDefinition.types";
+import { hrBorderFields } from "./editableFieldPresets";
 
 export const hrDefinition = {
   type: "HR",
@@ -12,7 +13,7 @@ export const hrDefinition = {
   },
   palette: { label: "구분선 넣기 (HR)", icon: "HR", order: 40 },
   childFields: [],
-  editableFields: [],
+  editableFields: hrBorderFields,
   dropPolicy: { allowRoot: true },
   dragPreview: { label: "구분선" },
   htmlSchema: { tag: "hr", selfClosing: true },
