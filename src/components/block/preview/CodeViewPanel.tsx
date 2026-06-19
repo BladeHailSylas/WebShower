@@ -33,7 +33,7 @@ export default function CodeViewPanel({ blocks }: CodeViewPanelProps) {
           복사
         </button>
       </div>
-      <pre className="flex-1 overflow-auto rounded-xl bg-slate-950 p-4 text-xs leading-relaxed text-slate-100 font-mono whitespace-pre-wrap break-words">
+      <pre className="flex-1 overflow-auto rounded-xl bg-slate-950 p-4 text-xs leading-relaxed text-slate-100 font-mono whitespace-pre-wrap wrap-break-word">
         <code>{code}</code>
       </pre>
     </div>

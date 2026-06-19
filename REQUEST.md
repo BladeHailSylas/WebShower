@@ -1,397 +1,539 @@
-현재 목표는 Block Studio의 LIST 기능을 순차적으로 확장하는 것입니다.
+Block Studio의 “스타일 확장”을 위한 현재 구조 진단 및 설계 보고서를 작성해 주세요.
 
-중요:
-
-* 이번 작업은 반드시 순차적으로 진행하세요.
-* 먼저 **Phase 1: LIST_ITEM container-like 전환**만 구현하세요.
-* Phase 1이 끝나면 멈추고, 변경 요약과 테스트 결과를 보고하세요.
-* **Phase 2: LIST 내부 “항목 추가” 버튼**은 Phase 1 테스트 후 별도 승인 전까지 구현하지 마세요.
-* 관련 없는 mini-project, route, layout, shared app 구조는 건드리지 마세요.
-* Block Studio 관련 파일만 수정하세요.
-* AGENTS.md의 최신 원칙을 따르세요.
+이번 요청은 구현이 아니라 조사와 설계 보고서 작성입니다.
+아직 코드를 수정하지 마세요.
 
 ## 배경
 
-현재 Block Studio에는 `LIST`와 `LIST_ITEM`이 구현되어 있습니다.
+이 프로젝트는 React + TypeScript + Tailwind CSS + DaisyUI + Vite 기반의 교육용 웹 빌더입니다.
+Block Studio는 일반 no-code 플랫폼이 아니라, 학생들이 블록 구조가 실제 HTML/CSS로 어떻게 연결되는지 이해하도록 돕는 교육용 도구입니다.
 
-현재 확인된 상태:
+AGENTS.md의 원칙을 반드시 따르세요.
 
-* `LIST`는 unordered list입니다.
-* `LIST`는 `<ul>`로 export/Code View에 반영됩니다.
-* `LIST_ITEM`은 `<li>`로 export/Code View에 반영됩니다.
-* `LIST_ITEM`은 palette에 노출되지 않는 internal block입니다.
-* 현재는 `LIST_ITEM`만 `LIST` 안에 들어갈 수 있습니다.
-* `LIST_ITEM`은 root, CARD, CONTAINER, GRID_ZONE, PASSWORD_ZONE, TOGGLE_ZONE 등에 들어가지 않습니다.
-* Code View와 Export는 현재까지 정상 동작합니다.
-* ordered list, `ol`, `listKind`는 이번 범위가 아닙니다.
+특히 다음 원칙을 지켜 주세요.
 
-현재 구조:
+* 작업 범위는 Block Studio 관련 파일로 한정합니다.
+* unrelated mini-projects, routes, layouts, pages, shared utilities는 수정하지 않습니다.
+* shared file 변경이 필요해 보이면, 왜 필요한지 보고서에 먼저 설명합니다.
+* `HtmlBlock` 모델을 교체하지 않습니다.
+* `children`, `defaultChildren`, `conditionalChildren` 구조를 유지합니다.
+* slots migration을 하지 않습니다.
+* `GRID_ZONE`에 columns, gridChildren, 2D child array, per-column drop target, GRID_DROPPER를 도입하지 않습니다.
+* LIST는 unordered-only, LIST_ITEM은 internal `<li>` 구조를 유지합니다.
+* LIST에 일반 블록을 직접 drop하고 compiler가 자동으로 `<li>`로 감싸는 구조를 만들지 않습니다.
+* `blockDefinitions`는 선언적 데이터로 유지합니다.
+* definition 안에 JSX, mutation, compiler 로직, DnD 실행 로직을 넣지 않습니다.
+* Code View 전용 HTML generator를 만들지 않습니다.
+* Preview / Code View / Export가 같은 의미의 HTML/CSS 구조를 보여야 합니다.
+* dnd-kit listener, drag handle, edit handle 동작을 변경하지 않습니다.
+* 이번 요청에서는 구현하지 말고, 조사와 보고서 작성만 합니다.
+
+## 현재 상태
+
+최근 스타일 적용 불일치 문제는 별도로 해결된 상태입니다.
+이전 진단에서 확인된 주요 구조는 다음과 같습니다.
+
+* StylePanel 변경값은 `HtmlBlock.styles`에 저장됩니다.
+* Preview와 HTML compiler/export는 `transformGuiToTailwind` 또는 관련 style 변환 경로를 사용합니다.
+* Code View와 Export는 기존 compiler/export 경로를 재사용해야 합니다.
+* Canvas는 editor shell이 있으므로 Preview/Export와 완전히 같은 DOM일 필요는 없지만, 교육적 cause-and-effect는 중요합니다.
+* 스타일 확장은 `editableFields`, `StyleProps`, style transformer, preview/export/compiler 경로와 맞아야 합니다.
+
+## 이번 보고서의 목적
+
+이번 보고서는 버그 수정 보고서가 아닙니다.
+
+목적은 다음 세 가지입니다.
+
+1. 현재 스타일 시스템이 어떤 방식으로 확장 가능한지 진단
+2. 스타일 필드 메타데이터와 StylePanel 섹션화를 도입할 수 있는지 검토
+3. “내부 텍스트에도 적용” 같은 텍스트 스타일 상속 기능을 나중에 안전하게 도입할 수 있는 구조 제안
+
+## 현재 구상 중인 스타일 확장 방향
+
+검토 중인 방향은 다음과 같습니다.
+
+### 1. 사용 가능한 스타일 옵션 추가
+
+현재보다 더 많은 스타일을 제공하고 싶습니다.
+
+후보 예시:
+
+텍스트 스타일:
+
+* textColor
+* fontSize
+* fontWeight 또는 isBold
+* fontFamily
+* lineHeight
+* textAlign
+* letterSpacing 가능성
+
+박스 스타일:
+
+* bgColor
+* padding
+* margin
+* border
+* borderColor
+* borderWidth
+* rounded
+* shadow
+
+레이아웃 스타일:
+
+* width
+* maxWidth
+* height 또는 minHeight
+* gap
+* gridCols
+* align/items 관련 옵션 가능성
+
+블록 전용 스타일:
+
+* IMAGE: objectFit, aspectRatio, rounded, width
+* LINK: variant, target, button-like style
+* HR: thickness, color, spacing
+* GRID_ZONE: gridCols, gap
+
+이 후보를 그대로 구현하라는 뜻은 아닙니다.
+현재 구조에서 어떤 것부터 안전하게 추가할 수 있는지 판단해 주세요.
+
+### 2. StylePanel UI 개선
+
+StylePanel을 현재보다 더 명확하게 섹션화하고 싶습니다.
+
+예상 섹션 후보:
 
 ```text
-LIST
-└─ LIST_ITEM(content)
+내용
+텍스트
+배경
+여백
+테두리
+레이아웃
+고급
 ```
 
-현재 HTML:
+조사할 것:
 
-```html
-<ul>
-  <li>목록 항목</li>
-</ul>
-```
+* 현재 `editableFields` 구조가 섹션 정보를 담을 수 있는지
+* 섹션 메타데이터를 `editableFields`에 넣는 것이 적절한지
+* 별도의 style field registry가 필요한지
+* 기존 content editing 필드와 style editing 필드를 어떻게 구분하는 것이 좋은지
+* block별로 표시할 스타일 옵션을 선언적으로 제어할 수 있는지
 
-## 최종 방향
+### 3. “내부 텍스트에도 적용” 기능
 
-`LIST_ITEM`을 text-only item에서 container-like `li`로 전환합니다.
+구역 블록에서 텍스트 스타일을 내부 텍스트에도 자연스럽게 적용하는 기능을 검토 중입니다.
 
-목표 구조:
+UI 문구 후보:
 
-```text
-LIST
-└─ LIST_ITEM
-   └─ children
-      ├─ PARAGRAPH
-      ├─ IMAGE
-      └─ LINK
-```
+* 내부 텍스트에도 적용
+* 텍스트 스타일 상속
+* 구역 안 텍스트에도 적용
 
-목표 HTML:
+원하는 의미:
 
-```html
-<ul>
-  <li>
-    <p>...</p>
-    <img ...>
-    <a ...>...</a>
-  </li>
-</ul>
-```
+* 부모 구역의 텍스트 계열 스타일만 내부 텍스트에 전달합니다.
+* 자식 block.styles를 직접 덮어쓰지 않습니다.
+* 가능하면 CSS 상속을 활용합니다.
+* Preview / Code View / Export에서 같은 의미가 유지되어야 합니다.
 
-중요한 원칙:
+상속 가능 후보:
 
-* `LIST`는 계속 `LIST_ITEM`만 직접 자식으로 받아야 합니다.
-* 일반 블록을 `LIST`에 직접 drop하게 만들지 마세요.
-* compiler가 “LIST의 자식을 자동으로 li로 감싼다”는 예외를 만들면 안 됩니다.
-* `LIST_ITEM` 자체가 `<li>`에 대응하는 block이어야 합니다.
-* block tree와 HTML structure가 최대한 일치해야 합니다.
-* Code View 전용 generator를 만들지 마세요.
-* 기존 compiler/export 경로를 계속 사용하세요.
+* 글자색
+* 글자 크기
+* 글자 굵기
+* 글꼴
+* 줄간격
+* 글자 정렬
 
----
+상속 불가능 후보:
 
-# Phase 1 — LIST_ITEM container-like 전환
+* 배경색
+* padding
+* margin
+* border
+* rounded
+* shadow
+* width/height
+* grid columns
+* gap
 
-이번 응답에서는 **Phase 1만 구현**하세요.
+조사할 것:
 
-## Phase 1 목표
+* 현재 구조에서 부모 구역에 text class를 붙였을 때 자식 HEADING/PARAGRAPH/LINK 등에 CSS 상속이 실제로 작동하는지
+* 자식 블록이 기본 text class를 가지고 있으면 부모 text style이 막히는지
+* `inheritTextStyles` 같은 flag를 `styles`에 추가하는 것이 적절한지
+* 이 flag를 `HtmlBlock.styles`에 추가해도 기존 구조를 크게 흔들지 않는지
+* text style과 box/layout style을 분리할 수 있는 메타데이터가 필요한지
+* 이 기능을 1차 스타일 확장에 포함할지, 별도 Phase로 분리할지
 
-`LIST_ITEM`을 다음 구조로 바꿉니다.
+## 중점 조사 파일/영역
+
+실제 repo 구조를 먼저 확인한 뒤, Block Studio 관련 파일만 조사해 주세요.
+
+특히 다음 영역을 확인해 주세요.
+
+* `HtmlBlock` 타입
+* `StyleProps` 타입
+* `blockDefinitions`
+* 각 block definition의 `template.styles`
+* `editableFields`
+* `editableFieldPresets`
+* `BlockStylePanel`
+* `EditableFieldControl`
+* `transformGuiToTailwind`
+* Preview renderer
+* HTML compiler/export 관련 파일
+* Code View가 사용하는 compile 경로
+* Canvas renderer / CanvasBlockBody / BlockCanvas 관련 파일
+* GRID_ZONE layout style 처리 경로
+* LIST / LIST_ITEM style 처리 경로
+* 현재 테스트 파일이 있다면 style 관련 테스트 위치
+
+파일명은 실제 repo에서 확인한 이름을 기준으로 보고해 주세요.
+
+## 조사 질문
+
+다음 질문에 답해 주세요.
+
+### A. 현재 스타일 시스템 구조
+
+1. 현재 `StyleProps`에는 어떤 필드가 있나요?
+2. 각 필드는 어떤 block에서 실제로 사용되나요?
+3. 각 필드는 StylePanel에서 어떤 `editableField`를 통해 노출되나요?
+4. 각 필드는 `transformGuiToTailwind`에서 어떻게 변환되나요?
+5. 각 필드는 Preview, Code View, Export에서 같은 의미로 반영되나요?
+6. Canvas에서는 어떤 필드가 반영되고 어떤 필드가 반영되지 않나요?
+
+### B. 스타일 필드 분류
+
+현재 및 후보 스타일을 다음 그룹으로 분류해 주세요.
+
+* content field
+* text style
+* box style
+* layout style
+* block-specific style
+* behavior/config field
+
+각 그룹에 대해 다음을 설명해 주세요.
+
+* `StyleProps`에 들어가는 것이 적절한지
+* block의 top-level field로 두는 것이 적절한지
+* block-specific props로 두는 것이 적절한지
+* `transformGuiToTailwind`로 처리하기 적절한지
+* 별도 layout helper나 inline style serializer가 필요한지
+
+### C. StylePanel 섹션화 가능성
+
+1. 현재 `editableFields` 구조에서 섹션 정보를 추가할 수 있나요?
+2. 예를 들어 `section: "text" | "background" | "layout"` 같은 메타데이터를 추가하는 것이 자연스러운가요?
+3. 기존 필드에 section을 추가해도 blockDefinitions의 선언적 성격이 유지되나요?
+4. StylePanel이 필드를 section 기준으로 그룹화하도록 바꾸면 예상 변경 범위는 어느 정도인가요?
+5. content editing 필드와 style editing 필드를 같은 패널에서 어떻게 구분하는 것이 좋나요?
+6. StylePanel UI 섹션화가 DnD나 Preview/Export에 영향을 줄 가능성이 있나요?
+
+### D. 스타일 메타데이터 도입 가능성
+
+다음과 같은 메타데이터가 필요한지 검토해 주세요.
 
 ```ts
-LIST_ITEM {
-  type: "LIST_ITEM",
-  children: []
-}
+type StyleFieldCategory =
+  | "content"
+  | "text"
+  | "box"
+  | "layout"
+  | "block-specific"
+  | "behavior"
+  | "advanced";
+
+type StyleFieldMeta = {
+  key: string;
+  label: string;
+  category: StyleFieldCategory;
+  inheritable?: boolean;
+  appliesTo?: string[];
+  transformKind?: "tailwind-class" | "inline-style" | "exporter-specific" | "none";
+};
 ```
 
-즉:
+반드시 이 구조를 쓰라는 뜻은 아닙니다.
+현재 repo에 맞는 현실적인 구조를 제안해 주세요.
 
-* `content` 사용을 중단합니다.
-* `LIST_ITEM`은 `children`만 사용합니다.
-* `LIST_ITEM`의 기본 children은 없어야 합니다.
-* 기본 `PARAGRAPH` child를 자동 생성하지 마세요.
-* 새 `LIST_ITEM`은 빈 `<li></li>`에 해당하는 구조로 시작합니다.
-* 사용자는 이후 `LIST_ITEM` 안에 P, IMAGE, LINK 등 허용된 블록을 직접 넣습니다.
+특히 다음을 비교해 주세요.
 
-## 매우 중요한 수정 기준
+* `editableFields`에 직접 메타데이터를 추가하는 방식
+* 별도 `styleFieldRegistry`를 만드는 방식
+* `blockDefinitions`의 `editableFields`와 별도 registry를 조합하는 방식
 
-이전 보고서에서는 `LIST_ITEM` 안에 기본 `PARAGRAPH` child를 넣는 방안을 권고했지만, 이번 구현에서는 그 방식을 사용하지 않습니다.
+각 방식의 장단점과 변경 범위를 설명해 주세요.
 
-하지 말아야 할 것:
+### E. “내부 텍스트에도 적용” 설계 가능성
 
-```text
-LIST_ITEM
-└─ PARAGRAPH("목록 항목")
-```
+1. 이 기능을 구현하려면 어떤 data field가 필요해 보이나요?
 
-해야 할 것:
+   * 예: `styles.inheritTextStyles`
+   * 다른 더 적절한 이름이 있다면 제안해 주세요.
+2. 이 field는 어떤 block type에 노출하는 것이 적절한가요?
 
-```text
-LIST_ITEM
-└─ children: []
-```
+   * CONTAINER
+   * CARD
+   * GRID_ZONE
+   * LIST
+   * LIST_ITEM
+   * PASSWORD_ZONE
+   * TOGGLE_ZONE
+3. HEADING/PARAGRAPH/LINK/IMAGE/HR에는 노출하지 않는 것이 적절한가요?
+4. 부모가 text style을 갖고 있고 자식도 text style을 갖고 있을 때 우선순위는 어떻게 되어야 하나요?
+5. CSS 상속을 활용할 경우 자식의 기본 text class가 부모 상속을 막는지 확인해 주세요.
+6. 자식 styles를 직접 변경하지 않는 방식으로 구현 가능한지 확인해 주세요.
+7. Preview / Code View / Export에서 같은 의미를 유지하려면 어느 경로에서 처리해야 하나요?
+8. Canvas에서도 교육적으로 비슷하게 보이게 할 필요가 있는지, 있다면 위험은 무엇인가요?
 
-이유:
+### F. 추가할 스타일 옵션의 우선순위
 
-* `li`를 생성했는데 자동으로 `p`가 함께 생기는 것은 교육적으로 설명 비용이 큽니다.
-* add-item button이 `LIST_ITEM` 내부 구조를 알게 만들면 data-driven abstraction이 약해집니다.
-* `LIST_ITEM` definition은 단순하게 `<li>` container 역할만 해야 합니다.
-* 필요하면 학생이 직접 P, IMAGE, LINK 등을 넣도록 합니다.
+현재 구조에서 안전하게 추가 가능한 스타일과 위험한 스타일을 나눠 주세요.
 
-## Phase 1 세부 요구사항
+다음 형식으로 정리해 주세요.
 
-### 1. LIST_ITEM definition
+| 후보 스타일 | 그룹 | 구현 난이도 | Preview/Export parity 위험 | Canvas 위험 | 추천 Phase | 메모 |
+| ------ | -- | -----: | -----------------------: | --------: | -------- | -- |
 
-`LIST_ITEM` definition을 다음 방향으로 전환하세요.
+후보에는 최소한 다음을 포함해 주세요.
 
-* internal block 유지
-* palette hidden 유지
-* `contentField` 제거 또는 사용 중단
-* template은 `children: []`
-* `childFields` 추가
-* `htmlSchema`: `{ tag: "li", childField: "children" }`
-* `editableFields`: 최소한 common style fields만 사용
-* inline input 없음
-* textarea 없음
+* textColor
+* fontSize
+* fontWeight/isBold
+* fontFamily
+* lineHeight
+* textAlign
+* letterSpacing
+* bgColor
+* padding
+* margin
+* borderWidth
+* borderColor
+* rounded
+* shadow
+* width
+* maxWidth
+* minHeight
+* gap
+* gridCols
+* image objectFit
+* image aspectRatio
+* link variant
+* hr thickness
+* hr color
 
-### 2. LIST definition
+### G. Preview / Code View / Export parity
 
-`LIST` definition은 계속 `LIST_ITEM`만 직접 자식으로 허용해야 합니다.
+스타일 확장 시 다음을 확인해 주세요.
 
-현재 기본 `LIST_ITEM` 개수는 repo 상태를 보고 판단하되, 다음 기준을 따르세요.
+1. class-style transformation은 `transformGuiToTailwind` 같은 공통 경로로 유지 가능한가요?
+2. layout-style transformation은 별도 helper가 필요한가요?
+3. inline style이 필요한 경우 Preview와 Export에서 같은 의미를 유지할 수 있나요?
+4. Code View가 compiler/export 경로를 계속 재사용할 수 있나요?
+5. Preview switch renderer와 htmlSchema compiler가 어긋날 가능성이 어디에 있나요?
+6. 이를 줄이기 위한 최소 변경 방안은 무엇인가요?
 
-선호:
+### H. 회귀 위험
 
-* LIST 생성 시 빈 `LIST_ITEM` 1개
+다음 영역별로 위험을 정리해 주세요.
 
-허용:
-
-* 기존 UX 안정성을 위해 빈 `LIST_ITEM` 3개 유지
-
-단, 어떤 경우에도 기본 LIST_ITEM 안에 PARAGRAPH나 다른 child block을 자동 생성하지 마세요.
-
-### 3. LIST_ITEM children 허용 범위
-
-Phase 1에서는 `LIST_ITEM` 안에 허용할 블록을 작게 유지하세요.
-
-우선 허용 후보:
-
-* HEADING
-* PARAGRAPH
-* IMAGE
-* LINK 또는 A
-* HR
-* CARD
-* CONTAINER
-
-우선 제외:
-
-* LIST
-* LIST_ITEM
+* 기존 style 적용
+* StylePanel content editing
+* Preview rendering
+* Code View
+* Export
+* Canvas visual feedback
+* DnD
 * GRID_ZONE
-* PASSWORD_ZONE
-* TOGGLE_ZONE
-* SPACER 또는 내부용 블록
+* LIST / LIST_ITEM
+* PASSWORD_ZONE / TOGGLE_ZONE
+* Tailwind class 충돌
+* TypeScript 타입 안정성
 
-특히 nested list는 이번 범위에서 제외합니다.
+## 보고서 형식
 
-만약 현재 drop policy 구조상 indirect nested LIST, 예를 들어 `LIST_ITEM > CONTAINER > LIST`까지 엄격히 막기 위해 큰 ancestry/subtree 검사가 필요하다면, 이번 Phase 1에서는 무리하게 구현하지 말고 보고하세요.
+다음 구조로 작성해 주세요.
 
-단, 직접적으로 `LIST_ITEM` 안에 `LIST`나 `LIST_ITEM`이 들어가는 것은 막아야 합니다.
+### 1. 요약 결론
 
-### 4. Preview / Code View / Export
+* 현재 스타일 시스템이 어느 정도까지 확장 가능한지 요약
+* 가장 먼저 정해야 할 설계 결정 3~5개
+* 구현 전에 반드시 확인해야 할 위험 3~5개
 
-다음을 지켜주세요.
+### 2. 현재 스타일 시스템 지도
 
-* `LIST_ITEM`은 `<li>`로 출력되어야 합니다.
-* `LIST_ITEM.children`은 기존 compiler recursion으로 출력되어야 합니다.
-* compiler에 `if block.type === "LIST_ITEM"` 같은 전용 HTML 생성 예외를 추가하지 마세요.
-* Code View 전용 generator를 만들지 마세요.
-* Code View는 기존 compiler 결과만 보여줘야 합니다.
-* Preview renderer는 현재 구조가 switch-based라면 최소 case 수정은 허용합니다.
-* Preview에서도 `LIST_ITEM.children`을 재귀 렌더링해야 합니다.
+다음 흐름을 실제 파일명과 함수명 기준으로 정리해 주세요.
 
-예상 출력:
-
-```html
-<ul>
-  <li>
-    <p>본문</p>
-  </li>
-</ul>
+```text
+blockDefinitions / editableFields
+→ StylePanel / EditableFieldControl
+→ HtmlBlock.styles 또는 block field
+→ style transformer
+→ Canvas
+→ Preview
+→ HTML compiler/export
+→ Code View
 ```
 
-빈 항목은 다음처럼 나올 수 있습니다.
+### 3. 현재 StyleProps / editableFields 목록
 
-```html
-<ul>
-  <li></li>
-</ul>
+현재 필드 목록을 표로 작성해 주세요.
+
+| Field | 저장 위치 | 노출 블록 | 입력 UI | 변환 경로 | Canvas 반영 | Preview 반영 | Export/Code View 반영 | 메모 |
+| ----- | ----- | ----- | ----- | ----- | --------- | ---------- | ------------------- | -- |
+
+### 4. 스타일 분류 제안
+
+현재 필드와 후보 필드를 다음 기준으로 분류해 주세요.
+
+* content
+* text
+* box
+* layout
+* block-specific
+* behavior/config
+* advanced
+
+### 5. StylePanel 섹션화 설계안
+
+최소 2가지 방식을 비교해 주세요.
+
+* 방식 A: 기존 `editableFields`에 section/category 메타데이터 추가
+* 방식 B: 별도 style field registry 도입
+* 필요하다면 방식 C 제안
+
+각 방식에 대해 다음을 포함해 주세요.
+
+* 변경 파일
+* 장점
+* 단점
+* 타입 안정성
+* blockDefinitions 선언성 유지 여부
+* 확장성
+* 구현 난이도
+* 권장 여부
+
+### 6. 스타일 메타데이터 설계안
+
+다음을 포함해 주세요.
+
+* 현재 repo에 맞는 타입 초안
+* `inheritable` 필요 여부
+* `transformKind` 필요 여부
+* `appliesTo` 또는 block-level 제어 방식 필요 여부
+* 기존 `editableFields`와의 관계
+* 1차 도입 시 최소 필드
+* 나중에 확장할 필드
+
+### 7. “내부 텍스트에도 적용” 설계안
+
+다음을 포함해 주세요.
+
+* 기능 의미 정의
+* UI 문구 후보
+* data field 후보
+* 노출할 block type
+* 노출하지 않을 block type
+* 상속 가능 스타일 목록
+* 상속 불가능 스타일 목록
+* 자식 명시 스타일과 부모 상속 스타일의 우선순위
+* CSS 상속 활용 가능성
+* Preview / Code View / Export 적용 경로
+* Canvas 적용 여부와 위험
+* 구현 Phase 제안
+
+### 8. 스타일 옵션 추가 우선순위
+
+후보 스타일을 Phase별로 나눠 주세요.
+
+예:
+
+```text
+Phase 1: 현재 구조에서 안전한 텍스트/박스 스타일 확장
+Phase 2: StylePanel 섹션화 및 스타일 메타데이터 정리
+Phase 3: 내부 텍스트에도 적용
+Phase 4: layout helper가 필요한 스타일
+Phase 5: block-specific style 고도화
 ```
 
-이것은 Phase 1에서는 허용합니다.
+실제 repo 상태를 기준으로 더 적절한 Phase를 제안해도 됩니다.
 
-### 5. Canvas UX
+### 9. 권장 Phase 1 구현 계획
 
-`LIST_ITEM`은 container-like block처럼 보여야 합니다.
+아직 구현하지 말고, 계획만 작성해 주세요.
 
-필요한 것:
+형식:
 
-* `LIST_ITEM` 안에 child drop zone 표시
-* empty state 표시
+```text
+Phase 1 목표:
+Phase 1에서 수정할 파일:
+Phase 1에서 만들 파일:
+Phase 1에서 수정하지 않을 것:
+Phase 1에서 추가할 스타일:
+Phase 1에서 제외할 스타일:
+Phase 1 완료 후 기대 동작:
+Phase 1 검증 방법:
+```
 
-  * 예: “이 항목 안에 블록을 넣으세요”
-  * 또는 “본문, 이미지, 링크 등을 드롭하세요”
-* drag handle / edit handle 유지
-* inline input 제외
-* text-only label인 `항목: ${block.content}` 같은 표시는 children 모델에 맞게 조정
+Phase 1은 작고 reviewable해야 합니다.
 
-가능하면 기존 `CanvasBlockSlot`을 재사용하세요.
-LIST_ITEM 전용 slot 컴포넌트를 만들지 마세요.
+### 10. 명시적 제외 범위
 
-### 6. DnD / drop policy
+이번 스타일 확장 검토에서 제외할 것을 명시해 주세요.
 
-다음을 유지해야 합니다.
+반드시 제외:
 
-* `LIST`는 직접 자식으로 `LIST_ITEM`만 받음
-* `LIST_ITEM`은 `LIST` 안에서만 존재할 수 있음
-* `LIST_ITEM`은 root로 이동할 수 없음
-* `LIST_ITEM`은 CARD, CONTAINER, GRID_ZONE, PASSWORD_ZONE, TOGGLE_ZONE 등으로 이동할 수 없음
-* `LIST_ITEM` 자체 reorder는 기존처럼 가능해야 함
-* `LIST_ITEM` 내부에는 허용된 일반 블록만 drop 가능해야 함
-
-이번 Phase 1에서 drop engine을 수정해야 한다면:
-
-* 최소 범위로만 수정하세요.
-* 기존 CONTAINER, CARD, GRID_ZONE, PASSWORD_ZONE, TOGGLE_ZONE의 drop 동작을 바꾸지 마세요.
-* acceptedBlockTypes / allowedParentTypes가 없는 기존 블록은 기존처럼 동작해야 합니다.
-
-### 7. StylePanel
-
-Phase 1에서는 LIST_ITEM content editing을 제거하거나 비활성화합니다.
-
-* LIST_ITEM은 더 이상 `content` text field를 노출하지 않아야 합니다.
-* LIST_ITEM 자체는 common style 정도만 수정 가능하면 됩니다.
-* 실제 텍스트는 사용자가 LIST_ITEM 안에 PARAGRAPH를 넣고, 그 PARAGRAPH를 StylePanel에서 수정하는 흐름입니다.
-* inline input은 구현하지 마세요.
-
-## Phase 1 명시적 제외 범위
-
-이번 Phase 1에서 다음은 구현하지 마세요.
-
-* LIST 내부 “항목 추가” 버튼
-* 자동 wrapping
-
-  * 예: LIST 빈 공간에 일반 block을 drop하면 자동으로 LIST_ITEM을 만들고 그 안에 넣는 기능
-* LIST_ITEM palette 노출
-* ordered list / `ol`
-* `listKind`
-* marker style option
-* textarea list editing
-* inline input
-* nested list
-* default PARAGRAPH child 자동 생성
+* `HtmlBlock` 모델 교체
+* slots migration
+* GRID_ZONE columns/gridChildren/2D array/per-column drop target/GRID_DROPPER
+* LIST ordered list/listKind/marker style
+* LIST 자식 자동 `<li>` wrapping
 * Code View 전용 generator
-* compiler special-case explosion
-* GRID_ZONE 관련 변경
-* gridGap
-* GRID_DROPPER
-* HtmlBlock 모델 대수정
+* 전역 theme 시스템
+* responsive breakpoint 시스템
+* 대규모 Canvas renderer 재작성
+* DnD listener/drag handle/edit handle 변경
+* unrelated repository 변경
 
-## Phase 1 완료 후 보고 형식
+### 11. 검증 계획
 
-Phase 1 구현이 끝나면 다음 형식으로 보고하세요.
+승인 후 구현 단계에서 실행할 검증 계획을 제안해 주세요.
 
-# Phase 1 LIST_ITEM Containerization Report
+가능하면 다음을 포함해 주세요.
 
-## 1. Summary
+* `npx.cmd tsc --noEmit`
+* `npm.cmd run build`
+* full lint가 막히는 경우 changed-file ESLint
+* 수동 테스트
 
-* 무엇을 바꿨는지
-* LIST_ITEM이 어떻게 바뀌었는지
-* 기본 child 생성 여부
+수동 테스트에는 최소한 다음을 포함해 주세요.
 
-## 2. Files Changed
+* 각 스타일 필드가 StylePanel에서 저장되는지
+* Preview 반영
+* Code View 반영
+* Export HTML 반영
+* Canvas에서 의도한 범위만 반영
+* CONTAINER/CARD/GRID_ZONE/LIST/LIST_ITEM 스타일
+* HEADING/PARAGRAPH/LINK/IMAGE/HR 스타일
+* PASSWORD_ZONE/TOGGLE_ZONE 회귀
+* GRID_ZONE gridCols 유지
+* LIST/LIST_ITEM restriction 유지
+* drag handle/edit handle 유지
+* nested block 이동 및 재정렬
 
-표 형식:
-| File | Change | Reason |
+## 응답 언어
 
-## 3. Data Model Result
+보고서는 한국어로 작성해 주세요.
 
-* LIST template
-* LIST_ITEM template
-* childFields
-* dropPolicy
-* htmlSchema
+## 중요
 
-## 4. Preview / Code View / Export Result
-
-* compiler special case 추가 여부
-* Code View 변경 여부
-* 예상 HTML 예시
-
-## 5. DnD Result
-
-* LIST accepts only LIST_ITEM
-* LIST_ITEM allowed parents
-* LIST_ITEM allowed children
-* forbidden drops
-
-## 6. Validation
-
-실행한 명령:
-
-* typecheck
-* build
-* lint 또는 changed-file lint
-
-실패가 있으면:
-
-* 관련 실패인지
-* 기존 unrelated 실패인지 구분
-
-## 7. Manual Regression Checklist
-
-* LIST 생성
-* 빈 LIST_ITEM 표시
-* LIST_ITEM 안에 PARAGRAPH drop
-* LIST_ITEM 안에 IMAGE/LINK/HR drop
-* LIST_ITEM reorder
-* LIST_ITEM이 root/CARD/CONTAINER/GRID_ZONE에 drop되지 않음
-* Preview 확인
-* Code View 확인
-* Export 확인
-* 기존 H1/P/IMAGE/A/HR/CARD/CONTAINER/GRID_ZONE 동작 확인
-
-## 8. Phase 2 Readiness
-
-* 항목 추가 버튼 구현을 위해 필요한 최소 변경
-* Phase 2에서 재사용할 수 있는 factory/mutation 경로
-* Phase 2 구현 전 남은 위험
-
----
-
-# Phase 2 — LIST 내부 항목 추가 버튼
-
-Phase 2는 지금 구현하지 마세요.
-다만 Phase 1 보고서의 “Phase 2 Readiness”에서 아래 방향을 고려해 주세요.
-
-향후 목표:
-
-* LIST 내부에 “항목 추가” 버튼을 둔다.
-* 버튼은 LIST의 children slot 하단에 표시한다.
-* 버튼을 누르면 새 빈 `LIST_ITEM`만 생성한다.
-* 새 LIST_ITEM 안에 PARAGRAPH나 다른 child를 자동 생성하지 않는다.
-* 새 item 생성은 반드시 blockFactory / createBlockFromDefinition("LIST_ITEM") 경로를 사용한다.
-* 버튼이나 mutation helper가 LIST_ITEM 내부 구조를 직접 조립하지 않는다.
-* LIST_ITEM은 계속 palette에 노출하지 않는다.
-* 자동 wrapping은 구현하지 않는다.
-
-향후 Phase 2에서 지켜야 할 원칙:
-
-```text
-button click
-→ createBlockFromDefinition("LIST_ITEM")
-→ append to LIST.children
-```
-
-하지 말아야 할 것:
-
-```text
-button click
-→ manually create LIST_ITEM
-→ manually create PARAGRAPH
-→ append PARAGRAPH into LIST_ITEM
-→ append LIST_ITEM
-```
-
-Phase 2는 Phase 1 테스트 후 별도 승인받고 진행하세요.
+이번 요청은 조사와 설계 보고서 작성만입니다.
+코드를 수정하지 마세요.
+변경 파일이 없어야 합니다.

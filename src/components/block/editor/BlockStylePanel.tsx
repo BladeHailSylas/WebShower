@@ -1,5 +1,9 @@
 import type { HtmlBlock } from "../../../types/types";
 import { getBlockDefinition } from "../../../features/block-studio/blocks/definitions";
+import type {
+  EditableFieldDefinition,
+  EditableFieldSection,
+} from "../../../features/block-studio/blocks/types/editableField.types";
 import EditableFieldControl from "./EditableFieldControl";
 
 interface BlockStylePanelProps {
@@ -8,10 +12,40 @@ interface BlockStylePanelProps {
   onDelete: () => void;
 }
 
+const sectionOrder: EditableFieldSection[] = [
+  "content",
+  "text",
+  "background",
+  "spacing",
+  "border",
+  "layout",
+  "behavior",
+  "advanced",
+];
+
+const sectionLabels: Record<EditableFieldSection, string> = {
+  content: "내용",
+  text: "텍스트",
+  background: "배경",
+  spacing: "여백",
+  border: "테두리",
+  layout: "레이아웃",
+  behavior: "동작 설정",
+  advanced: "고급",
+};
+
+function groupFieldsBySection(fields: EditableFieldDefinition[]) {
+  return sectionOrder
+    .map((section) => ({
+      section,
+      fields: fields.filter((field) => field.section === section),
+    }))
+    .filter((group) => group.fields.length > 0);
+}
+
 export default function BlockStylePanel({ targetBlock, onUpdate, onDelete }: BlockStylePanelProps) {
   const definition = getBlockDefinition(targetBlock.type);
-  const checkboxFields = definition.editableFields.filter((field) => field.control === "checkbox");
-  const otherFields = definition.editableFields.filter((field) => field.control !== "checkbox");
+  const fieldGroups = groupFieldsBySection(definition.editableFields);
 
   return (
     <div className="flex flex-col gap-4 text-sm font-medium border-t border-amber-200/60 pt-1 mt-1">
@@ -43,17 +77,40 @@ export default function BlockStylePanel({ targetBlock, onUpdate, onDelete }: Blo
         블록 꾸미기
       </div>
 
-      {otherFields.map((field) => (
-        <EditableFieldControl key={field.path} field={field} targetBlock={targetBlock} onUpdate={onUpdate} />
-      ))}
+      {fieldGroups.map(({ section, fields }) => {
+        const checkboxFields = fields.filter((field) => field.control === "checkbox");
+        const otherFields = fields.filter((field) => field.control !== "checkbox");
 
-      {checkboxFields.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 mt-1">
-          {checkboxFields.map((field) => (
-            <EditableFieldControl key={field.path} field={field} targetBlock={targetBlock} onUpdate={onUpdate} />
-          ))}
-        </div>
-      )}
+        return (
+          <section key={section} className="flex flex-col gap-3">
+            <h3 className="text-[11px] font-black text-amber-900/60 uppercase tracking-wider border-b border-amber-200/70 pb-1">
+              {sectionLabels[section]}
+            </h3>
+
+            {otherFields.map((field) => (
+              <EditableFieldControl
+                key={field.path}
+                field={field}
+                targetBlock={targetBlock}
+                onUpdate={onUpdate}
+              />
+            ))}
+
+            {checkboxFields.length > 0 && (
+              <div className="grid grid-cols-2 gap-3">
+                {checkboxFields.map((field) => (
+                  <EditableFieldControl
+                    key={field.path}
+                    field={field}
+                    targetBlock={targetBlock}
+                    onUpdate={onUpdate}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        );
+      })}
     </div>
   );
 }

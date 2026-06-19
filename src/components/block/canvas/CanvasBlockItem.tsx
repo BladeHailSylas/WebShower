@@ -19,7 +19,6 @@ export default function CanvasBlockItem({ block, activeStyleId, onStyleClick, on
     id: block.id,
     data: { type: "CANVAS_ITEM", block },
   });
-  const isGrid = block.type === "GRID_ZONE";
   const style = {
     transform: CSS.Transform.toString(transform),
     transition: isDragging ? "none" : "transform 220ms cubic-bezier(0.2, 0, 0, 1), opacity 220ms ease",
@@ -32,7 +31,7 @@ export default function CanvasBlockItem({ block, activeStyleId, onStyleClick, on
       ref={setNodeRef}
       style={style}
       className={`mb-2 relative flex items-stretch ${
-        isGrid ? "w-full max-w-xl" : "w-max"
+        "max-w-5xl"
       } active:cursor-grabbing group`}
     >
       <BlockDragHandle activatorRef={setActivatorNodeRef} attributes={attributes} listeners={listeners} />
@@ -45,7 +44,6 @@ export default function CanvasBlockItem({ block, activeStyleId, onStyleClick, on
       <BlockEditHandle
         blockId={block.id}
         active={activeStyleId === block.id}
-        variant={isGrid ? "grid" : "default"}
         onStyleClick={onStyleClick}
       />
     </div>

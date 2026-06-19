@@ -11,7 +11,7 @@ export default function TogglePreviewItem({ block, renderBlock, className }: Tog
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className={`w-full text-slate-900 ${className}`}>
+    <div className={`w-full ${className}`}>
       <div className="flex justify-between items-center gap-4">
         <div className="flex-1">{block.defaultChildren?.map((child) => renderBlock(child))}</div>
         <button
