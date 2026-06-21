@@ -1,256 +1,251 @@
-SLIDER_ZONE v1.1 UI polish 구현 계획을 작성해 주세요.
+Learning Templates v1을 구현하기 전에, 현재 `starterTemplate`의 형식과 처리 방식이 다중 템플릿 확장에 적절한지 조사해 주세요.
 
-이번 요청은 **조사와 구현 계획 수립**입니다.
+이번 요청은 **조사와 계획 수립**입니다.
 아직 코드를 수정하지 마세요.
 
 ## 배경
 
-Block Studio에는 현재 `SLIDER_ZONE` v1이 구현되어 있습니다.
+Block Studio에는 현재 `starterTemplate`가 존재합니다.
+앞으로 Learning Templates v1을 추가하려고 합니다.
 
-확인된 상태:
-
-* `SLIDER_ZONE` 추가 가능
-* `SLIDE_ITEM`은 internal block으로 동작
-* 슬라이드가 없을 때 / 1개일 때 / 2개 이상일 때 처리됨
-* 첫 슬라이드 / 마지막 슬라이드에서 이전·다음 버튼 상태 처리됨
-* Preview에서 이전/다음 버튼 작동
-* Export HTML에서도 이전/다음 버튼 작동
-* 한 페이지에 여러 개의 `SLIDER_ZONE`이 있어도 각 slider가 독립적으로 작동
-* 현재 구조상 큰 파괴나 회귀는 보이지 않음
-
-이제 v1.1에서는 새 기능을 크게 늘리는 것이 아니라, **시각적 품질과 사용감 개선**에 집중합니다.
-
-## 현재 문제
-
-현재 `SLIDER_ZONE`은 기능적으로는 작동하지만 다음 문제가 있습니다.
-
-1. 슬라이드를 넘길 때 전환이 뚝뚝 끊겨 보임
-2. 슬라이드마다 내부 요소 크기가 다르면 slider 전체 높이가 변해서 화면이 흔들려 보임
-
-## v1.1 목표
-
-이번 v1.1의 목표는 다음 두 가지입니다.
+Learning Templates v1의 목표는 다음과 같습니다.
 
 ```text
-1. 슬라이드 전환을 더 부드럽게 보이도록 개선
-2. 슬라이더 높이를 더 안정적으로 유지할 수 있는 옵션 검토
+사용자가 예시 템플릿 목록에서 원하는 템플릿을 고르고,
+“이 템플릿 추가하기” 버튼을 누르면,
+해당 템플릿의 HtmlBlock[] 묶음이 현재 Canvas root 맨 아래에 추가된다.
 ```
 
-우선 선호하는 방향:
+v1에서는 드래그 앤 드롭으로 템플릿을 삽입하지 않습니다.
 
-```text
-- fade transition
-- SLIDER_ZONE 전용 높이 토큰
-```
+## 중요한 방향
 
-## 중요한 범위 제한
+Learning Templates v1은 새 블록 시스템을 만드는 작업이 아닙니다.
+기존 `HtmlBlock` 구조와 기존 blockDefinitions / compiler / Preview / Code View / Export 경로를 유지해야 합니다.
 
-이번 작업은 `SLIDER_ZONE` v1.1 UI polish입니다.
+원칙:
 
-기능 확장이 아니라 기존 수동 이전/다음 슬라이더의 시각적 품질 개선만 다룹니다.
-
-v1.1에서 구현하지 않을 것:
-
-* autoplay
-* autoplay interval
-* loop
-* swipe / drag transition
-* dots indicator
-* thumbnail
-* 여러 장 동시 표시
-* responsive slidesPerView
-* transition 종류 선택 UI
-* transition duration 설정 UI
-* 슬라이드별 transition 설정
-* 복잡한 height auto-measurement
-* 이미지 로딩 후 높이 재계산 로직
-* Canvas renderer 대규모 변경
-* HtmlBlock 모델 변경
-* slots migration
-* Code View 전용 generator
-* DnD listener / drag handle / edit handle 변경
-* unrelated repository 변경
+* `HtmlBlock` 모델을 변경하지 않습니다.
+* slots migration을 하지 않습니다.
+* Code View 전용 generator를 만들지 않습니다.
+* DnD를 템플릿 삽입에 연결하지 않습니다.
+* 템플릿 삽입은 버튼 클릭으로 처리합니다.
+* 템플릿은 root canvas 맨 아래에 append하는 방식으로 시작합니다.
+* nested 위치 삽입은 v1에서 제외합니다.
+* 템플릿 데이터 안에 고정 id가 있더라도, 삽입 시에는 반드시 새 id로 재생성해야 합니다.
+* SLIDER_ZONE, LIST, nested CONTAINER/CARD처럼 깊은 children 구조도 id가 재귀적으로 재생성되어야 합니다.
 
 ## 조사할 것
 
-현재 repo의 `SLIDER_ZONE` 구현을 확인한 뒤, 다음을 조사해 주세요.
+실제 repo 구조를 확인한 뒤 다음을 조사해 주세요.
 
-### 1. 현재 SLIDER_ZONE 구조
+### 1. starterTemplate 구조
 
-다음을 실제 파일명과 함수명 기준으로 정리해 주세요.
+다음을 확인해 주세요.
 
-* `SLIDER_ZONE` definition
-* `SLIDE_ITEM` definition
-* Preview renderer / slider preview component
-* Export interactive exporter
-* Code View가 사용하는 compiler/export 경로
-* StylePanel에 노출된 `SLIDER_ZONE` 스타일 필드
-* `SLIDER_ZONE` / `SLIDE_ITEM`의 기본 className
-* 현재 slider viewport / slide / controls 구조
+* `starterTemplate`가 어디에 정의되어 있는지
+* 타입이 무엇인지
+* `HtmlBlock[]`인지, 다른 wrapper 구조가 있는지
+* block id를 포함하고 있는지
+* children / defaultChildren / conditionalChildren을 포함하는지
+* LIST/LIST_ITEM, SLIDER_ZONE/SLIDE_ITEM 같은 internal block 구조를 담을 수 있는지
+* 스타일 필드와 block-specific field를 담기에 충분한지
 
-### 2. 전환 애니메이션
+### 2. starterTemplate 처리 경로
 
-v1.1에서는 우선 `fade transition`을 선호합니다.
+다음을 확인해 주세요.
+
+* 현재 `starterTemplate`가 어디에서 사용되는지
+* 앱 시작 시 초기 Canvas를 채우는 데만 쓰이는지
+* reset/new document 기능과 연결되어 있는지
+* 현재 처리 방식이 기존 block factory를 통하는지
+* starterTemplate 안의 id를 그대로 쓰는지
+* 매번 새 id를 생성하는지
+* deep clone 또는 id 재생성 helper가 이미 있는지
+* 없다면 어디에 feature-local helper를 두는 것이 적절한지
+
+### 3. Learning Templates로 확장 가능성
 
 다음을 검토해 주세요.
 
-* 현재 Preview 구조에서 fade transition을 넣을 수 있는지
-* 현재 Export JS 구조에서 fade transition을 동일하게 넣을 수 있는지
-* Preview와 Export가 같은 의미로 동작할 수 있는지
-* 현재처럼 한 번에 하나의 slide만 렌더링하는 구조라면 fade가 가능한지
-* fade를 위해 모든 slide를 DOM에 두고 `opacity` / `hidden`을 제어해야 하는지
-* 아니면 현재 렌더링 구조를 유지하면서 CSS transition을 적용할 수 있는지
-* 0개 / 1개 / 2개 이상 상태에서 transition 처리가 어떻게 달라지는지
-* 끝 버튼 비활성화 정책과 충돌하지 않는지
+* 현재 `starterTemplate` 형식을 그대로 여러 템플릿에 재사용할 수 있는지
+* `LearningTemplate` 타입을 새로 만드는 것이 필요한지
+* 최소 타입은 무엇이면 충분한지
 
-우선은 수평 slide transition보다 fade transition을 선호합니다.
-좌우 translate track 구조는 v1.1에서는 과도할 수 있으므로 신중히 검토해 주세요.
-
-### 3. 높이 안정화
-
-현재는 슬라이드 내부 요소 크기에 따라 slider 높이가 변할 수 있습니다.
-
-v1.1에서는 복잡한 자동 측정 방식보다, 토큰 기반 높이 옵션을 선호합니다.
-
-검토할 옵션:
+예상 후보:
 
 ```ts
-styles.sliderHeight?: "default" | "sm" | "md" | "lg" | "xl";
+type LearningTemplate = {
+  id: string;
+  title: string;
+  description: string;
+  blocks: HtmlBlock[];
+};
 ```
 
-또는 repo의 기존 명명 규칙에 더 맞는 이름이 있다면 제안해 주세요.
+교육적 설명을 위해 다음 필드를 추가할 필요가 있는지도 검토해 주세요.
 
-권장 UI 라벨:
+```ts
+learningPoints?: string[];
+usedBlocks?: string[];
+category?: string;
+```
+
+단, v1에서 과도한 템플릿 registry나 검색 시스템은 만들지 않는 방향을 선호합니다.
+
+### 4. 템플릿 삽입 방식
+
+v1에서는 버튼 삽입만 사용합니다.
+
+검토할 것:
+
+* 선택한 템플릿의 `blocks`를 현재 Canvas root 맨 아래에 append할 수 있는지
+* 여러 block을 한 번에 append할 수 있는 tree mutation 경로가 있는지
+* 없다면 최소 helper가 필요한지
+* 삽입된 block들의 id를 모두 새로 생성할 수 있는지
+* children 깊이에 관계없이 재귀적으로 id를 새로 만들 수 있는지
+* 삽입 후 어떤 block을 selected 상태로 둘지
+* 삽입 후 Preview / Code View / Export가 즉시 갱신되는지
+* undo/redo가 있다면 그 흐름에 영향을 주는지
+* DnD 로직을 건드리지 않아도 되는지
+
+### 5. UI 위치와 UX
+
+Learning Templates v1 UI를 어디에 둘 수 있을지 조사해 주세요.
+
+후보:
+
+* BlockPalette 안에 별도 “템플릿” 섹션
+* BlockPalette 옆 별도 탭
+* StylePanel과는 분리
+* 상단 또는 사이드바의 “예시 템플릿” 패널
+
+v1에서는 다음 정도면 충분합니다.
 
 ```text
-슬라이더 높이
+템플릿 제목
+짧은 설명
+사용 블록 또는 학습 포인트
+“이 템플릿 추가하기” 버튼
 ```
 
-권장 선택지 예시:
+드래그 앤 드롭 삽입은 제외합니다.
 
-```text
-기본
-낮게
-보통
-높게
-아주 높게
-```
+### 6. v1 템플릿 후보
 
-권장 class mapping 예시:
+현재 구현된 블록과 스타일을 기준으로 v1에 적절한 템플릿 후보를 제안해 주세요.
 
-```text
-default 또는 미설정 → 기존 높이 유지
-sm → min-h-48
-md → min-h-64
-lg → min-h-80
-xl → min-h-96
-```
+예시 후보:
 
-실제 mapping은 repo의 기존 Tailwind 사용 방식과 디자인에 맞춰 제안해 주세요.
+* 자기소개 카드
+* 공지사항 박스
+* 2열 소개 섹션
+* 프로젝트 포트폴리오 그리드
+* FAQ 토글 섹션
+* 비밀번호 잠금 콘텐츠 예시
+* 메인 슬라이더 섹션
+* 단계별 안내 목록
 
-확인할 것:
+각 템플릿이 사용하는 블록과 학습 포인트도 간단히 제안해 주세요.
 
-* 이 옵션을 `StyleProps`에 둘지, slider-specific style field로 볼지
-* `transformGuiToTailwind` / resolver에서 처리할지
-* `SLIDER_ZONE` 전용 class mapping으로 처리할지
-* Preview / Export / Code View에서 같은 class 결과가 나오는지
-* Canvas에는 이 높이 옵션을 실제로 반영할지, 아니면 Preview/Export 중심으로 둘지
-* 0개 슬라이드 상태에서도 높이가 적용되어야 하는지
-* 1개 슬라이드 상태와 복수 슬라이드 상태에서 같은 높이 정책을 쓸 수 있는지
+## v1 제외 범위
 
-## 권장 방향
+다음은 Learning Templates v1에서 제외합니다.
 
-가능하면 다음 방향을 우선 검토해 주세요.
-
-### 전환
-
-* fade transition만 추가
-* 전환 duration은 고정값으로 둠
-* transition 종류 선택 UI는 추가하지 않음
-* transition 관련 StylePanel 옵션은 추가하지 않음
-
-### 높이
-
-* `SLIDER_ZONE` 전용 높이 토큰 추가
-* UI 라벨은 `슬라이더 높이`
-* StylePanel에서는 기존 구조에 맞는 적절한 섹션에 배치
-* 자유 입력이 아니라 제한된 토큰 사용
-* 일반 `minHeight` 공통 스타일로 확장하지 않음
-
-### Canvas
-
-* Canvas 편집 구조는 크게 바꾸지 않음
-* Canvas에서는 모든 `SLIDE_ITEM`을 펼쳐 보여주는 기존 편집 방식 유지
-* Canvas에 fade transition을 적용하지 않음
-* Canvas에 높이 옵션을 강하게 반영해 편집 UX를 해치지 않도록 주의
-* 필요한 경우 Preview/Export 중심 적용으로 제한
-
-## 구현 계획에서 답해야 할 질문
-
-다음 질문에 명확히 답해 주세요.
-
-1. fade transition 구현을 위해 Preview 구조를 얼마나 바꿔야 하나요?
-2. Export JS 구조를 얼마나 바꿔야 하나요?
-3. 현재처럼 선택된 slide만 렌더링하는 구조를 유지할 수 있나요?
-4. 모든 slide를 DOM에 두는 방식이 필요하다면, 0개/1개/복수 상태와 접근성 처리는 어떻게 하나요?
-5. `hidden`과 `opacity` transition은 함께 사용할 수 있나요?
-6. Export에서 여러 slider instance의 독립 동작은 유지되나요?
-7. slider height 옵션은 어디에 저장하는 것이 가장 적절한가요?
-8. slider height class는 기존 resolver 정책과 충돌하지 않나요?
-9. 기존 `paddingSize`, `marginSize`, border, shadow, rounded, text style과 충돌하지 않나요?
-10. Code View는 기존 compiler/export 결과를 그대로 표시하나요?
-11. SLIDE_ITEM의 내부 content가 CONTAINER/CARD를 포함해도 높이와 transition이 안정적인가요?
-12. v1.1에서 반드시 하지 말아야 할 작업은 무엇인가요?
+* 템플릿 drag/drop 삽입
+* nested 위치 삽입
+* 사용자 커스텀 템플릿 저장
+* 템플릿 편집기
+* 템플릿 검색
+* 원격 템플릿 로딩
+* 템플릿 카테고리 필터 고도화
+* 템플릿 미리보기 iframe
+* 템플릿 공유/라이브러리 기능
+* HtmlBlock 모델 변경
+* slots migration
+* Code View 전용 generator
+* DnD listener 변경
+* unrelated repository 변경
 
 ## 보고서 형식
 
-다음 구조로 작성해 주세요.
+다음 구조로 보고서를 작성해 주세요.
 
 ### 1. 요약 결론
 
-* v1.1 구현 가능 여부
-* 권장 방식
-* 주요 위험
-* 제외해야 할 것
+* 현재 `starterTemplate` 구조가 Learning Templates v1 확장에 적절한지
+* 그대로 재사용 가능한 부분
+* 보완이 필요한 부분
+* 가장 큰 위험 3~5개
 
-### 2. 현재 구조 요약
+### 2. 현재 starterTemplate 구조와 처리 경로
 
-* 관련 파일
-* Preview 구조
-* Export 구조
-* StylePanel / style field 구조
-* 현재 높이와 전환 처리 방식
+* 파일 위치
+* 타입
+* 사용 위치
+* id 처리 방식
+* 초기화/삽입 흐름
 
-### 3. Fade transition 설계안
+### 3. LearningTemplate 타입 제안
 
-* Preview 구현 방식
-* Export 구현 방식
-* DOM 구조 변경 필요 여부
-* CSS class / inline style 사용 여부
-* 0개 / 1개 / 복수 slide 처리
-* 접근성 영향
-* 여러 slider instance 영향
+* 최소 타입
+* v1에서 포함할 메타데이터
+* v1에서 제외할 메타데이터
+* 기존 starterTemplate와의 관계
 
-### 4. Slider height 설계안
+### 4. 템플릿 deep clone / id 재생성 계획
 
-* 필드명 후보
-* 저장 위치
-* UI 라벨 / 선택지
-* class mapping
-* StylePanel 섹션
-* Preview / Export / Code View 반영
-* Canvas 반영 여부
-* 기존 스타일과의 충돌 가능성
+* 기존 helper 존재 여부
+* 새 helper 필요 여부
+* children 재귀 처리
+* internal block 처리
+* SLIDER_ZONE / LIST 등 중첩 구조 처리
+* id 충돌 방지 방식
 
-### 5. 권장 구현 범위
+### 5. 템플릿 삽입 계획
 
-v1.1에서 구현할 것과 구현하지 않을 것을 구분해 주세요.
+* root append 방식
+* 여러 block 삽입 방식
+* selection 처리
+* Preview / Code View / Export 갱신
+* DnD와 분리되는지
 
-### 6. 수정 파일 계획
+### 6. UI 배치 제안
 
-예상 수정 파일과 새 파일이 있다면 정리해 주세요.
+* 추천 위치
+* v1 UI 구성
+* StylePanel / BlockPalette와의 관계
+* 드래그 삽입을 제외하는 이유
 
-### 7. 검증 계획
+### 7. v1 템플릿 후보
+
+각 후보에 대해 다음 형식으로 정리해 주세요.
+
+```text
+템플릿 이름:
+사용 블록:
+사용 스타일:
+학습 포인트:
+구현 난이도:
+```
+
+### 8. 권장 구현 Phase
+
+작고 reviewable한 Phase로 나눠 주세요.
+
+예시:
+
+```text
+T1: starterTemplate 구조 조사 및 template data 타입 정리
+T2: deep clone / id regeneration helper
+T3: Template gallery UI
+T4: root append insertion
+T5: sample templates 작성 및 회귀 검증
+```
+
+실제 repo 구조에 맞춰 더 적절한 Phase를 제안해 주세요.
+
+### 9. 검증 계획
 
 자동 검증:
 
@@ -265,26 +260,24 @@ git diff --check
 
 수동 검증에는 최소한 다음을 포함해 주세요.
 
-* 슬라이드 0개 상태
-* 슬라이드 1개 상태
-* 슬라이드 2개 이상 상태
-* 첫 슬라이드 / 마지막 슬라이드 버튼 상태
-* fade transition Preview 동작
-* fade transition Export 동작
-* 여러 SLIDER_ZONE instance 독립 동작
-* slider height 기본 / 낮게 / 보통 / 높게 / 아주 높게
-* SLIDE_ITEM 내부에 HEADING / PARAGRAPH / IMAGE / LINK
-* SLIDE_ITEM 내부에 CONTAINER / CARD
-* 높이가 다른 슬라이드 간 이동 시 흔들림 개선 여부
-* Code View class/output 확인
-* Export HTML 확인
-* 기존 SLIDER_ZONE 추가 / 슬라이드 추가 / 재정렬 / 삭제 회귀
-* 기존 GRID_ZONE, LIST/LIST_ITEM, PASSWORD_ZONE, TOGGLE_ZONE 회귀 없음
-* drag handle / edit handle 회귀 없음
+* 템플릿 목록이 표시되는지
+* “이 템플릿 추가하기” 버튼 동작
+* Canvas root 맨 아래에 블록 묶음 추가
+* 같은 템플릿을 여러 번 추가해도 id 충돌 없음
+* nested children id도 재생성
+* LIST/LIST_ITEM 구조 유지
+* SLIDER_ZONE/SLIDE_ITEM 구조 유지
+* PASSWORD_ZONE/TOGGLE_ZONE 포함 템플릿 정상 작동
+* Preview 갱신
+* Code View 갱신
+* Export HTML 정상
+* 기존 DnD 동작 회귀 없음
+* 기존 block palette 동작 회귀 없음
+* 기존 StylePanel 편집 회귀 없음
 
 ## 중요
 
 이번 요청에서는 코드를 수정하지 마세요.
-조사와 v1.1 구현 계획만 작성해 주세요.
+조사와 계획 보고서만 작성해 주세요.
 
 응답은 한국어로 작성해 주세요.

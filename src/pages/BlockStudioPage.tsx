@@ -15,7 +15,7 @@ import { useBlockDragAndDrop } from "../features/block-studio/hooks/useBlockDrag
 import { useBlockStudio } from "../features/block-studio/hooks/useBlockStudio";
 
 export default function BlockStudioPage() {
-  const { blocks, setBlocks } = useBlockStudio();
+  const { blocks, setBlocks, appendLearningTemplate } = useBlockStudio();
   const { activeDrag, handleDragStart, handleDragEnd } = useBlockDragAndDrop(setBlocks);
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -31,7 +31,7 @@ export default function BlockStudioPage() {
       onDragEnd={handleDragEnd}
     >
       <BlockStudioLayout
-        palette={<BlockPalette />}
+        palette={<BlockPalette onAddTemplate={appendLearningTemplate} />}
         canvas={<BlockCanvas blocks={blocks} setBlocks={setBlocks} />}
         preview={<BlockRenderer blocks={blocks} />}
       />
