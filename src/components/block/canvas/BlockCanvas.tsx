@@ -13,7 +13,7 @@ interface BlockCanvasProps {
 
 export default function BlockCanvas({ blocks, setBlocks }: BlockCanvasProps) {
   const {
-    canvasRef,
+    scrollContainerRef,
     selectedBlockId,
     selectedBlock,
     lineStart,
@@ -26,12 +26,12 @@ export default function BlockCanvas({ blocks, setBlocks }: BlockCanvasProps) {
   } = useSelectedBlockEditor(blocks, setBlocks);
 
   return (
-    <div ref={canvasRef} className="flex flex-col h-full w-full relative overflow-hidden bg-slate-900">
+    <div className="flex min-w-0 flex-col h-full w-full relative overflow-hidden bg-slate-900">
       <div className="absolute top-0 left-0 w-full p-6 z-10 pointer-events-none">
         <h2 className="text-2xl font-black text-slate-700/50">조립 캔버스</h2>
       </div>
 
-      <CanvasRootDropZone onClearSelection={clearSelection}>
+      <CanvasRootDropZone scrollContainerRef={scrollContainerRef} onClearSelection={clearSelection}>
         <div className="relative z-10 flex flex-col items-start gap-2">
           <CanvasBlockList
             blocks={blocks}

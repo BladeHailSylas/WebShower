@@ -90,6 +90,7 @@ export default function CanvasBlockSlot({
           <CanvasBlockItem
             key={child.id}
             block={child}
+            isNested
             editorLabel={fieldDefinition.itemLabelPrefix ? `${fieldDefinition.itemLabelPrefix} ${index + 1}` : undefined}
             activeStyleId={activeStyleId}
             onStyleClick={onStyleClick}

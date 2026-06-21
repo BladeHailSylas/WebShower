@@ -7,6 +7,7 @@ import textLimiter from "../../../utils/textLimiter";
 
 interface CanvasBlockBodyProps {
   block: HtmlBlock;
+  isNested: boolean;
   editorLabel?: string;
   activeStyleId: string | null;
   onStyleClick: (event: MouseEvent, id: string) => void;
@@ -31,6 +32,7 @@ function getBlockLabel(block: HtmlBlock): string | null {
 
 export default function CanvasBlockBody({
   block,
+  isNested,
   editorLabel,
   activeStyleId,
   onStyleClick,
@@ -41,7 +43,11 @@ export default function CanvasBlockBody({
   return (
     <div
       className={`flex flex-col border-2 border-slate-700 bg-slate-800 shadow-sm ${
-        isContainer || definition.childFields.length > 0 ? "min-w-70" : "min-w-50"
+        isNested
+          ? "min-w-0 flex-1"
+          : isContainer || definition.childFields.length > 0
+            ? "min-w-70"
+            : "min-w-50"
       }`}
     >
       <div className="p-3 font-bold text-slate-200 text-sm flex justify-between items-center">

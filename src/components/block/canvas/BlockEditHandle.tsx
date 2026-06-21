@@ -16,6 +16,7 @@ export default function BlockEditHandle({
 
   return (
     <div
+      data-block-edit-handle-id={blockId}
       onClick={(event) => onStyleClick(event, blockId)}
       onPointerDown={stopPointer}
       className={`w-8 rounded-r-xl border-y-2 border-r-2 cursor-pointer flex items-center justify-center shrink-0 ${colors} ${

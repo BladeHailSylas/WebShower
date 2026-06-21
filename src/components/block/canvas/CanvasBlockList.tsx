@@ -23,6 +23,7 @@ export default function CanvasBlockList({
         <CanvasBlockItem
           key={block.id}
           block={block}
+          isNested={false}
           activeStyleId={activeStyleId}
           onStyleClick={onStyleClick}
           onAppendChild={onAppendChild}
