@@ -136,6 +136,21 @@ export const marginSizeField: EditableFieldDefinition = {
   ],
 };
 
+export const sliderHeightField: EditableFieldDefinition = {
+  path: "styles.sliderHeight",
+  label: "슬라이더 높이",
+  control: "select",
+  section: "layout",
+  defaultValue: "default",
+  options: [
+    { label: "기본", value: "default" },
+    { label: "낮게", value: "sm" },
+    { label: "보통", value: "md" },
+    { label: "높게", value: "lg" },
+    { label: "아주 높게", value: "xl" },
+  ],
+};
+
 export const hrBorderFields: EditableFieldDefinition[] = [
   { ...borderWidthField, label: "선 굵기" },
   { ...borderColorField, label: "선 색상" },

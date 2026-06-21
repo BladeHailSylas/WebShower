@@ -21,14 +21,18 @@ export function compileSliderZone(block: HtmlBlock, compileBlock: CompileBlock):
   if (slides.length === 0) {
     return `
 <section id="${uniqueId}-root" class="${classes}" aria-label="콘텐츠 슬라이더">
-  <div class="p-4 text-center text-sm text-slate-500">슬라이드가 없습니다</div>
+  <div class="grid flex-1 place-items-center p-4 text-center text-sm text-slate-500">슬라이드가 없습니다</div>
 </section>`.trim();
   }
 
+  const transitionClasses =
+    slides.length > 1
+      ? "transition-[opacity,visibility] duration-300 ease-in-out motion-reduce:transition-none"
+      : "";
   const slideHtml = slides
     .map(
       (slide, index) => `
-    <div class="slider-slide" data-slider-owner="${uniqueId}" data-slide-index="${index}" role="group" aria-roledescription="슬라이드" aria-label="${index + 1} / ${slides.length}" aria-hidden="${index === 0 ? "false" : "true"}"${index === 0 ? "" : " hidden"}>${compileBlock(slide)}</div>`,
+    <div class="slider-slide flex flex-col justify-center col-start-1 row-start-1 ${transitionClasses} ${index === 0 ? "visible opacity-100" : "invisible pointer-events-none opacity-0"}" data-slider-owner="${uniqueId}" data-slide-index="${index}" role="group" aria-roledescription="슬라이드" aria-label="${index + 1} / ${slides.length}" aria-hidden="${index === 0 ? "false" : "true"}"${index === 0 ? "" : " inert"}>${compileBlock(slide)}</div>`,
     )
     .join("");
 
@@ -51,8 +55,13 @@ export function compileSliderZone(block: HtmlBlock, compileBlock: CompileBlock):
       root.dataset.slideIndex = String(nextIndex);
       slides.forEach((slide, index) => {
         const isActive = index === nextIndex;
-        slide.hidden = !isActive;
+        slide.classList.toggle('visible', isActive);
+        slide.classList.toggle('opacity-100', isActive);
+        slide.classList.toggle('invisible', !isActive);
+        slide.classList.toggle('pointer-events-none', !isActive);
+        slide.classList.toggle('opacity-0', !isActive);
         slide.setAttribute('aria-hidden', String(!isActive));
+        slide.inert = !isActive;
       });
       root.querySelector('[data-slider-owner="${uniqueId}"][data-slider-action="prev"]').disabled = nextIndex === 0;
       root.querySelector('[data-slider-owner="${uniqueId}"][data-slider-action="next"]').disabled = nextIndex === lastIndex;
@@ -63,7 +72,7 @@ export function compileSliderZone(block: HtmlBlock, compileBlock: CompileBlock):
 
   return `
 <section id="${uniqueId}-root" class="${classes}" data-slide-index="0" aria-label="콘텐츠 슬라이더">
-  <div class="slider-viewport">${slideHtml}
+  <div class="slider-viewport grid flex-1" aria-live="polite">${slideHtml}
   </div>${controls}
 </section>`.trim();
 }

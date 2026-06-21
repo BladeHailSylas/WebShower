@@ -1,5 +1,10 @@
 import type { BlockDefinition } from "../types/blockDefinition.types";
-import { commonStyleFields, marginSizeField, paddingSizeField } from "./editableFieldPresets";
+import {
+  commonStyleFields,
+  marginSizeField,
+  paddingSizeField,
+  sliderHeightField,
+} from "./editableFieldPresets";
 
 export const sliderZoneDefinition = {
   type: "SLIDER_ZONE",
@@ -11,7 +16,7 @@ export const sliderZoneDefinition = {
     type: "SLIDER_ZONE",
     children: [],
     styles: {
-      className: "relative w-full  overflow-hidden rounded-xl border border-slate-200 shadow-sm text-slate-900",
+      className: "relative flex w-full flex-col overflow-hidden rounded-xl border border-slate-200 shadow-sm text-slate-900",
     },
   },
   palette: { label: "슬라이더 구역 만들기", icon: "SLIDE", order: 40 },
@@ -27,7 +32,7 @@ export const sliderZoneDefinition = {
       itemLabelPrefix: "슬라이드",
     },
   ],
-  editableFields: [...commonStyleFields, paddingSizeField, marginSizeField],
+  editableFields: [...commonStyleFields, sliderHeightField, paddingSizeField, marginSizeField],
   dropPolicy: { acceptsChildren: true, childFields: ["children"], allowRoot: true },
   dragPreview: { label: "슬라이더 구역" },
   htmlExporterKey: "sliderZone",

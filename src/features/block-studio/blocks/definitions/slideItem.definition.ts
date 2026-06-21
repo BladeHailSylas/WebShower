@@ -11,7 +11,7 @@ export const slideItemDefinition = {
     id: "template-slide-item",
     type: "SLIDE_ITEM",
     children: [],
-    styles: { className: "w-full p-4 text-slate-900" },
+    styles: { className: "w-full p-4 text-slate-900 flex justify-center" },
   },
   palette: { label: "슬라이드 항목", hidden: true, order: 999 },
   childFields: [

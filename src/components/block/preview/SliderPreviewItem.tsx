@@ -16,15 +16,37 @@ export default function SliderPreviewItem({ block, className, renderBlock }: Sli
   if (slides.length === 0) {
     return (
       <section className={className} aria-label="콘텐츠 슬라이더">
-        <div className="p-4 text-center text-sm text-slate-500">슬라이드가 없습니다</div>
+        <div className="grid flex-1 place-items-center p-4 text-center text-sm text-slate-500">슬라이드가 없습니다</div>
       </section>
     );
   }
 
   return (
     <section className={className} aria-label="콘텐츠 슬라이더">
-      <div className="slider-viewport" aria-live="polite">
-        {renderBlock(slides[safeIndex])}
+      <div className="slider-viewport grid flex-1" aria-live="polite">
+        {slides.map((slide, index) => {
+          const isActive = index === safeIndex;
+          const transitionClasses =
+            slides.length > 1
+              ? "transition-[opacity,visibility] duration-300 ease-in-out motion-reduce:transition-none"
+              : "";
+
+          return (
+            <div
+              key={slide.id}
+              className={`slider-slide flex flex-col justify-center col-start-1 row-start-1 ${transitionClasses} ${
+                isActive ? "visible opacity-100" : "invisible pointer-events-none opacity-0"
+              }`}
+              role="group"
+              aria-roledescription="슬라이드"
+              aria-label={`${index + 1} / ${slides.length}`}
+              aria-hidden={!isActive}
+              inert={isActive ? undefined : true}
+            >
+              {renderBlock(slide)}
+            </div>
+          );
+        })}
       </div>
       {slides.length > 1 && (
         <div className="slider-controls flex items-center justify-between gap-3 border-t border-slate-200 p-3">

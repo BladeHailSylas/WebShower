@@ -17,6 +17,7 @@ const lineHeightPattern = /^leading-(?:none|tight|snug|normal|relaxed|loose|\[.+
 const letterSpacingPattern = /^tracking-(?:tighter|tight|normal|wide|wider|widest|\[.+\])$/;
 const paddingPattern = /^p(?:[xytrbl])?-(?:\d+(?:\.\d+)?|px|\[.+\])$/;
 const marginPattern = /^-?m(?:[xytrbl])?-(?:\d+(?:\.\d+)?|px|auto|\[.+\])$/;
+const minHeightPattern = /^min-h-(?:\d+(?:\.\d+)?|px|full|screen|min|max|fit|\[.+\])$/;
 const roundedPattern = /^rounded(?:-(?:none|xs|sm|md|lg|xl|[2-9]xl|full|\[.+\]))?$/;
 const shadowPattern = /^shadow(?:-(?:none|xs|sm|md|lg|xl|2xl|inner|\[.+\]))?$/;
 const borderWidthPattern = /^border(?:-[xytrblse])?(?:-(?:0|2|4|8|\[.+\]))?$/;
@@ -124,6 +125,13 @@ const marginClasses: Record<Exclude<NonNullable<StyleProps["marginSize"]>, "defa
   md: "m-4",
   lg: "m-6",
   xl: "m-8",
+};
+
+const sliderHeightClasses: Record<Exclude<NonNullable<StyleProps["sliderHeight"]>, "default">, string> = {
+  sm: "min-h-48",
+  md: "min-h-64",
+  lg: "min-h-80",
+  xl: "min-h-96",
 };
 
 function isRootUtility(token: string): boolean {
@@ -240,6 +248,12 @@ export function resolveGuiStyleClasses(baseClasses: string[], styles: StyleProps
       (token) => token !== "mx-auto" && marginPattern.test(token),
       [marginClasses[styles.marginSize]],
     );
+  }
+
+  if (blockType === "SLIDER_ZONE" && styles.sliderHeight !== undefined && styles.sliderHeight !== "default") {
+    tokens = replaceRootUtility(tokens, (token) => minHeightPattern.test(token), [
+      sliderHeightClasses[styles.sliderHeight],
+    ]);
   }
 
   return deduplicate(tokens).join(" ");
