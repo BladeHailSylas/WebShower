@@ -9,7 +9,7 @@ export const containerDefinition = {
   template: {
     id: "template-container",
     type: "CONTAINER",
-    styles: { className: "mb-2 text-slate-800" },
+    styles: { className: "mb-2 text-slate-800 w-full" },
     children: [],
   },
   palette: { label: "일반 구역 만들기", icon: "BOX", order: 10 },

@@ -15,7 +15,7 @@ export const gridZoneDefinition = {
     id: "template-grid-zone",
     type: "GRID_ZONE",
     styles: {
-      className: "border border-slate-200 rounded-xl p-4 bg-white shadow-sm",
+      className: "border border-slate-200 rounded-xl p-4 bg-white shadow-sm w-full",
       gridCols: 2,
     },
     children: [],

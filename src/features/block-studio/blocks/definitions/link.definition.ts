@@ -17,7 +17,7 @@ export const linkDefinition = {
     type: "A",
     content: "",
     link: "",
-    styles: { className: "mb-2 text-slate-800" },
+    styles: { className: "mb-2 text-slate-800 underline" },
   },
   palette: { label: "링크 이동 버튼 만들기 (A)", icon: "A", order: 30 },
   childFields: [],
