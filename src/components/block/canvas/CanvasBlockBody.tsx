@@ -7,6 +7,7 @@ import textLimiter from "../../../utils/textLimiter";
 
 interface CanvasBlockBodyProps {
   block: HtmlBlock;
+  editorLabel?: string;
   activeStyleId: string | null;
   onStyleClick: (event: MouseEvent, id: string) => void;
   onAppendChild: (parentId: string, field: BlockChildField, blockType: BlockType) => void;
@@ -30,6 +31,7 @@ function getBlockLabel(block: HtmlBlock): string | null {
 
 export default function CanvasBlockBody({
   block,
+  editorLabel,
   activeStyleId,
   onStyleClick,
   onAppendChild,
@@ -43,7 +45,7 @@ export default function CanvasBlockBody({
       }`}
     >
       <div className="p-3 font-bold text-slate-200 text-sm flex justify-between items-center">
-        <span>{textLimiter(getBlockLabel(block), 14)}</span>
+        <span>{textLimiter(editorLabel ?? getBlockLabel(block), 14)}</span>
         {/*textLimiter를 getBlockLabel 내부에서 적용하는 것이 더 깔끔하지만, 개발 효율성을 위해 일부러 이렇게 처리함 */}
       </div>
       {definition.childFields.map((fieldDefinition) => (

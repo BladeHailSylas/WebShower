@@ -86,10 +86,11 @@ export default function CanvasBlockSlot({
         <div className="text-[10px] font-bold tracking-tight mb-1">{fieldDefinition.label}</div>
       )}
       <SortableContext items={children.map((child) => child.id)} strategy={strategy}>
-        {children.map((child) => (
+        {children.map((child, index) => (
           <CanvasBlockItem
             key={child.id}
             block={child}
+            editorLabel={fieldDefinition.itemLabelPrefix ? `${fieldDefinition.itemLabelPrefix} ${index + 1}` : undefined}
             activeStyleId={activeStyleId}
             onStyleClick={onStyleClick}
             onAppendChild={onAppendChild}

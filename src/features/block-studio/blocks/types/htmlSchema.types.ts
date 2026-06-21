@@ -1,5 +1,5 @@
 export interface HtmlSchemaDefinition {
-  tag: "div" | "h1" | "p" | "img" | "a" | "hr" | "ul" | "li";
+  tag: "div" | "h1" | "p" | "img" | "a" | "hr" | "ul" | "li" | "article";
   contentField?: "content";
   childField?: "children";
   srcField?: "src";
@@ -7,4 +7,4 @@ export interface HtmlSchemaDefinition {
   selfClosing?: boolean;
 }
 
-export type HtmlExporterKey = "passwordZone" | "toggleZone";
+export type HtmlExporterKey = "passwordZone" | "toggleZone" | "sliderZone";

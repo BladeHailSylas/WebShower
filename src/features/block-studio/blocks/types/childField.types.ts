@@ -23,5 +23,6 @@ export interface ChildFieldDefinition {
   sortable: "vertical" | "grid";
   acceptedBlockTypes?: BlockType[];
   appendAction?: ChildFieldAppendAction;
+  itemLabelPrefix?: string;
   getItems?: (block: HtmlBlock) => HtmlBlock[] | undefined;
 }

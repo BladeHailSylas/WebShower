@@ -9,12 +9,13 @@ import CanvasBlockBody from "./CanvasBlockBody";
 
 interface CanvasBlockItemProps {
   block: HtmlBlock;
+  editorLabel?: string;
   activeStyleId: string | null;
   onStyleClick: (event: MouseEvent, id: string) => void;
   onAppendChild: (parentId: string, field: BlockChildField, blockType: BlockType) => void;
 }
 
-export default function CanvasBlockItem({ block, activeStyleId, onStyleClick, onAppendChild }: CanvasBlockItemProps) {
+export default function CanvasBlockItem({ block, editorLabel, activeStyleId, onStyleClick, onAppendChild }: CanvasBlockItemProps) {
   const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, isDragging } = useSortable({
     id: block.id,
     data: { type: "CANVAS_ITEM", block },
@@ -37,6 +38,7 @@ export default function CanvasBlockItem({ block, activeStyleId, onStyleClick, on
       <BlockDragHandle activatorRef={setActivatorNodeRef} attributes={attributes} listeners={listeners} />
       <CanvasBlockBody
         block={block}
+        editorLabel={editorLabel}
         activeStyleId={activeStyleId}
         onStyleClick={onStyleClick}
         onAppendChild={onAppendChild}

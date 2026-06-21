@@ -2,6 +2,7 @@ import type { CSSProperties, ReactNode } from "react";
 import type { HtmlBlock } from "../../../types/types";
 import { transformGuiToTailwind } from "../../../features/block-studio/blocks/html/transformGuiToTailwind";
 import PasswordPreviewItem from "./PasswordPreviewItem";
+import SliderPreviewItem from "./SliderPreviewItem";
 import TogglePreviewItem from "./TogglePreviewItem";
 
 interface PreviewBlockRendererProps {
@@ -40,6 +41,14 @@ function renderPreviewBlock(block: HtmlBlock): ReactNode {
         <li key={block.id} className={classes}>
           {block.children?.map((child) => renderPreviewBlock(child))}
         </li>
+      );
+    case "SLIDER_ZONE":
+      return <SliderPreviewItem key={block.id} block={block} renderBlock={renderPreviewBlock} className={classes} />;
+    case "SLIDE_ITEM":
+      return (
+        <article key={block.id} className={classes}>
+          {block.children?.map((child) => renderPreviewBlock(child))}
+        </article>
       );
     case "GRID_ZONE":
       return (

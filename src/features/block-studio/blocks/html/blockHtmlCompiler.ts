@@ -2,6 +2,7 @@ import type { HtmlBlock } from "../../../../types/types";
 import { getBlockDefinition } from "../definitions";
 import { compileHtmlSchema } from "./htmlSchemaCompiler";
 import { compilePasswordZone, compileToggleZone } from "./interactiveExporters";
+import { compileSliderZone } from "./sliderZoneExporter";
 
 export function compileBlockHtml(block: HtmlBlock): string {
   const definition = getBlockDefinition(block.type);
@@ -16,6 +17,10 @@ export function compileBlockHtml(block: HtmlBlock): string {
 
   if (definition.htmlExporterKey === "toggleZone") {
     return compileToggleZone(block, compileBlockHtml);
+  }
+
+  if (definition.htmlExporterKey === "sliderZone") {
+    return compileSliderZone(block, compileBlockHtml);
   }
 
   return "";

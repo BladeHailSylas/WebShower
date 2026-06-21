@@ -11,6 +11,8 @@ import { listDefinition } from "./list.definition";
 import { listItemDefinition } from "./listItem.definition";
 import { paragraphDefinition } from "./paragraph.definition";
 import { passwordZoneDefinition } from "./passwordZone.definition";
+import { slideItemDefinition } from "./slideItem.definition";
+import { sliderZoneDefinition } from "./sliderZone.definition";
 import { spacerDefinition } from "./spacer.definition";
 import { toggleZoneDefinition } from "./toggleZone.definition";
 
@@ -19,6 +21,8 @@ export const blockDefinitions = {
   CARD: cardDefinition,
   LIST: listDefinition,
   LIST_ITEM: listItemDefinition,
+  SLIDER_ZONE: sliderZoneDefinition,
+  SLIDE_ITEM: slideItemDefinition,
   GRID_ZONE: gridZoneDefinition,
   H1: headingDefinition,
   P: paragraphDefinition,
