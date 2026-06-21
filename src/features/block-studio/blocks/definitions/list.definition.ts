@@ -1,5 +1,10 @@
 import type { BlockDefinition } from "../types/blockDefinition.types";
-import { commonStyleFields, marginSizeField, paddingSizeField } from "./editableFieldPresets";
+import {
+  commonStyleFields,
+  listStyleField,
+  marginSizeField,
+  paddingSizeField,
+} from "./editableFieldPresets";
 
 export const listDefinition = {
   type: "LIST",
@@ -9,7 +14,7 @@ export const listDefinition = {
   template: {
     id: "template-list",
     type: "LIST",
-    styles: { className: "mb-2 list-disc space-y-1 pl-5 text-slate-800" },
+    styles: { className: "mb-2 list-disc space-y-1 pl-5 text-slate-800", listStyle: "disk" },
     children: [
       {
         id: "template-list-item-1",
@@ -43,7 +48,7 @@ export const listDefinition = {
       appendAction: { label: "항목 추가", blockType: "LIST_ITEM" },
     },
   ],
-  editableFields: [...commonStyleFields, paddingSizeField, marginSizeField],
+  editableFields: [...commonStyleFields, listStyleField, paddingSizeField, marginSizeField],
   dropPolicy: { acceptsChildren: true, childFields: ["children"], allowRoot: true },
   dragPreview: { label: "목록" },
   htmlSchema: { tag: "ul", childField: "children" },

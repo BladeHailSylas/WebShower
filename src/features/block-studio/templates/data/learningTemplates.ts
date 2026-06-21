@@ -133,7 +133,10 @@ export const learningTemplates: LearningTemplate[] = [
           {
             id: "steps-list",
             type: "LIST",
-            styles: { className: "space-y-3 rounded-xl border border-slate-200 bg-white p-5 pl-10 shadow-sm list-decimal" },
+            styles: {
+              className: "space-y-3 rounded-xl border border-slate-200 bg-white p-5 pl-10 shadow-sm list-disc",
+              listStyle: "disk",
+            },
             children: [
               {
                 id: "steps-item-one",

@@ -151,6 +151,19 @@ export const sliderHeightField: EditableFieldDefinition = {
   ],
 };
 
+export const listStyleField: EditableFieldDefinition = {
+  path: "styles.listStyle",
+  label: "목록 기호",
+  control: "select",
+  section: "text",
+  defaultValue: "disk",
+  options: [
+    { label: "원", value: "disk" },
+    { label: "사각형", value: "square" },
+    { label: "없음", value: "none" },
+  ],
+};
+
 export const hrBorderFields: EditableFieldDefinition[] = [
   { ...borderWidthField, label: "선 굵기" },
   { ...borderColorField, label: "선 색상" },
@@ -277,6 +290,5 @@ export const gridColumnField: EditableFieldDefinition = {
   options: [
     { label: "한 줄 2개", value: 2 },
     { label: "한 줄 3개", value: 3 },
-    { label: "한 줄 4개", value: 4 },
   ],
 };

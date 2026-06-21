@@ -18,6 +18,7 @@ const letterSpacingPattern = /^tracking-(?:tighter|tight|normal|wide|wider|wides
 const paddingPattern = /^p(?:[xytrbl])?-(?:\d+(?:\.\d+)?|px|\[.+\])$/;
 const marginPattern = /^-?m(?:[xytrbl])?-(?:\d+(?:\.\d+)?|px|auto|\[.+\])$/;
 const minHeightPattern = /^min-h-(?:\d+(?:\.\d+)?|px|full|screen|min|max|fit|\[.+\])$/;
+const listStylePattern = /^list-(?:disc|decimal|none|\[.+\])$/;
 const roundedPattern = /^rounded(?:-(?:none|xs|sm|md|lg|xl|[2-9]xl|full|\[.+\]))?$/;
 const shadowPattern = /^shadow(?:-(?:none|xs|sm|md|lg|xl|2xl|inner|\[.+\]))?$/;
 const borderWidthPattern = /^border(?:-[xytrblse])?(?:-(?:0|2|4|8|\[.+\]))?$/;
@@ -132,6 +133,12 @@ const sliderHeightClasses: Record<Exclude<NonNullable<StyleProps["sliderHeight"]
   md: "min-h-64",
   lg: "min-h-80",
   xl: "min-h-96",
+};
+
+const listStyleClasses: Record<NonNullable<StyleProps["listStyle"]>, string> = {
+  disk: "list-disc",
+  square: "list-[square]",
+  none: "list-none",
 };
 
 function isRootUtility(token: string): boolean {
@@ -253,6 +260,12 @@ export function resolveGuiStyleClasses(baseClasses: string[], styles: StyleProps
   if (blockType === "SLIDER_ZONE" && styles.sliderHeight !== undefined && styles.sliderHeight !== "default") {
     tokens = replaceRootUtility(tokens, (token) => minHeightPattern.test(token), [
       sliderHeightClasses[styles.sliderHeight],
+    ]);
+  }
+
+  if (blockType === "LIST" && styles.listStyle !== undefined) {
+    tokens = replaceRootUtility(tokens, (token) => listStylePattern.test(token), [
+      listStyleClasses[styles.listStyle],
     ]);
   }
 

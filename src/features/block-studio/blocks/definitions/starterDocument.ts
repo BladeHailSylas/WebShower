@@ -26,7 +26,7 @@ const starterBlocks: HtmlBlock[] = [
         id: "starter-desc",
         type: "P",
         content:
-          "블록을 조립하여 나만의 웹사이트를 만들어보세요. 오늘 만든 작품은 스마트폰에 저장해 부모님께 자랑해볼까요?",
+          "웹 프로그래밍을 블록으로 쉽게 알아봅시다. 다 만든 작품은 저장해서 자랑해보세요!",
         styles: { className: "text-sm text-slate-500 leading-relaxed font-medium" },
       },
     ],

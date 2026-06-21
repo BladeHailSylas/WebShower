@@ -22,6 +22,7 @@ export interface StyleProps {
   marginSize?: 'default' | 'none' | 'sm' | 'md' | 'lg' | 'xl';
   sliderHeight?: 'default' | 'sm' | 'md' | 'lg' | 'xl';
   gridCols?: 2 | 3 | 4;
+  listStyle?: 'disk' | 'square' | 'none';
 }
 
 export interface HtmlBlock {
