@@ -1,6 +1,7 @@
 import type { TutorialMission } from "../types/tutorial.types";
 
 interface TutorialMissionBarProps {
+  trackTitle: string;
   mission?: TutorialMission;
   successMission?: TutorialMission;
   processedCount: number;
@@ -9,11 +10,13 @@ interface TutorialMissionBarProps {
   onSkip: () => void;
   onNextMission: () => void;
   onHide: () => void;
+  onExit: () => void;
 }
 
 const defaultSuccessComment = "좋습니다! 다음 미션으로 넘어가 볼까요?";
 
 export default function TutorialMissionBar({
+  trackTitle,
   mission,
   successMission,
   processedCount,
@@ -22,6 +25,7 @@ export default function TutorialMissionBar({
   onSkip,
   onNextMission,
   onHide,
+  onExit,
 }: TutorialMissionBarProps) {
   const isShowingSuccess = successMission !== undefined;
   const isShowingComplete = isComplete && !isShowingSuccess;
@@ -47,6 +51,9 @@ export default function TutorialMissionBar({
 
       <div className="min-w-0 max-w-xl">
         <div className="flex min-w-0 items-center gap-2">
+          <span className="max-w-36 truncate text-[10px] font-bold text-slate-500 @max-[520px]:hidden">
+            {trackTitle}
+          </span>
           <span className="shrink-0 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-300">
             {isShowingSuccess ? `성공 ${processedCount}/${totalCount}` : isShowingComplete ? "완료" : `진행 ${processedCount}/${totalCount}`}
           </span>
@@ -97,6 +104,13 @@ export default function TutorialMissionBar({
           title="튜토리얼 숨기기"
         >
           닫기
+        </button>
+        <button
+          type="button"
+          className="rounded-lg px-2 py-1.5 text-xs font-bold text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"
+          onClick={onExit}
+        >
+          나가기
         </button>
       </div>
     </section>

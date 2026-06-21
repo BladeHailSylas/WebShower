@@ -48,6 +48,18 @@ export interface TutorialMission {
   commentOnSuccess?: string;
 }
 
+export interface TutorialTrack {
+  id: string;
+  title: string;
+  description: string;
+  missions: readonly TutorialMission[];
+}
+
+export type TutorialModeState =
+  | { status: "selecting" }
+  | { status: "active"; trackId: string }
+  | { status: "completed"; trackId: string };
+
 export type TutorialUiSignals = Record<TutorialUiSignal, boolean>;
 
 export interface TutorialTreeIndex {

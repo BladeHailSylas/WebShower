@@ -14,12 +14,13 @@ import DragPreviewOverlay from "../features/block-studio/components/DragPreviewO
 import { useBlockDragAndDrop } from "../features/block-studio/hooks/useBlockDragAndDrop";
 import { useBlockStudio } from "../features/block-studio/hooks/useBlockStudio";
 import TutorialOverlay from "../features/block-studio/tutorial/components/TutorialOverlay";
-import { useTutorialProgress } from "../features/block-studio/tutorial/hooks/useTutorialProgress";
+import { tutorialTracks } from "../features/block-studio/tutorial/data/tutorialTracks";
+import { useTutorialMode } from "../features/block-studio/tutorial/hooks/useTutorialMode";
 import type { LearningTemplate } from "../features/block-studio/templates/types/learningTemplate.types";
 
 export default function BlockStudioPage() {
   const { blocks, setBlocks, appendLearningTemplate } = useBlockStudio();
-  const tutorial = useTutorialProgress({ blocks });
+  const tutorial = useTutorialMode({ blocks, tracks: tutorialTracks });
   const { activeDrag, handleDragStart, handleDragEnd } = useBlockDragAndDrop(setBlocks);
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -28,12 +29,13 @@ export default function BlockStudioPage() {
   );
 
   const addLearningTemplate = (template: LearningTemplate) => {
+    if (tutorial.isTutorialMode) return;
     appendLearningTemplate(template);
-    tutorial.recordUiSignal("templateInserted");
+    tutorial.progress.recordUiSignal("templateInserted");
   };
 
   const handlePreviewTabViewed = (tab: "preview" | "code") => {
-    tutorial.recordUiSignal(tab === "preview" ? "previewOpened" : "codeViewOpened");
+    tutorial.progress.recordUiSignal(tab === "preview" ? "previewOpened" : "codeViewOpened");
   };
 
   return (
@@ -44,21 +46,34 @@ export default function BlockStudioPage() {
       onDragEnd={handleDragEnd}
     >
       <BlockStudioLayout
-        palette={<BlockPalette onAddTemplate={addLearningTemplate} />}
+        palette={
+          <BlockPalette
+            key={tutorial.isTutorialMode ? "tutorial-palette" : "standard-palette"}
+            onAddTemplate={addLearningTemplate}
+            templatesDisabled={tutorial.isTutorialMode}
+          />
+        }
         canvas={<BlockCanvas blocks={blocks} setBlocks={setBlocks} />}
         canvasOverlay={
           <TutorialOverlay
-            mission={tutorial.activeMission}
-            successMission={tutorial.successMission}
-            successMissionNumber={tutorial.successMissionNumber}
-            processedCount={tutorial.processedCount}
-            totalCount={tutorial.missions.length}
-            isComplete={tutorial.isComplete}
-            isHidden={tutorial.isHidden}
+            mode={tutorial.mode}
+            tracks={tutorial.tracks}
+            activeTrack={tutorial.activeTrack}
+            completedTrackIds={tutorial.completedTrackIds}
+            mission={tutorial.progress.activeMission}
+            successMission={tutorial.progress.successMission}
+            successMissionNumber={tutorial.progress.successMissionNumber}
+            processedCount={tutorial.progress.processedCount}
+            totalCount={tutorial.progress.missions.length}
+            isComplete={tutorial.progress.isComplete}
+            isHidden={tutorial.progress.isHidden}
             onSkip={tutorial.skipActiveMission}
             onNextMission={tutorial.continueAfterSuccess}
-            onHide={tutorial.hide}
-            onShow={tutorial.show}
+            onHide={tutorial.progress.hide}
+            onShow={tutorial.progress.show}
+            onStartTrack={tutorial.startTrack}
+            onRestart={tutorial.restartTrack}
+            onExit={tutorial.exitTutorial}
           />
         }
         preview={<BlockRenderer blocks={blocks} onTabViewed={handlePreviewTabViewed} />}

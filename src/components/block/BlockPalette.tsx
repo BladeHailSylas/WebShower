@@ -8,6 +8,7 @@ import type { LearningTemplate } from "../../features/block-studio/templates/typ
 
 interface BlockPaletteProps {
   onAddTemplate: (template: LearningTemplate) => void;
+  templatesDisabled?: boolean;
 }
 
 interface PaletteItemProps {
@@ -51,7 +52,10 @@ function groupDefinitions() {
   }, {});
 }
 
-export default function BlockPalette({ onAddTemplate }: BlockPaletteProps) {
+export default function BlockPalette({
+  onAddTemplate,
+  templatesDisabled = false,
+}: BlockPaletteProps) {
   const [activeTab, setActiveTab] = useState<"blocks" | "templates">("blocks");
   const groupedDefinitions = groupDefinitions();
 
@@ -64,7 +68,7 @@ export default function BlockPalette({ onAddTemplate }: BlockPaletteProps) {
           <button
             type="button"
             role="tab"
-            aria-selected={activeTab === "blocks"}
+            aria-selected={templatesDisabled || activeTab === "blocks"}
             className={`rounded-lg px-3 py-2 text-xs font-black transition-colors ${
               activeTab === "blocks" ? "bg-emerald-500 text-slate-950" : "bg-slate-700 text-slate-300 hover:bg-slate-600"
             }`}
@@ -75,19 +79,31 @@ export default function BlockPalette({ onAddTemplate }: BlockPaletteProps) {
           <button
             type="button"
             role="tab"
-            aria-selected={activeTab === "templates"}
+            aria-selected={!templatesDisabled && activeTab === "templates"}
+            aria-disabled={templatesDisabled}
+            disabled={templatesDisabled}
             className={`rounded-lg px-3 py-2 text-xs font-black transition-colors ${
-              activeTab === "templates" ? "bg-emerald-500 text-slate-950" : "bg-slate-700 text-slate-300 hover:bg-slate-600"
+              templatesDisabled
+                ? "cursor-not-allowed bg-slate-800 text-slate-500 opacity-60"
+                : activeTab === "templates"
+                  ? "bg-emerald-500 text-slate-950"
+                  : "bg-slate-700 text-slate-300 hover:bg-slate-600"
             }`}
             onClick={() => setActiveTab("templates")}
+            title={templatesDisabled ? "튜토리얼 진행 중에는 템플릿을 사용할 수 없습니다." : undefined}
           >
             템플릿
           </button>
         </div>
+        {templatesDisabled && (
+          <p className="mt-2 text-[11px] font-medium text-amber-300">
+            튜토리얼 진행 중에는 블록을 직접 조립해 보세요.
+          </p>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-6">
-        {activeTab === "blocks" ? (
+        {templatesDisabled || activeTab === "blocks" ? (
           Object.entries(groupedDefinitions).map(([categoryLabel, definitions]) => (
             <div key={categoryLabel} className="flex flex-col gap-3">
               <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider">{categoryLabel}</h3>

@@ -1,368 +1,504 @@
-Tutorial Overlay v1.2: Success Feedback 구현 계획을 작성해 주세요.
+소개 페이지 튜토리얼 트랙의 실제 미션 데이터를 작성해 주세요.
 
-이번 요청은 **조사와 구현 계획 수립**입니다.
-아직 코드를 수정하지 마세요.
-
-## 배경
-
-Block Studio에는 현재 Tutorial Overlay가 구현되어 있습니다.
-
-현재 확인된 상태:
-
-* Canvas 상단에 Tutorial Mission Bar가 표시됨
-* block tree / UI signal / property 변경 조건을 기반으로 미션 완료를 추적함
-* 튜토리얼은 block tree를 직접 수정하지 않음
-* 튜토리얼은 DnD, StylePanel, Preview, Code View, Export 경로를 방해하지 않음
-* 완료된 미션은 ledger에 기록되어 이후 블록을 삭제하거나 값을 되돌려도 진행률이 역행하지 않음
-* 현재는 미션 성공 시 곧바로 다음 미션으로 넘어가는 흐름임
-
-현재 문제:
-
-* 미션을 완료해도 사용자가 “무엇을 방금 배웠는지” 인지하기 전에 다음 미션으로 넘어감
-* 튜토리얼이 체크리스트처럼 느껴지고, 개념 설명의 깊이가 부족함
-* 성공 순간에 짧은 피드백과 학습 코멘트를 제공하면 교육 효과가 좋아질 수 있음
+이번 작업은 기존 Tutorial Track / TutorialMission 구조에 맞춰 **데이터를 채우는 작업**입니다.
+가능하면 로직 변경 없이 mission data 중심으로 작업해 주세요.
 
 ## 목표
 
-Tutorial Overlay v1.2의 목표는 **미션 성공 피드백**입니다.
-
-미션이 완료되었을 때 즉시 다음 미션으로 넘어가지 않고, 짧은 성공 상태를 보여준 뒤 사용자가 직접 다음 미션으로 넘어가게 합니다.
-
-원하는 흐름:
+첫 번째 튜토리얼 트랙은 다음 주제입니다.
 
 ```text
-미션 조건 충족
-→ 성공 상태 표시
-→ commentOnSuccess로 짧은 학습 코멘트 표시
-→ 사용자가 “다음 미션” 버튼 클릭
-→ 다음 미션 표시
+나를 소개하는 첫 웹페이지
 ```
 
-예시:
+설명:
 
 ```text
-잘 했어요!
-블록을 추가할 때 사용한 이 동작을 “드래그”라고 합니다.
-[다음 미션]
+제목, 본문, 이미지, 카드, 목록, 링크와 기본 스타일을 사용해 간단한 자기소개 페이지를 만들어 봅니다.
 ```
 
-## 핵심 원칙
+이 튜토리얼은 사용자가 따라 하면 간단한 자기소개 페이지 하나가 완성되는 흐름이어야 합니다.
 
-반드시 지켜 주세요.
+## 사용 블록
 
-* 튜토리얼은 block tree를 직접 수정하지 않습니다.
-* 튜토리얼은 DnD 이벤트를 가로채지 않습니다.
-* StylePanel input handler를 변경하지 않습니다.
-* Preview / Code View / Export 생성 경로를 변경하지 않습니다.
-* HtmlBlock 모델을 변경하지 않습니다.
-* blockDefinitions 구조를 변경하지 않습니다.
-* localStorage / 계정 저장을 추가하지 않습니다.
-* mission data는 여전히 선언적 데이터여야 합니다.
-* `commentOnSuccess`에는 JSX, React component, function, mutation logic을 넣지 않습니다.
-* 성공 피드백은 UI 상태일 뿐, 미션 조건 판정 자체를 바꾸지 않습니다.
+이 트랙에서 주로 사용할 블록:
 
-## 제안 기능
+* CONTAINER
+* HEADING / H1
+* PARAGRAPH / P
+* IMAGE
+* CARD
+* LIST
+* LIST_ITEM
+* LINK / A
 
-### 1. TutorialMission에 commentOnSuccess 추가
+첫 소개 페이지 튜토리얼에서는 다음 고급 블록은 사용하지 않습니다.
 
-`TutorialMission` 타입에 선택적 필드를 추가하는 방향을 검토해 주세요.
+* GRID_ZONE
+* SLIDER_ZONE
+* PASSWORD_ZONE
+* TOGGLE_ZONE
 
-우선 후보:
+## 미션 흐름
 
-```ts
-type TutorialMission = {
-  id: string;
-  title: string;
-  description: string;
-  condition: TutorialCondition;
-  commentOnSuccess?: string;
-};
-```
+아래 흐름을 현재 repo의 `TutorialMission` 타입과 condition 구조에 맞게 mission data로 작성해 주세요.
 
-v1.2에서는 단순 문자열을 선호합니다.
+### 1. 일반 구역 추가
 
-다음과 같은 구조는 v1.2에서 과하면 제외해 주세요.
-
-```ts
-commentOnSuccess?: {
-  title?: string;
-  body: string;
-};
-```
-
-단, 현재 UI 구조상 객체형이 더 안전하다면 이유를 설명해 주세요.
-
-### 2. 성공 상태 표시
-
-미션이 완료되면 Mission Bar가 다음 미션으로 바로 넘어가지 않고 성공 상태를 보여주도록 계획해 주세요.
-
-성공 상태에는 다음을 표시합니다.
-
-* 완료 표시
-* 짧은 성공 제목
-* `commentOnSuccess`
-* “다음 미션” 버튼
-
-`commentOnSuccess`가 없는 미션은 기본 성공 문구를 표시하거나, 성공 상태 없이 바로 다음으로 넘길지 비교해 주세요.
-
-선호 방향:
+제목:
 
 ```text
-commentOnSuccess가 없더라도 짧은 기본 성공 상태는 표시한다.
+소개 구역을 만들어 보세요
 ```
 
-기본 문구 예시:
+안내:
 
 ```text
-좋습니다! 다음 미션으로 넘어가 볼까요?
+왼쪽 블록 목록에서 일반 구역을 추가해 보세요.
 ```
 
-### 3. 다음 미션 이동 방식
-
-v1.2에서는 자동 이동보다 사용자가 “다음 미션” 버튼을 눌러 이동하는 방식을 선호합니다.
-
-검토할 것:
-
-* 성공 상태에서 자동 timeout을 둘지
-* 자동 timeout 없이 버튼만 둘지
-* skip/hide/reopen과 success state가 어떻게 상호작용할지
-
-선호 방향:
+완료 조건:
 
 ```text
-자동 timeout 없이 “다음 미션” 버튼으로만 이동한다.
+튜토리얼 시작 baseline 이후 새 CONTAINER가 존재
 ```
 
-## 조사할 것
-
-현재 Tutorial Overlay 구현을 확인한 뒤 다음을 조사해 주세요.
-
-### 1. 현재 active mission 계산 구조
-
-다음을 실제 파일명과 함수명 기준으로 정리해 주세요.
-
-* mission data 위치
-* TutorialMission 타입 위치
-* evaluator 위치
-* completed ledger 업데이트 방식
-* active mission 계산 방식
-* skipped mission 처리
-* hidden/reopen 처리
-* property-aware mission 완료 처리
-* 여러 미션 동시 완료 처리
-
-### 2. 성공 feedback state 필요성
-
-현재 구조에서 미션 완료 후 곧바로 다음 미션으로 넘어가는 원인을 확인하고, 성공 상태를 추가하려면 어떤 상태가 필요한지 제안해 주세요.
-
-후보:
-
-```ts
-type TutorialSuccessFeedback = {
-  missionId: string;
-  title: string;
-  comment: string;
-} | null;
-```
-
-또는 더 적절한 형태가 있다면 제안해 주세요.
-
-검토할 것:
-
-* completed ledger와 success feedback state를 어떻게 분리할지
-* active mission 계산을 success feedback 중에는 잠시 멈출지
-* success feedback 중에도 evaluator는 계속 동작해야 하는지
-* success feedback 중 새 미션이 추가로 완료되면 어떻게 처리할지
-* feedback state가 skip/hide/reopen에 미치는 영향
-
-### 3. 여러 미션 동시 완료 처리
-
-Learning Template 삽입이나 property 변경으로 여러 미션이 동시에 완료될 수 있습니다.
-
-v1.2에서는 다음 정책을 선호합니다.
+성공 코멘트:
 
 ```text
-여러 미션이 동시에 완료되면,
-현재 activeMission이 완료된 경우에만 그 미션의 성공 피드백을 보여준다.
-다른 동시에 완료된 미션은 completed ledger에는 기록하되 별도 피드백은 생략한다.
-```
-
-이 정책이 현재 구조에 적절한지 검토해 주세요.
-
-검토할 것:
-
-* 현재 active mission이 아닌 후속 미션이 먼저 완료되는 경우
-* 템플릿 삽입으로 여러 조건이 한꺼번에 충족되는 경우
-* success feedback을 연속 queue로 만들 필요가 있는지
-* v1.2에서 queue는 과한지
-
-선호 방향:
-
-```text
-success feedback queue는 v1.2에서 만들지 않는다.
-현재 active mission 중심으로만 feedback을 표시한다.
-```
-
-### 4. skip / hide / reopen과의 관계
-
-다음을 검토해 주세요.
-
-* 성공 상태에서 “건너뛰기” 버튼을 보여줄지
-* 성공 상태에서 “숨기기” 버튼은 유지할지
-* success feedback 중 숨기면 reopen 시 성공 상태를 다시 보여줄지, 다음 미션으로 넘어갈지
-* success feedback 중 skip이 가능한지
-* 모든 미션 완료 상태와 success feedback이 충돌하지 않는지
-
-선호 방향:
-
-```text
-성공 상태에서는 “다음 미션”과 “숨기기”만 보여준다.
-건너뛰기는 일반 미션 상태에서만 보여준다.
-성공 상태에서 숨긴 뒤 다시 열면 같은 성공 상태를 보여준다.
-```
-
-### 5. UI/UX 설계
-
-TutorialMissionBar의 success variant를 제안해 주세요.
-
-검토할 것:
-
-* 기존 Mission Bar 크기를 크게 늘리지 않는 방법
-* 완료 아이콘 또는 체크 표시
-* 성공 제목
-* commentOnSuccess 표시
-* “다음 미션” 버튼
-* 진행률 표시 유지 여부
-* 좁은 화면에서 comment를 어떻게 줄일지
-* StylePanel popover / Canvas overlay / DnD와 충돌하지 않는지
-* `aria-live`를 사용해 성공 상태를 알려줄지
-
-성공 애니메이션은 과도할 필요 없습니다.
-
-우선 후보:
-
-* border color 변경
-* check icon 표시
-* 짧은 fade/scale transition
-* DaisyUI alert-like styling
-* `transition-all` 정도의 가벼운 효과
-
-다음은 v1.2에서 제외합니다.
-
-* confetti
-* 복잡한 animation library
-* sound effect
-* modal success screen
-* full-screen celebration
-* motion preference 처리 고도화
-
-### 6. commentOnSuccess 문구 초안
-
-기존 미션 목록을 확인하고, 각 미션에 넣을 수 있는 `commentOnSuccess` 초안을 제안해 주세요.
-
-예시:
-
-```text
-첫 블록 추가하기:
-잘 했어요! 블록을 추가할 때 사용한 이 동작을 “드래그”라고 합니다.
-
-일반 구역 만들기:
 좋습니다. 구역은 HTML에서 div처럼 여러 요소를 묶는 역할을 합니다.
-
-구역 안에 제목 넣기:
-잘 했어요. 제목이 구역 안에 들어가면 HTML에서도 부모-자식 구조가 만들어집니다.
-
-이미지 추가하기:
-이미지는 웹페이지에서 img 태그로 표현됩니다.
-
-제목 문구 바꾸기:
-좋습니다. 화면의 글자는 HTML 요소의 content로 저장됩니다.
-
-배경색 바꾸기:
-잘 했어요. 배경색은 CSS 스타일로 표현됩니다.
-
-코드 보기 확인:
-좋습니다. 지금 만든 블록 구조가 실제 HTML 코드로 변환된 모습을 확인했습니다.
 ```
 
-문구는 초보자가 이해하기 쉬운 한국어로 작성해 주세요.
-너무 길지 않게, 한두 문장 정도로 제한해 주세요.
+### 2. 구역 안에 제목 넣기
 
-## 보고서 형식
-
-다음 구조로 작성해 주세요.
-
-### 1. 요약 결론
-
-* v1.2 구현 가능 여부
-* 권장 success feedback 구조
-* `commentOnSuccess` 타입 설계
-* 주요 위험
-* v1.2에서 제외해야 할 것
-
-### 2. 현재 Tutorial 흐름 분석
-
-* 관련 파일
-* active mission 계산
-* completed ledger 업데이트
-* skip/hide/reopen
-* 동시 완료 처리
-* property-aware mission 처리
-
-### 3. Success feedback state 설계
-
-* 필요한 state
-* completed ledger와의 관계
-* active mission 계산과의 관계
-* 여러 미션 동시 완료 처리
-* hide/reopen/skip과의 관계
-
-### 4. TutorialMission 타입 확장안
-
-* `commentOnSuccess?: string` 추가 가능성
-* 객체형 대안 비교
-* mission data 선언성 유지 여부
-* 문구 작성 기준
-
-### 5. UI 설계안
-
-* 일반 mission 상태
-* success feedback 상태
-* 모두 완료 상태
-* hidden/reopen 상태
-* 좁은 화면 fallback
-* 접근성 고려
-* 애니메이션/시각 효과 범위
-
-### 6. commentOnSuccess 문구 초안
-
-표 형식으로 작성해 주세요.
-
-| Mission | commentOnSuccess |
-| ------- | ---------------- |
-
-### 7. 수정 파일 계획
-
-예상 수정 파일과 신규 파일이 있다면 정리해 주세요.
-
-### 8. Phase별 구현 제안
-
-작고 reviewable하게 나눠 주세요.
-
-예시:
+제목:
 
 ```text
-TUT-1.2-A: TutorialMission 타입과 mission data에 commentOnSuccess 추가
-TUT-1.2-B: success feedback state와 active mission 계산 조정
-TUT-1.2-C: TutorialMissionBar success variant UI 추가
-TUT-1.2-D: skip/hide/reopen 및 동시 완료 회귀 검증
+구역 안에 제목을 넣어 보세요
 ```
 
-실제 repo 구조에 맞춰 더 적절한 Phase를 제안해 주세요.
+안내:
 
-### 9. 검증 계획
+```text
+방금 만든 일반 구역 안에 제목 블록을 넣어 보세요.
+```
 
-자동 검증:
+완료 조건:
+
+```text
+새 CONTAINER의 direct child로 HEADING/H1이 존재
+```
+
+성공 코멘트:
+
+```text
+잘 했어요. 제목이 구역 안에 들어가면 HTML에서도 부모-자식 구조가 만들어집니다.
+```
+
+### 3. 제목 문구 바꾸기
+
+제목:
+
+```text
+제목을 나만의 문장으로 바꿔 보세요
+```
+
+안내:
+
+```text
+제목을 “안녕하세요, 저는 ○○입니다”처럼 나를 소개하는 문장으로 바꿔 보세요.
+```
+
+완료 조건:
+
+```text
+HEADING/H1의 content가 baseline 또는 기본값과 달라짐
+```
+
+성공 코멘트:
+
+```text
+좋습니다. 화면에 보이는 글자는 HTML 요소의 내용으로 저장됩니다.
+```
+
+### 4. 본문 추가
+
+제목:
+
+```text
+소개 문장을 넣어 보세요
+```
+
+안내:
+
+```text
+소개 구역 안에 본문 블록을 추가해 보세요.
+```
+
+완료 조건:
+
+```text
+새 CONTAINER의 direct child 또는 descendant로 PARAGRAPH/P가 존재
+```
+
+성공 코멘트:
+
+```text
+본문은 HTML에서 p 태그로 표현됩니다. 긴 설명이나 소개 문장을 담을 때 사용합니다.
+```
+
+### 5. 본문 내용 수정
+
+제목:
+
+```text
+나를 소개하는 글을 써 보세요
+```
+
+안내:
+
+```text
+본문 내용을 내가 좋아하는 것, 배우고 싶은 것, 나를 표현하는 문장으로 바꿔 보세요.
+```
+
+완료 조건:
+
+```text
+PARAGRAPH/P의 content가 baseline 또는 기본값과 달라짐
+```
+
+성공 코멘트:
+
+```text
+좋습니다. 제목과 본문을 함께 쓰면 페이지의 핵심 메시지가 더 분명해집니다.
+```
+
+### 6. 이미지 추가
+
+제목:
+
+```text
+이미지를 추가해 보세요
+```
+
+안내:
+
+```text
+소개 구역에 이미지 블록을 추가해 보세요.
+```
+
+완료 조건:
+
+```text
+baseline 이후 새 IMAGE가 존재
+```
+
+성공 코멘트:
+
+```text
+이미지는 HTML에서 img 태그로 표현됩니다.
+```
+
+### 7. 이미지 주소 바꾸기
+
+제목:
+
+```text
+이미지 주소를 바꿔 보세요
+```
+
+안내:
+
+```text
+이미지 블록의 주소를 다른 이미지 URL로 바꿔 보세요.
+```
+
+완료 조건:
+
+```text
+IMAGE의 src가 baseline 또는 기본값과 달라짐
+```
+
+성공 코멘트:
+
+```text
+img 태그는 src 속성에 적힌 주소에서 이미지를 불러옵니다.
+```
+
+### 8. 안쪽 여백 조절
+
+제목:
+
+```text
+소개 구역에 안쪽 여백을 주세요
+```
+
+안내:
+
+```text
+소개 구역의 안쪽 여백을 조절해 내용이 조금 더 편하게 보이도록 만들어 보세요.
+```
+
+완료 조건:
+
+```text
+CONTAINER의 styles.paddingSize가 meaningful value로 변경됨
+```
+
+성공 코멘트:
+
+```text
+안쪽 여백은 CSS의 padding입니다. 내용과 테두리 사이에 숨 쉴 공간을 만들어 줍니다.
+```
+
+### 9. 카드 추가
+
+제목:
+
+```text
+관심사 카드를 만들어 보세요
+```
+
+안내:
+
+```text
+카드 구역을 추가해 내가 좋아하는 것들을 정리할 공간을 만들어 보세요.
+```
+
+완료 조건:
+
+```text
+baseline 이후 새 CARD가 존재
+```
+
+성공 코멘트:
+
+```text
+카드는 관련 있는 내용을 하나의 덩어리로 묶어 보여줄 때 유용합니다.
+```
+
+### 10. 카드 안에 제목 넣기
+
+제목:
+
+```text
+카드에 제목을 넣어 보세요
+```
+
+안내:
+
+```text
+카드 안에 “제가 좋아하는 것” 같은 제목을 넣어 보세요.
+```
+
+완료 조건:
+
+```text
+CARD의 direct child 또는 descendant로 HEADING/H1이 존재
+```
+
+성공 코멘트:
+
+```text
+카드 안에도 제목, 본문, 목록 같은 여러 블록을 넣을 수 있습니다.
+```
+
+### 11. 목록 추가
+
+제목:
+
+```text
+관심사 목록을 만들어 보세요
+```
+
+안내:
+
+```text
+카드 안에 목록을 추가해 좋아하는 것들을 정리해 보세요.
+```
+
+완료 조건:
+
+```text
+CARD의 descendant로 LIST가 존재하고, LIST가 direct LIST_ITEM을 1개 이상 가짐
+```
+
+성공 코멘트:
+
+```text
+목록은 HTML에서 ul과 li 구조로 표현됩니다. 반복되는 내용을 정리할 때 자주 사용합니다.
+```
+
+### 12. 배경색 바꾸기
+
+제목:
+
+```text
+소개 구역의 배경색을 바꿔 보세요
+```
+
+안내:
+
+```text
+소개 구역이나 카드의 배경색을 바꿔 페이지 분위기를 만들어 보세요.
+```
+
+완료 조건:
+
+```text
+CONTAINER 또는 CARD의 styles.bgColor가 meaningful value로 변경됨
+```
+
+성공 코멘트:
+
+```text
+배경색은 CSS 스타일로 표현됩니다. 같은 구조라도 색을 바꾸면 분위기가 달라집니다.
+```
+
+### 13. 그림자 추가
+
+제목:
+
+```text
+카드에 그림자를 넣어 보세요
+```
+
+안내:
+
+```text
+카드에 그림자를 넣어 화면에서 살짝 떠 있는 느낌을 만들어 보세요.
+```
+
+완료 조건:
+
+```text
+CARD의 styles.shadow가 meaningful value로 변경됨
+```
+
+성공 코멘트:
+
+```text
+그림자는 CSS shadow 스타일입니다. 카드처럼 독립된 영역을 강조할 때 자주 사용합니다.
+```
+
+### 14. 링크 추가
+
+제목:
+
+```text
+링크를 추가해 보세요
+```
+
+안내:
+
+```text
+더 알아볼 수 있는 사이트나 내가 좋아하는 페이지로 가는 링크를 추가해 보세요.
+```
+
+완료 조건:
+
+```text
+baseline 이후 새 LINK/A가 존재
+```
+
+성공 코멘트:
+
+```text
+링크는 HTML에서 a 태그로 표현됩니다.
+```
+
+### 15. 링크 주소 입력
+
+제목:
+
+```text
+링크 주소를 입력해 보세요
+```
+
+안내:
+
+```text
+링크가 이동할 주소를 입력해 보세요.
+```
+
+완료 조건:
+
+```text
+LINK/A의 link 또는 href 값이 비어 있지 않고 meaningful value임
+```
+
+성공 코멘트:
+
+```text
+a 태그는 href 속성에 적힌 주소로 이동합니다.
+```
+
+### 16. 미리보기 확인
+
+제목:
+
+```text
+미리보기에서 확인해 보세요
+```
+
+안내:
+
+```text
+오른쪽 미리보기 탭을 눌러 지금 만든 페이지가 어떻게 보이는지 확인해 보세요.
+```
+
+완료 조건:
+
+```text
+previewOpened UI signal
+```
+
+성공 코멘트:
+
+```text
+좋습니다. 미리보기는 블록으로 만든 페이지가 실제 화면에서 어떻게 보일지 보여줍니다.
+```
+
+### 17. 코드 보기 확인
+
+제목:
+
+```text
+코드 보기에서 HTML을 확인해 보세요
+```
+
+안내:
+
+```text
+코드 보기 탭을 눌러 방금 만든 블록 구조가 HTML로 어떻게 바뀌는지 확인해 보세요.
+```
+
+완료 조건:
+
+```text
+codeViewOpened UI signal
+```
+
+성공 코멘트:
+
+```text
+잘 했어요. 지금 만든 블록 구조가 실제 HTML 코드로 변환된 모습을 확인했습니다.
+```
+
+## 구현 지침
+
+* 현재 `TutorialTrack` / `TutorialMission` 타입에 맞춰 작성해 주세요.
+* 새 condition 타입이 필요하면 먼저 최소 범위로 제안하고 적용해 주세요.
+* 가능하면 기존 property-aware condition을 재사용해 주세요.
+* mission data에 JSX, React component, mutation function을 넣지 마세요.
+* 튜토리얼은 block tree를 수정하지 않아야 합니다.
+* 튜토리얼 모드에서 Templates 탭 비활성화 정책은 유지합니다.
+* Preview / Code View / Export 경로는 변경하지 마세요.
+* DnD, StylePanel input handler, HtmlBlock 모델, blockDefinitions 구조는 변경하지 마세요.
+
+## 검증
+
+가능하면 다음을 실행해 주세요.
 
 ```powershell
 npx.cmd tsc --noEmit
@@ -371,50 +507,20 @@ npm.cmd run lint
 git diff --check
 ```
 
-필요 시 changed-file lint를 제안해 주세요.
-
 수동 검증에는 최소한 다음을 포함해 주세요.
 
-* 미션 완료 시 즉시 다음 미션으로 넘어가지 않는지
-* 성공 상태가 표시되는지
-* commentOnSuccess가 표시되는지
-* commentOnSuccess가 없는 미션의 기본 문구 처리
-* “다음 미션” 버튼으로 다음 미션 이동
-* 성공 상태에서 숨기기 / 다시 열기
-* 성공 상태에서 건너뛰기 버튼이 표시되지 않는지
-* 일반 미션 상태에서 건너뛰기 정상 작동
-* 여러 미션 동시 완료 시 현재 active mission 중심으로 feedback 표시
-* 템플릿 삽입 시 ledger가 흔들리지 않는지
-* property-aware mission 완료 시 success feedback 표시
-* 모든 미션 완료 상태와 success feedback 충돌 없음
-* DnD 회귀 없음
-* StylePanel 편집 회귀 없음
-* Preview / Code View / Export 회귀 없음
-
-## 명시적 제외 범위
-
-이번 v1.2에서는 다음을 제외합니다.
-
-* success feedback queue
-* 자동 timeout 진행
-* confetti
-* sound effect
-* full-screen modal
-* animation library
-* guided-tour library
-* localStorage
-* 계정 저장
-* block mutation
-* DnD 변경
-* StylePanel input handler 변경
-* HtmlBlock 모델 변경
-* blockDefinitions 구조 변경
-* Preview / Code View / Export 변경
-* unrelated repository 변경
-
-## 중요
-
-이번 요청에서는 코드를 수정하지 마세요.
-조사와 Tutorial Overlay v1.2 success feedback 구현 계획만 작성해 주세요.
+* 소개 페이지 튜토리얼 트랙이 표시됨
+* 트랙 시작 후 starter document의 기존 블록으로 미션이 즉시 완료되지 않음
+* 각 미션이 의도한 행동으로 완료됨
+* content 변경 미션 정상 작동
+* src/link 변경 미션 정상 작동
+* padding/bgColor/shadow style 미션 정상 작동
+* success feedback comment 표시
+* 다음 미션 진행 정상
+* skip/hide/reopen 정상
+* Preview / Code View 미션 정상
+* 일반 모드에서 기존 Templates 기능 정상
+* 튜토리얼 모드에서 Templates 비활성화 유지
+* DnD / StylePanel / Preview / Code View / Export 회귀 없음
 
 응답은 한국어로 작성해 주세요.
