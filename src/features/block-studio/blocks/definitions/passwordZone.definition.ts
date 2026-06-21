@@ -1,5 +1,10 @@
 import type { BlockDefinition } from "../types/blockDefinition.types";
-import { commonStyleFields, correctAnswerField } from "./editableFieldPresets";
+import {
+  commonStyleFields,
+  correctAnswerField,
+  marginSizeField,
+  paddingSizeField,
+} from "./editableFieldPresets";
 
 export const passwordZoneDefinition = {
   type: "PASSWORD_ZONE",
@@ -31,7 +36,7 @@ export const passwordZoneDefinition = {
       sortable: "vertical",
     },
   ],
-  editableFields: [correctAnswerField, ...commonStyleFields],
+  editableFields: [correctAnswerField, ...commonStyleFields, paddingSizeField, marginSizeField],
   dropPolicy: {
     acceptsChildren: true,
     childFields: ["defaultChildren", "conditionalChildren"],

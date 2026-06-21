@@ -1,5 +1,10 @@
 import type { BlockDefinition } from "../types/blockDefinition.types";
-import { commonStyleFields, headingContentField, typographyDetailFields } from "./editableFieldPresets";
+import {
+  commonStyleFields,
+  headingContentField,
+  marginSizeField,
+  typographyDetailFields,
+} from "./editableFieldPresets";
 
 export const headingDefinition = {
   type: "H1",
@@ -14,7 +19,7 @@ export const headingDefinition = {
   },
   palette: { label: "제목 넣기 (H1)", icon: "H1", order: 10 },
   childFields: [],
-  editableFields: [headingContentField, ...commonStyleFields, ...typographyDetailFields],
+  editableFields: [headingContentField, ...commonStyleFields, ...typographyDetailFields, marginSizeField],
   dropPolicy: { allowRoot: true },
   dragPreview: { label: "제목", contentField: "content" },
   htmlSchema: { tag: "h1", contentField: "content" },

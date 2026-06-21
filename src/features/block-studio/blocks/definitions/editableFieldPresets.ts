@@ -104,6 +104,38 @@ export const borderColorField: EditableFieldDefinition = {
   ],
 };
 
+export const paddingSizeField: EditableFieldDefinition = {
+  path: "styles.paddingSize",
+  label: "안쪽 여백",
+  control: "select",
+  section: "advanced",
+  defaultValue: "default",
+  options: [
+    { label: "기본", value: "default" },
+    { label: "없음", value: "none" },
+    { label: "작게", value: "sm" },
+    { label: "보통", value: "md" },
+    { label: "크게", value: "lg" },
+    { label: "아주 크게", value: "xl" },
+  ],
+};
+
+export const marginSizeField: EditableFieldDefinition = {
+  path: "styles.marginSize",
+  label: "바깥 여백",
+  control: "select",
+  section: "advanced",
+  defaultValue: "default",
+  options: [
+    { label: "기본", value: "default" },
+    { label: "없음", value: "none" },
+    { label: "작게", value: "sm" },
+    { label: "보통", value: "md" },
+    { label: "크게", value: "lg" },
+    { label: "아주 크게", value: "xl" },
+  ],
+};
+
 export const hrBorderFields: EditableFieldDefinition[] = [
   { ...borderWidthField, label: "선 굵기" },
   { ...borderColorField, label: "선 색상" },

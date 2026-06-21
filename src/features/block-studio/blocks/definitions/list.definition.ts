@@ -1,5 +1,5 @@
 import type { BlockDefinition } from "../types/blockDefinition.types";
-import { commonStyleFields } from "./editableFieldPresets";
+import { commonStyleFields, marginSizeField, paddingSizeField } from "./editableFieldPresets";
 
 export const listDefinition = {
   type: "LIST",
@@ -43,7 +43,7 @@ export const listDefinition = {
       appendAction: { label: "항목 추가", blockType: "LIST_ITEM" },
     },
   ],
-  editableFields: commonStyleFields,
+  editableFields: [...commonStyleFields, paddingSizeField, marginSizeField],
   dropPolicy: { acceptsChildren: true, childFields: ["children"], allowRoot: true },
   dragPreview: { label: "목록" },
   htmlSchema: { tag: "ul", childField: "children" },

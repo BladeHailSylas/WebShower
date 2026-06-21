@@ -1,5 +1,10 @@
 import type { BlockDefinition } from "../types/blockDefinition.types";
-import { commonStyleFields, gridColumnField } from "./editableFieldPresets";
+import {
+  commonStyleFields,
+  gridColumnField,
+  marginSizeField,
+  paddingSizeField,
+} from "./editableFieldPresets";
 
 export const gridZoneDefinition = {
   type: "GRID_ZONE",
@@ -25,7 +30,7 @@ export const gridZoneDefinition = {
       sortable: "grid",
     },
   ],
-  editableFields: [...commonStyleFields, gridColumnField],
+  editableFields: [...commonStyleFields, gridColumnField, paddingSizeField, marginSizeField],
   dropPolicy: { acceptsChildren: true, childFields: ["children"], allowRoot: true },
   dragPreview: { label: "바둑판 구역" },
   htmlSchema: { tag: "div", childField: "children" },

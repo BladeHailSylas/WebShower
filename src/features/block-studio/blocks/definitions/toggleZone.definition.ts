@@ -1,5 +1,5 @@
 import type { BlockDefinition } from "../types/blockDefinition.types";
-import { commonStyleFields } from "./editableFieldPresets";
+import { commonStyleFields, marginSizeField, paddingSizeField } from "./editableFieldPresets";
 
 export const toggleZoneDefinition = {
   type: "TOGGLE_ZONE",
@@ -30,7 +30,7 @@ export const toggleZoneDefinition = {
       sortable: "vertical",
     },
   ],
-  editableFields: commonStyleFields,
+  editableFields: [...commonStyleFields, paddingSizeField, marginSizeField],
   dropPolicy: {
     acceptsChildren: true,
     childFields: ["defaultChildren", "conditionalChildren"],

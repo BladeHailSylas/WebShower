@@ -1,5 +1,5 @@
 import type { BlockDefinition } from "../types/blockDefinition.types";
-import { commonStyleFields } from "./editableFieldPresets";
+import { commonStyleFields, paddingSizeField } from "./editableFieldPresets";
 
 export const listItemDefinition = {
   type: "LIST_ITEM",
@@ -24,7 +24,7 @@ export const listItemDefinition = {
       acceptedBlockTypes: ["H1", "P", "IMAGE", "A", "HR", "CARD", "CONTAINER"],
     },
   ],
-  editableFields: commonStyleFields,
+  editableFields: [...commonStyleFields, paddingSizeField],
   dropPolicy: {
     acceptsChildren: true,
     childFields: ["children"],

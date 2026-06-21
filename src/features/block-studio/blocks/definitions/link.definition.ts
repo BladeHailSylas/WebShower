@@ -3,6 +3,7 @@ import {
   commonStyleFields,
   linkHrefField,
   linkTextField,
+  marginSizeField,
   typographyDetailFields,
 } from "./editableFieldPresets";
 
@@ -20,7 +21,13 @@ export const linkDefinition = {
   },
   palette: { label: "링크 이동 버튼 만들기 (A)", icon: "A", order: 30 },
   childFields: [],
-  editableFields: [linkTextField, linkHrefField, ...commonStyleFields, ...typographyDetailFields],
+  editableFields: [
+    linkTextField,
+    linkHrefField,
+    ...commonStyleFields,
+    ...typographyDetailFields,
+    marginSizeField,
+  ],
   dropPolicy: { allowRoot: true },
   dragPreview: { label: "링크", contentField: "content" },
   htmlSchema: { tag: "a", contentField: "content", hrefField: "link" },

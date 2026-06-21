@@ -15,6 +15,8 @@ const fontWeightPattern = /^font-(?:thin|extralight|light|normal|medium|semibold
 const fontFamilyPattern = /^font-(?:sans|serif|mono|\[.+\])$/;
 const lineHeightPattern = /^leading-(?:none|tight|snug|normal|relaxed|loose|\[.+\])$/;
 const letterSpacingPattern = /^tracking-(?:tighter|tight|normal|wide|wider|widest|\[.+\])$/;
+const paddingPattern = /^p(?:[xytrbl])?-(?:\d+(?:\.\d+)?|px|\[.+\])$/;
+const marginPattern = /^-?m(?:[xytrbl])?-(?:\d+(?:\.\d+)?|px|auto|\[.+\])$/;
 const roundedPattern = /^rounded(?:-(?:none|xs|sm|md|lg|xl|[2-9]xl|full|\[.+\]))?$/;
 const shadowPattern = /^shadow(?:-(?:none|xs|sm|md|lg|xl|2xl|inner|\[.+\]))?$/;
 const borderWidthPattern = /^border(?:-[xytrblse])?(?:-(?:0|2|4|8|\[.+\]))?$/;
@@ -106,6 +108,22 @@ const borderColorClasses: Record<Exclude<NonNullable<StyleProps["borderColor"]>,
   red: "border-red-500",
   blue: "border-indigo-500",
   green: "border-emerald-500",
+};
+
+const paddingClasses: Record<Exclude<NonNullable<StyleProps["paddingSize"]>, "default">, string> = {
+  none: "p-0",
+  sm: "p-2",
+  md: "p-4",
+  lg: "p-6",
+  xl: "p-8",
+};
+
+const marginClasses: Record<Exclude<NonNullable<StyleProps["marginSize"]>, "default">, string> = {
+  none: "m-0",
+  sm: "m-2",
+  md: "m-4",
+  lg: "m-6",
+  xl: "m-8",
 };
 
 function isRootUtility(token: string): boolean {
@@ -208,6 +226,20 @@ export function resolveGuiStyleClasses(baseClasses: string[], styles: StyleProps
     tokens = replaceRootUtility(tokens, (token) => explicitBorderColorPattern.test(token), [
       borderColorClasses[styles.borderColor],
     ]);
+  }
+
+  if (styles.paddingSize !== undefined && styles.paddingSize !== "default") {
+    tokens = replaceRootUtility(tokens, (token) => paddingPattern.test(token), [
+      paddingClasses[styles.paddingSize],
+    ]);
+  }
+
+  if (styles.marginSize !== undefined && styles.marginSize !== "default") {
+    tokens = replaceRootUtility(
+      tokens,
+      (token) => token !== "mx-auto" && marginPattern.test(token),
+      [marginClasses[styles.marginSize]],
+    );
   }
 
   return deduplicate(tokens).join(" ");

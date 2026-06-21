@@ -1,5 +1,5 @@
 import type { BlockDefinition } from "../types/blockDefinition.types";
-import { commonStyleFields } from "./editableFieldPresets";
+import { commonStyleFields, marginSizeField, paddingSizeField } from "./editableFieldPresets";
 
 export const cardDefinition = {
   type: "CARD",
@@ -22,7 +22,7 @@ export const cardDefinition = {
       sortable: "vertical",
     },
   ],
-  editableFields: commonStyleFields,
+  editableFields: [...commonStyleFields, paddingSizeField, marginSizeField],
   dropPolicy: { acceptsChildren: true, childFields: ["children"], allowRoot: true },
   dragPreview: { label: "카드" },
   htmlSchema: { tag: "div", childField: "children" },
