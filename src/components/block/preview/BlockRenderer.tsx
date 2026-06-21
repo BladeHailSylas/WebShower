@@ -6,12 +6,18 @@ import QrExportPanel from "./QrExportPanel";
 
 interface BlockRendererProps {
   blocks: HtmlBlock[];
+  onTabViewed?: (tab: PreviewTab) => void;
 }
 
 type PreviewTab = "preview" | "code";
 
-export default function BlockRenderer({ blocks }: BlockRendererProps) {
+export default function BlockRenderer({ blocks, onTabViewed }: BlockRendererProps) {
   const [activeTab, setActiveTab] = useState<PreviewTab>("preview");
+
+  const viewTab = (tab: PreviewTab) => {
+    setActiveTab(tab);
+    onTabViewed?.(tab);
+  };
 
   return (
     <div className="flex flex-col h-full w-full bg-slate-50">
@@ -29,7 +35,7 @@ export default function BlockRenderer({ blocks }: BlockRendererProps) {
       <div className="bg-white border-b border-slate-200 p-2 flex gap-2 shrink-0">
         <button
           type="button"
-          onClick={() => setActiveTab("preview")}
+          onClick={() => viewTab("preview")}
           className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold transition ${
             activeTab === "preview" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
           }`}
@@ -38,7 +44,7 @@ export default function BlockRenderer({ blocks }: BlockRendererProps) {
         </button>
         <button
           type="button"
-          onClick={() => setActiveTab("code")}
+          onClick={() => viewTab("code")}
           className={`flex-1 px-3 py-2 rounded-lg text-xs font-bold transition ${
             activeTab === "code" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600 hover:bg-slate-200"
           }`}

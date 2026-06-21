@@ -1,111 +1,292 @@
-Block Studio Canvas UI의 두 가지 문제에 대해 원인을 조사하고 진단 보고서를 작성해 주세요.
+Tutorial Overlay v1.2: Success Feedback 구현 계획을 작성해 주세요.
 
-이번 요청은 **조사와 원인 분석**입니다.
+이번 요청은 **조사와 구현 계획 수립**입니다.
 아직 코드를 수정하지 마세요.
 
 ## 배경
 
-Block Studio는 React + TypeScript + Tailwind CSS + DaisyUI + Vite 기반의 교육용 웹 빌더입니다.
+Block Studio에는 현재 Tutorial Overlay가 구현되어 있습니다.
 
-최근 다음 작업들이 완료되었습니다.
+현재 확인된 상태:
 
-* 스타일 시스템 확장
-* SLIDER_ZONE v1 / v1.1
-* Learning Templates v1
-* Code View v2
+* Canvas 상단에 Tutorial Mission Bar가 표시됨
+* block tree / UI signal / property 변경 조건을 기반으로 미션 완료를 추적함
+* 튜토리얼은 block tree를 직접 수정하지 않음
+* 튜토리얼은 DnD, StylePanel, Preview, Code View, Export 경로를 방해하지 않음
+* 완료된 미션은 ledger에 기록되어 이후 블록을 삭제하거나 값을 되돌려도 진행률이 역행하지 않음
+* 현재는 미션 성공 시 곧바로 다음 미션으로 넘어가는 흐름임
 
-현재 주요 기능은 대체로 정상 작동하지만, Canvas UI에서 두 가지 시각적/위치 관련 문제가 확인되었습니다.
+현재 문제:
 
-## 문제 1: GRID_ZONE 내부 구역 중첩 시 블록이 튀어나오는 문제
+* 미션을 완료해도 사용자가 “무엇을 방금 배웠는지” 인지하기 전에 다음 미션으로 넘어감
+* 튜토리얼이 체크리스트처럼 느껴지고, 개념 설명의 깊이가 부족함
+* 성공 순간에 짧은 피드백과 학습 코멘트를 제공하면 교육 효과가 좋아질 수 있음
 
-### 현상
+## 목표
 
-`GRID_ZONE` 안에 여러 `CONTAINER` 또는 container-like block을 중첩해서 넣을 경우, 깊게 중첩된 구역이 부모 영역 안에 자연스럽게 수축되지 않고 오른쪽으로 튀어나오거나, grid column 영역을 넘어 보입니다.
+Tutorial Overlay v1.2의 목표는 **미션 성공 피드백**입니다.
 
-이미지에서는 빨간색 사각형으로 강조된 구간입니다.
+미션이 완료되었을 때 즉시 다음 미션으로 넘어가지 않고, 짧은 성공 상태를 보여준 뒤 사용자가 직접 다음 미션으로 넘어가게 합니다.
 
-관찰된 특징:
+원하는 흐름:
 
-* GRID_ZONE 안에서 구역을 여러 단계 중첩하면 문제가 두드러집니다.
-* nested CONTAINER의 편집용 shell 또는 drop zone이 부모 column 너비 안에 맞춰 줄어들지 않는 것처럼 보입니다.
-* 일반 root 또는 단순 container보다 GRID_ZONE 내부 중첩에서 더 눈에 띕니다.
-* 실제 Preview/Export 문제라기보다 Canvas 편집 UI 문제일 가능성이 있습니다.
+```text
+미션 조건 충족
+→ 성공 상태 표시
+→ commentOnSuccess로 짧은 학습 코멘트 표시
+→ 사용자가 “다음 미션” 버튼 클릭
+→ 다음 미션 표시
+```
 
-### 조사할 것
+예시:
 
-다음을 확인해 주세요.
+```text
+잘 했어요!
+블록을 추가할 때 사용한 이 동작을 “드래그”라고 합니다.
+[다음 미션]
+```
 
-1. GRID_ZONE의 Canvas DOM 구조와 className
-2. GRID_ZONE direct child가 Canvas에서 어떤 wrapper 안에 렌더링되는지
-3. CanvasBlockSlot / CanvasBlockItem / CanvasBlockBody / nested drop zone 구조
-4. container-like block의 기본 width, min-width, padding, border, overflow 관련 class
-5. GRID_ZONE column item이 `min-width: 0` 없이 콘텐츠 최소 폭 때문에 밀려나는지
-6. nested block shell에 `w-full`, `min-w-*`, fixed width, flex shrink 관련 문제가 있는지
-7. drag handle / edit handle / side rail이 실제 block width 계산에 영향을 주는지
-8. dotted drop zone 또는 editor shell이 부모보다 큰 width를 강제하는지
-9. GRID_ZONE의 Canvas layout과 Preview/Export layout이 어떻게 다른지
-10. 이 문제가 Canvas에서만 발생하는지, Preview/Export에서도 유사하게 발생하는지
+## 핵심 원칙
 
-특히 CSS Grid 내부 item에서 흔한 문제인 `min-width: auto` / `min-w-0` / overflow 문제인지 확인해 주세요.
+반드시 지켜 주세요.
 
-## 문제 2: 스크롤 후 StylePanel 위치가 선택 요소와 어긋나는 문제
+* 튜토리얼은 block tree를 직접 수정하지 않습니다.
+* 튜토리얼은 DnD 이벤트를 가로채지 않습니다.
+* StylePanel input handler를 변경하지 않습니다.
+* Preview / Code View / Export 생성 경로를 변경하지 않습니다.
+* HtmlBlock 모델을 변경하지 않습니다.
+* blockDefinitions 구조를 변경하지 않습니다.
+* localStorage / 계정 저장을 추가하지 않습니다.
+* mission data는 여전히 선언적 데이터여야 합니다.
+* `commentOnSuccess`에는 JSX, React component, function, mutation logic을 넣지 않습니다.
+* 성공 피드백은 UI 상태일 뿐, 미션 조건 판정 자체를 바꾸지 않습니다.
 
-### 현상
+## 제안 기능
 
-StylePanel은 선택된 블록 근처에 floating panel처럼 표시됩니다.
+### 1. TutorialMission에 commentOnSuccess 추가
 
-스크롤을 내리지 않은 상태에서는 선택 요소와 StylePanel이 비교적 잘 정렬됩니다.
-하지만 Canvas를 아래로 스크롤한 뒤 블록을 선택하면, StylePanel이 선택 요소와 맞지 않고 위/아래 또는 옆으로 어긋납니다.
+`TutorialMission` 타입에 선택적 필드를 추가하는 방향을 검토해 주세요.
 
-이미지에서는 보라색 사각형으로 강조된 구간입니다.
+우선 후보:
 
-### 조사할 것
+```ts
+type TutorialMission = {
+  id: string;
+  title: string;
+  description: string;
+  condition: TutorialCondition;
+  commentOnSuccess?: string;
+};
+```
 
-다음을 확인해 주세요.
+v1.2에서는 단순 문자열을 선호합니다.
 
-1. StylePanel 위치 계산이 어디에서 이루어지는지
-2. 선택된 block의 위치를 어떤 API로 측정하는지
+다음과 같은 구조는 v1.2에서 과하면 제외해 주세요.
 
-   * 예: `getBoundingClientRect`
-   * offsetTop / offsetLeft
-   * scrollTop / scrollLeft
-3. viewport 좌표와 scroll container 좌표를 혼용하고 있지 않은지
-4. Canvas의 실제 scroll container가 window인지, 특정 div인지
-5. StylePanel이 `position: absolute`인지 `fixed`인지
-6. panel의 containing block이 어디인지
-7. 스크롤 offset을 더하거나 빼는 계산이 누락되었는지
-8. Canvas 내부 transform, scale, relative container, overflow 설정이 위치 계산에 영향을 주는지
-9. 선택 후 scroll이 발생하거나 layout shift가 생기는지
-10. nested block / GRID_ZONE 내부 block 선택 시 위치 계산이 더 크게 어긋나는지
+```ts
+commentOnSuccess?: {
+  title?: string;
+  body: string;
+};
+```
 
-특히 다음 가능성을 검토해 주세요.
+단, 현재 UI 구조상 객체형이 더 안전하다면 이유를 설명해 주세요.
 
-* `getBoundingClientRect()`는 viewport 기준인데 panel은 scroll container 기준 absolute 위치를 사용하고 있음
-* window scroll과 Canvas scroll container scroll을 혼동하고 있음
-* panel이 viewport fixed 좌표로 배치되어야 하는데 부모 relative 좌표로 배치되고 있음
-* scrollTop을 중복으로 더하거나 아예 반영하지 않고 있음
+### 2. 성공 상태 표시
 
-## 공통 조사 범위
+미션이 완료되면 Mission Bar가 다음 미션으로 바로 넘어가지 않고 성공 상태를 보여주도록 계획해 주세요.
 
-실제 repo 구조를 확인하고, Block Studio 관련 파일만 조사해 주세요.
+성공 상태에는 다음을 표시합니다.
 
-특히 다음 영역을 확인해 주세요.
+* 완료 표시
+* 짧은 성공 제목
+* `commentOnSuccess`
+* “다음 미션” 버튼
 
-* Canvas layout 관련 컴포넌트
-* `BlockStudioLayout`
-* `BlockCanvas`
-* `CanvasBlockItem`
-* `CanvasBlockBody`
-* `CanvasBlockSlot`
-* drag handle / edit handle 관련 컴포넌트
-* StylePanel / floating editor 관련 컴포넌트
-* selected block 상태 관리
-* block position measurement 로직
-* GRID_ZONE canvas 렌더링 경로
-* container-like block canvas 렌더링 경로
-* CSS class / Tailwind class / inline style 관련 로직
+`commentOnSuccess`가 없는 미션은 기본 성공 문구를 표시하거나, 성공 상태 없이 바로 다음으로 넘길지 비교해 주세요.
 
-파일명과 함수명은 실제 repo 기준으로 보고해 주세요.
+선호 방향:
+
+```text
+commentOnSuccess가 없더라도 짧은 기본 성공 상태는 표시한다.
+```
+
+기본 문구 예시:
+
+```text
+좋습니다! 다음 미션으로 넘어가 볼까요?
+```
+
+### 3. 다음 미션 이동 방식
+
+v1.2에서는 자동 이동보다 사용자가 “다음 미션” 버튼을 눌러 이동하는 방식을 선호합니다.
+
+검토할 것:
+
+* 성공 상태에서 자동 timeout을 둘지
+* 자동 timeout 없이 버튼만 둘지
+* skip/hide/reopen과 success state가 어떻게 상호작용할지
+
+선호 방향:
+
+```text
+자동 timeout 없이 “다음 미션” 버튼으로만 이동한다.
+```
+
+## 조사할 것
+
+현재 Tutorial Overlay 구현을 확인한 뒤 다음을 조사해 주세요.
+
+### 1. 현재 active mission 계산 구조
+
+다음을 실제 파일명과 함수명 기준으로 정리해 주세요.
+
+* mission data 위치
+* TutorialMission 타입 위치
+* evaluator 위치
+* completed ledger 업데이트 방식
+* active mission 계산 방식
+* skipped mission 처리
+* hidden/reopen 처리
+* property-aware mission 완료 처리
+* 여러 미션 동시 완료 처리
+
+### 2. 성공 feedback state 필요성
+
+현재 구조에서 미션 완료 후 곧바로 다음 미션으로 넘어가는 원인을 확인하고, 성공 상태를 추가하려면 어떤 상태가 필요한지 제안해 주세요.
+
+후보:
+
+```ts
+type TutorialSuccessFeedback = {
+  missionId: string;
+  title: string;
+  comment: string;
+} | null;
+```
+
+또는 더 적절한 형태가 있다면 제안해 주세요.
+
+검토할 것:
+
+* completed ledger와 success feedback state를 어떻게 분리할지
+* active mission 계산을 success feedback 중에는 잠시 멈출지
+* success feedback 중에도 evaluator는 계속 동작해야 하는지
+* success feedback 중 새 미션이 추가로 완료되면 어떻게 처리할지
+* feedback state가 skip/hide/reopen에 미치는 영향
+
+### 3. 여러 미션 동시 완료 처리
+
+Learning Template 삽입이나 property 변경으로 여러 미션이 동시에 완료될 수 있습니다.
+
+v1.2에서는 다음 정책을 선호합니다.
+
+```text
+여러 미션이 동시에 완료되면,
+현재 activeMission이 완료된 경우에만 그 미션의 성공 피드백을 보여준다.
+다른 동시에 완료된 미션은 completed ledger에는 기록하되 별도 피드백은 생략한다.
+```
+
+이 정책이 현재 구조에 적절한지 검토해 주세요.
+
+검토할 것:
+
+* 현재 active mission이 아닌 후속 미션이 먼저 완료되는 경우
+* 템플릿 삽입으로 여러 조건이 한꺼번에 충족되는 경우
+* success feedback을 연속 queue로 만들 필요가 있는지
+* v1.2에서 queue는 과한지
+
+선호 방향:
+
+```text
+success feedback queue는 v1.2에서 만들지 않는다.
+현재 active mission 중심으로만 feedback을 표시한다.
+```
+
+### 4. skip / hide / reopen과의 관계
+
+다음을 검토해 주세요.
+
+* 성공 상태에서 “건너뛰기” 버튼을 보여줄지
+* 성공 상태에서 “숨기기” 버튼은 유지할지
+* success feedback 중 숨기면 reopen 시 성공 상태를 다시 보여줄지, 다음 미션으로 넘어갈지
+* success feedback 중 skip이 가능한지
+* 모든 미션 완료 상태와 success feedback이 충돌하지 않는지
+
+선호 방향:
+
+```text
+성공 상태에서는 “다음 미션”과 “숨기기”만 보여준다.
+건너뛰기는 일반 미션 상태에서만 보여준다.
+성공 상태에서 숨긴 뒤 다시 열면 같은 성공 상태를 보여준다.
+```
+
+### 5. UI/UX 설계
+
+TutorialMissionBar의 success variant를 제안해 주세요.
+
+검토할 것:
+
+* 기존 Mission Bar 크기를 크게 늘리지 않는 방법
+* 완료 아이콘 또는 체크 표시
+* 성공 제목
+* commentOnSuccess 표시
+* “다음 미션” 버튼
+* 진행률 표시 유지 여부
+* 좁은 화면에서 comment를 어떻게 줄일지
+* StylePanel popover / Canvas overlay / DnD와 충돌하지 않는지
+* `aria-live`를 사용해 성공 상태를 알려줄지
+
+성공 애니메이션은 과도할 필요 없습니다.
+
+우선 후보:
+
+* border color 변경
+* check icon 표시
+* 짧은 fade/scale transition
+* DaisyUI alert-like styling
+* `transition-all` 정도의 가벼운 효과
+
+다음은 v1.2에서 제외합니다.
+
+* confetti
+* 복잡한 animation library
+* sound effect
+* modal success screen
+* full-screen celebration
+* motion preference 처리 고도화
+
+### 6. commentOnSuccess 문구 초안
+
+기존 미션 목록을 확인하고, 각 미션에 넣을 수 있는 `commentOnSuccess` 초안을 제안해 주세요.
+
+예시:
+
+```text
+첫 블록 추가하기:
+잘 했어요! 블록을 추가할 때 사용한 이 동작을 “드래그”라고 합니다.
+
+일반 구역 만들기:
+좋습니다. 구역은 HTML에서 div처럼 여러 요소를 묶는 역할을 합니다.
+
+구역 안에 제목 넣기:
+잘 했어요. 제목이 구역 안에 들어가면 HTML에서도 부모-자식 구조가 만들어집니다.
+
+이미지 추가하기:
+이미지는 웹페이지에서 img 태그로 표현됩니다.
+
+제목 문구 바꾸기:
+좋습니다. 화면의 글자는 HTML 요소의 content로 저장됩니다.
+
+배경색 바꾸기:
+잘 했어요. 배경색은 CSS 스타일로 표현됩니다.
+
+코드 보기 확인:
+좋습니다. 지금 만든 블록 구조가 실제 HTML 코드로 변환된 모습을 확인했습니다.
+```
+
+문구는 초보자가 이해하기 쉬운 한국어로 작성해 주세요.
+너무 길지 않게, 한두 문장 정도로 제한해 주세요.
 
 ## 보고서 형식
 
@@ -113,92 +294,73 @@ StylePanel은 선택된 블록 근처에 floating panel처럼 표시됩니다.
 
 ### 1. 요약 결론
 
-* 문제 1의 가장 가능성 높은 원인
-* 문제 2의 가장 가능성 높은 원인
-* 두 문제가 서로 관련되어 있는지
-* Canvas 전용 문제인지, Preview/Export에도 영향이 있는지
-* 바로 고치기 전에 주의해야 할 위험
+* v1.2 구현 가능 여부
+* 권장 success feedback 구조
+* `commentOnSuccess` 타입 설계
+* 주요 위험
+* v1.2에서 제외해야 할 것
 
-### 2. 문제 1: GRID_ZONE 중첩 overflow 진단
+### 2. 현재 Tutorial 흐름 분석
 
-다음을 포함해 주세요.
+* 관련 파일
+* active mission 계산
+* completed ledger 업데이트
+* skip/hide/reopen
+* 동시 완료 처리
+* property-aware mission 처리
 
-* 관련 파일과 컴포넌트
-* 현재 DOM / wrapper 구조 요약
-* GRID_ZONE Canvas layout 방식
-* nested container shell 구조
-* width / min-width / overflow / flex/grid 관련 class 분석
-* 원인 후보별 가능성
-* 가장 가능성 높은 원인
-* Preview/Export 영향 여부
-* 최소 수정 후보 2~3개
-* 각 수정 후보의 위험
+### 3. Success feedback state 설계
 
-### 3. 문제 2: StylePanel scroll misalignment 진단
+* 필요한 state
+* completed ledger와의 관계
+* active mission 계산과의 관계
+* 여러 미션 동시 완료 처리
+* hide/reopen/skip과의 관계
 
-다음을 포함해 주세요.
+### 4. TutorialMission 타입 확장안
 
-* 관련 파일과 컴포넌트
-* 현재 위치 계산 방식
-* 사용하는 좌표계
-* Canvas scroll container 구조
-* panel positioning 방식
-* scroll offset 처리 여부
-* 원인 후보별 가능성
-* 가장 가능성 높은 원인
-* 최소 수정 후보 2~3개
-* 각 수정 후보의 위험
+* `commentOnSuccess?: string` 추가 가능성
+* 객체형 대안 비교
+* mission data 선언성 유지 여부
+* 문구 작성 기준
 
-### 4. 수정 우선순위 제안
+### 5. UI 설계안
 
-두 문제 중 무엇을 먼저 고치는 것이 좋은지 제안해 주세요.
+* 일반 mission 상태
+* success feedback 상태
+* 모두 완료 상태
+* hidden/reopen 상태
+* 좁은 화면 fallback
+* 접근성 고려
+* 애니메이션/시각 효과 범위
 
-기준:
+### 6. commentOnSuccess 문구 초안
 
-* DnD 회귀 위험
-* Canvas layout 회귀 위험
-* StylePanel 편집 회귀 위험
-* 수정 범위
-* 테스트 용이성
+표 형식으로 작성해 주세요.
 
-### 5. 권장 수정 계획
+| Mission | commentOnSuccess |
+| ------- | ---------------- |
 
-아직 구현하지 말고 계획만 제시해 주세요.
+### 7. 수정 파일 계획
 
-형식:
+예상 수정 파일과 신규 파일이 있다면 정리해 주세요.
+
+### 8. Phase별 구현 제안
+
+작고 reviewable하게 나눠 주세요.
+
+예시:
 
 ```text
-Fix 1 목표:
-수정할 파일:
-수정 방식:
-수정하지 않을 것:
-검증 방법:
-
-Fix 2 목표:
-수정할 파일:
-수정 방식:
-수정하지 않을 것:
-검증 방법:
+TUT-1.2-A: TutorialMission 타입과 mission data에 commentOnSuccess 추가
+TUT-1.2-B: success feedback state와 active mission 계산 조정
+TUT-1.2-C: TutorialMissionBar success variant UI 추가
+TUT-1.2-D: skip/hide/reopen 및 동시 완료 회귀 검증
 ```
 
-두 문제를 한 번에 고치는 것이 위험하다면, 반드시 분리해서 제안해 주세요.
+실제 repo 구조에 맞춰 더 적절한 Phase를 제안해 주세요.
 
-### 6. 명시적 제외 범위
-
-이번 진단에서는 다음을 제외합니다.
-
-* 코드 수정
-* Canvas renderer 대규모 재작성
-* DnD listener / drag handle / edit handle 변경
-* HtmlBlock 모델 변경
-* blockDefinitions 구조 변경
-* Preview / Export / Code View 변경
-* SLIDER_ZONE / TEMPLATE / 스타일 시스템 변경
-* unrelated repository 변경
-
-### 7. 검증 계획
-
-수정이 승인되었을 때 실행할 검증 계획을 제안해 주세요.
+### 9. 검증 계획
 
 자동 검증:
 
@@ -213,24 +375,46 @@ git diff --check
 
 수동 검증에는 최소한 다음을 포함해 주세요.
 
-* GRID_ZONE 안에 CONTAINER 여러 단계 중첩
-* GRID_ZONE 2열 / 3열 / 4열 각각 확인
-* nested CONTAINER / CARD / LIST / SLIDER_ZONE 조합 확인
-* Canvas에서 블록이 부모 column 밖으로 튀어나오지 않는지 확인
-* Preview/Export는 기존과 동일한지 확인
-* 스크롤하지 않은 상태에서 StylePanel 위치 확인
-* 아래로 스크롤한 상태에서 StylePanel 위치 확인
-* 깊게 중첩된 블록 선택 시 StylePanel 위치 확인
-* GRID_ZONE 내부 블록 선택 시 StylePanel 위치 확인
-* drag handle 정상 작동
-* edit handle 정상 작동
-* nested drop zone 정상 작동
-* StylePanel 필드 편집 정상 작동
-* 기존 DnD 이동/재정렬 회귀 없음
+* 미션 완료 시 즉시 다음 미션으로 넘어가지 않는지
+* 성공 상태가 표시되는지
+* commentOnSuccess가 표시되는지
+* commentOnSuccess가 없는 미션의 기본 문구 처리
+* “다음 미션” 버튼으로 다음 미션 이동
+* 성공 상태에서 숨기기 / 다시 열기
+* 성공 상태에서 건너뛰기 버튼이 표시되지 않는지
+* 일반 미션 상태에서 건너뛰기 정상 작동
+* 여러 미션 동시 완료 시 현재 active mission 중심으로 feedback 표시
+* 템플릿 삽입 시 ledger가 흔들리지 않는지
+* property-aware mission 완료 시 success feedback 표시
+* 모든 미션 완료 상태와 success feedback 충돌 없음
+* DnD 회귀 없음
+* StylePanel 편집 회귀 없음
+* Preview / Code View / Export 회귀 없음
+
+## 명시적 제외 범위
+
+이번 v1.2에서는 다음을 제외합니다.
+
+* success feedback queue
+* 자동 timeout 진행
+* confetti
+* sound effect
+* full-screen modal
+* animation library
+* guided-tour library
+* localStorage
+* 계정 저장
+* block mutation
+* DnD 변경
+* StylePanel input handler 변경
+* HtmlBlock 모델 변경
+* blockDefinitions 구조 변경
+* Preview / Code View / Export 변경
+* unrelated repository 변경
 
 ## 중요
 
 이번 요청에서는 코드를 수정하지 마세요.
-조사와 원인 분석 보고서만 작성해 주세요.
+조사와 Tutorial Overlay v1.2 success feedback 구현 계획만 작성해 주세요.
 
 응답은 한국어로 작성해 주세요.

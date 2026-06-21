@@ -1,5 +1,4 @@
 import { Outlet } from "react-router";
-import Overlay from "./Overlay";
 
 export default function Layout() {
   return (
@@ -7,7 +6,6 @@ export default function Layout() {
       <div className="flex flex-1 gap-6">
         <div className="flex-1">
           <Outlet />
-          <Overlay />
         </div>
       </div>
     </div>
