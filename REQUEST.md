@@ -1,251 +1,279 @@
-Learning Templates v1을 구현하기 전에, 현재 `starterTemplate`의 형식과 처리 방식이 다중 템플릿 확장에 적절한지 조사해 주세요.
+Code View v2 구현 계획을 작성해 주세요.
 
 이번 요청은 **조사와 계획 수립**입니다.
 아직 코드를 수정하지 마세요.
 
 ## 배경
 
-Block Studio에는 현재 `starterTemplate`가 존재합니다.
-앞으로 Learning Templates v1을 추가하려고 합니다.
+Block Studio에는 현재 Code View v1이 구현되어 있으며, 기능적으로는 충분히 잘 작동합니다.
 
-Learning Templates v1의 목표는 다음과 같습니다.
+현재 원칙:
+
+* Code View는 read-only입니다.
+* Code View는 기존 compiler/export 경로를 재사용해야 합니다.
+* Code View 전용 HTML generator를 만들면 안 됩니다.
+* Preview / Code View / Export는 같은 의미의 HTML 구조를 보여야 합니다.
+* Code View는 학생들이 블록 구조가 실제 HTML/CSS/JS로 어떻게 변환되는지 이해하도록 돕는 교육용 transparency feature입니다.
+
+최근 Learning Templates v1도 구현되었으므로, Code View가 더 읽기 쉬워지면 템플릿을 통해 만든 구조를 학습하는 데 도움이 됩니다.
+
+## v2 목표
+
+Code View v2의 목표는 **읽기 경험 개선**입니다.
+
+v2에서 다룰 대표 개선 사항은 다음 두 가지입니다.
 
 ```text
-사용자가 예시 템플릿 목록에서 원하는 템플릿을 고르고,
-“이 템플릿 추가하기” 버튼을 누르면,
-해당 템플릿의 HtmlBlock[] 묶음이 현재 Canvas root 맨 아래에 추가된다.
+1. HTML formatting
+   - 줄바꿈
+   - 들여쓰기
+   - 중첩 구조가 보이게 표시
+
+2. Syntax highlighting
+   - 태그 이름
+   - 속성 이름
+   - 속성 값
+   - 텍스트 내용
+   - 주석 / script / style 구분 가능성 검토
 ```
 
-v1에서는 드래그 앤 드롭으로 템플릿을 삽입하지 않습니다.
+v2는 코드 편집 기능이 아닙니다.
+기존 raw HTML 생성 경로를 유지하고, Code View 표시 단계에서만 formatting/highlighting을 적용하는 방향을 선호합니다.
 
-## 중요한 방향
+권장 흐름:
 
-Learning Templates v1은 새 블록 시스템을 만드는 작업이 아닙니다.
-기존 `HtmlBlock` 구조와 기존 blockDefinitions / compiler / Preview / Code View / Export 경로를 유지해야 합니다.
+```text
+HtmlBlock[]
+→ 기존 compileBlockHtml / compilePageHtml
+→ raw HTML string
+→ display-only formatter
+→ display-only highlighter
+→ Code View 표시
+```
 
-원칙:
+## 중요한 제한
 
-* `HtmlBlock` 모델을 변경하지 않습니다.
-* slots migration을 하지 않습니다.
-* Code View 전용 generator를 만들지 않습니다.
-* DnD를 템플릿 삽입에 연결하지 않습니다.
-* 템플릿 삽입은 버튼 클릭으로 처리합니다.
-* 템플릿은 root canvas 맨 아래에 append하는 방식으로 시작합니다.
-* nested 위치 삽입은 v1에서 제외합니다.
-* 템플릿 데이터 안에 고정 id가 있더라도, 삽입 시에는 반드시 새 id로 재생성해야 합니다.
-* SLIDER_ZONE, LIST, nested CONTAINER/CARD처럼 깊은 children 구조도 id가 재귀적으로 재생성되어야 합니다.
+다음은 v2에서 구현하지 않습니다.
+
+* Code View에서 코드 직접 수정
+* HTML → block tree 역변환
+* Code View 전용 generator
+* Preview JSX로부터 HTML 재생성
+* escaping 재구현으로 compiler 의미 변경
+* 대형 코드 에디터 의존성 도입
+* 실시간 linting
+* HTML validation
+* diff view
+* 선택 블록의 코드 range mapping
+* 선택 블록 코드 강조
+* 접기/펼치기
+* 검색 기능
+* Export 경로 변경
+* HtmlBlock 모델 변경
+* blockDefinitions 변경
+* DnD / Canvas / StylePanel 변경
+* unrelated repository 변경
 
 ## 조사할 것
 
 실제 repo 구조를 확인한 뒤 다음을 조사해 주세요.
 
-### 1. starterTemplate 구조
+### 1. 현재 Code View v1 구조
+
+다음을 실제 파일명과 함수명 기준으로 정리해 주세요.
+
+* Code View 컴포넌트 위치
+* Code View가 raw HTML string을 받는 방식
+* `compileBlocksForCodeView` 또는 관련 adapter
+* `compileBlockHtml` 사용 경로
+* body fragment / full document 표시 여부
+* copy button 동작
+* empty state 동작
+* HTML escaping 처리 위치
+* 현재 CSS class / layout 구조
+
+### 2. Formatting 적용 가능성
 
 다음을 확인해 주세요.
 
-* `starterTemplate`가 어디에 정의되어 있는지
-* 타입이 무엇인지
-* `HtmlBlock[]`인지, 다른 wrapper 구조가 있는지
-* block id를 포함하고 있는지
-* children / defaultChildren / conditionalChildren을 포함하는지
-* LIST/LIST_ITEM, SLIDER_ZONE/SLIDE_ITEM 같은 internal block 구조를 담을 수 있는지
-* 스타일 필드와 block-specific field를 담기에 충분한지
+* 기존 compiler 결과 string을 display-only로 formatting할 수 있는지
+* formatter가 HTML 의미를 바꾸지 않는지
+* body fragment와 full document 모두 처리해야 하는지
+* SLIDER_ZONE exporter처럼 script가 포함된 HTML도 안전하게 처리 가능한지
+* script/style 내용은 formatting 대상에서 제외하거나 보존해야 하는지
+* 자체 lightweight formatter로 충분한지
+* Prettier 같은 외부 의존성이 필요한지
+* 외부 의존성 도입 시 번들 크기와 유지보수 부담은 어떤지
 
-### 2. starterTemplate 처리 경로
+우선은 대형 의존성 없이, 현재 compiler가 생성하는 예측 가능한 HTML을 대상으로 하는 lightweight formatter를 선호합니다.
+
+다만 자체 formatter가 script/style을 위험하게 바꿀 가능성이 크다면, 안전한 범위 제한 또는 다른 방안을 제안해 주세요.
+
+### 3. Syntax highlighting 적용 가능성
 
 다음을 확인해 주세요.
 
-* 현재 `starterTemplate`가 어디에서 사용되는지
-* 앱 시작 시 초기 Canvas를 채우는 데만 쓰이는지
-* reset/new document 기능과 연결되어 있는지
-* 현재 처리 방식이 기존 block factory를 통하는지
-* starterTemplate 안의 id를 그대로 쓰는지
-* 매번 새 id를 생성하는지
-* deep clone 또는 id 재생성 helper가 이미 있는지
-* 없다면 어디에 feature-local helper를 두는 것이 적절한지
+* raw HTML을 안전하게 escape한 뒤 token span으로 감싸는 방식이 가능한지
+* `dangerouslySetInnerHTML`이 필요한지, 필요하다면 XSS 위험을 어떻게 피할지
+* 태그 이름, 속성 이름, 속성 값, 텍스트를 구분할 수 있는지
+* script/style 블록을 어떻게 표시할지
+* highlighting이 copy되는 코드 내용에 영향을 주지 않도록 할 수 있는지
+* Tailwind class 기반 색상만으로 충분한지
+* 별도 syntax highlighting 라이브러리가 필요한지
 
-### 3. Learning Templates로 확장 가능성
+우선은 read-only 표시용 lightweight highlighter를 선호합니다.
+대형 코드 에디터 라이브러리는 도입하지 마세요.
 
-다음을 검토해 주세요.
+### 4. Copy behavior
 
-* 현재 `starterTemplate` 형식을 그대로 여러 템플릿에 재사용할 수 있는지
-* `LearningTemplate` 타입을 새로 만드는 것이 필요한지
-* 최소 타입은 무엇이면 충분한지
+현재 copy button이 있다면 다음을 검토해 주세요.
 
-예상 후보:
+* v2에서는 raw HTML을 복사할지
+* formatted HTML을 복사할지
+* 화면에 보이는 코드와 복사되는 코드가 일치해야 하는지
+* Export HTML은 계속 기존 compile/export 경로를 사용해야 함
 
-```ts
-type LearningTemplate = {
-  id: string;
-  title: string;
-  description: string;
-  blocks: HtmlBlock[];
-};
-```
-
-교육적 설명을 위해 다음 필드를 추가할 필요가 있는지도 검토해 주세요.
-
-```ts
-learningPoints?: string[];
-usedBlocks?: string[];
-category?: string;
-```
-
-단, v1에서 과도한 템플릿 registry나 검색 시스템은 만들지 않는 방향을 선호합니다.
-
-### 4. 템플릿 삽입 방식
-
-v1에서는 버튼 삽입만 사용합니다.
-
-검토할 것:
-
-* 선택한 템플릿의 `blocks`를 현재 Canvas root 맨 아래에 append할 수 있는지
-* 여러 block을 한 번에 append할 수 있는 tree mutation 경로가 있는지
-* 없다면 최소 helper가 필요한지
-* 삽입된 block들의 id를 모두 새로 생성할 수 있는지
-* children 깊이에 관계없이 재귀적으로 id를 새로 만들 수 있는지
-* 삽입 후 어떤 block을 selected 상태로 둘지
-* 삽입 후 Preview / Code View / Export가 즉시 갱신되는지
-* undo/redo가 있다면 그 흐름에 영향을 주는지
-* DnD 로직을 건드리지 않아도 되는지
-
-### 5. UI 위치와 UX
-
-Learning Templates v1 UI를 어디에 둘 수 있을지 조사해 주세요.
-
-후보:
-
-* BlockPalette 안에 별도 “템플릿” 섹션
-* BlockPalette 옆 별도 탭
-* StylePanel과는 분리
-* 상단 또는 사이드바의 “예시 템플릿” 패널
-
-v1에서는 다음 정도면 충분합니다.
+선호 방향:
 
 ```text
-템플릿 제목
-짧은 설명
-사용 블록 또는 학습 포인트
-“이 템플릿 추가하기” 버튼
+Code View에 표시되는 formatted HTML을 복사한다.
+Export는 기존 compiler/export 경로를 그대로 사용한다.
 ```
 
-드래그 앤 드롭 삽입은 제외합니다.
+단, 현재 UX와 더 잘 맞는 대안이 있다면 보고서에 비교해 주세요.
 
-### 6. v1 템플릿 후보
+### 5. Learning Templates와의 관계
 
-현재 구현된 블록과 스타일을 기준으로 v1에 적절한 템플릿 후보를 제안해 주세요.
+Learning Templates로 추가한 예시 블록 묶음이 Code View v2에서 더 읽기 쉬워져야 합니다.
 
-예시 후보:
+다음을 확인해 주세요.
 
-* 자기소개 카드
-* 공지사항 박스
-* 2열 소개 섹션
-* 프로젝트 포트폴리오 그리드
-* FAQ 토글 섹션
-* 비밀번호 잠금 콘텐츠 예시
-* 메인 슬라이더 섹션
-* 단계별 안내 목록
+* nested CONTAINER / CARD 구조가 들여쓰기로 잘 보이는지
+* GRID_ZONE, LIST/LIST_ITEM 구조가 잘 보이는지
+* PASSWORD_ZONE / TOGGLE_ZONE 출력이 지나치게 읽기 어려워지지 않는지
+* SLIDER_ZONE exporter HTML/JS가 formatting/highlighting에서 깨지지 않는지
+* interactive block의 script가 교육적으로 너무 복잡하게 보일 때 최소한 구분되어 보이는지
 
-각 템플릿이 사용하는 블록과 학습 포인트도 간단히 제안해 주세요.
+## 권장 v2 범위
 
-## v1 제외 범위
+v2에서 구현할 것:
 
-다음은 Learning Templates v1에서 제외합니다.
+```text
+- Code View 표시용 HTML formatter
+- Code View 표시용 syntax highlighter
+- formatted HTML copy 정책 정리
+- empty state / copy button 기존 동작 유지
+```
 
-* 템플릿 drag/drop 삽입
-* nested 위치 삽입
-* 사용자 커스텀 템플릿 저장
-* 템플릿 편집기
-* 템플릿 검색
-* 원격 템플릿 로딩
-* 템플릿 카테고리 필터 고도화
-* 템플릿 미리보기 iframe
-* 템플릿 공유/라이브러리 기능
-* HtmlBlock 모델 변경
-* slots migration
-* Code View 전용 generator
-* DnD listener 변경
-* unrelated repository 변경
+v2에서 구현하지 않을 것:
+
+```text
+- 코드 편집
+- Code View 전용 HTML 생성
+- block 선택과 코드 range 연결
+- 접기/펼치기
+- 검색
+- diff
+- 대형 editor dependency
+```
+
+## 구현 방식 제안 시 비교할 것
+
+보고서에서는 최소한 다음 방식을 비교해 주세요.
+
+### 방식 A: 자체 lightweight formatter + highlighter
+
+* 장점
+* 단점
+* 처리 가능한 HTML 범위
+* script/style 처리 정책
+* 예상 수정 파일
+* 위험
+
+### 방식 B: 작은 syntax highlighting 라이브러리 사용
+
+* 후보가 있다면 이름과 이유
+* 번들 크기 / 의존성 부담
+* formatter는 별도로 필요한지
+* 위험
+
+### 방식 C: Prettier standalone 사용
+
+* 장점
+* 단점
+* 번들 크기
+* import 방식
+* html parser 필요 여부
+* Block Studio v2 범위에 과한지 여부
+
+우선은 방식 A를 선호하지만, 실제 repo 상태에 따라 현실적인 권장안을 제시해 주세요.
 
 ## 보고서 형식
 
-다음 구조로 보고서를 작성해 주세요.
+다음 구조로 작성해 주세요.
 
 ### 1. 요약 결론
 
-* 현재 `starterTemplate` 구조가 Learning Templates v1 확장에 적절한지
-* 그대로 재사용 가능한 부분
-* 보완이 필요한 부분
-* 가장 큰 위험 3~5개
+* Code View v2 구현 가능 여부
+* 권장 방식
+* 가장 큰 위험
+* v2에서 제외해야 할 것
 
-### 2. 현재 starterTemplate 구조와 처리 경로
+### 2. 현재 Code View 구조
 
-* 파일 위치
-* 타입
-* 사용 위치
-* id 처리 방식
-* 초기화/삽입 흐름
+* 관련 파일
+* compiler/export 경로
+* copy button
+* empty state
+* 현재 표시 방식
 
-### 3. LearningTemplate 타입 제안
+### 3. Formatting 설계안
 
-* 최소 타입
-* v1에서 포함할 메타데이터
-* v1에서 제외할 메타데이터
-* 기존 starterTemplate와의 관계
+* formatter 위치
+* 입력/출력
+* body fragment/full document 처리
+* script/style 처리
+* SLIDER_ZONE exporter 처리
+* HTML 의미 보존 방식
+* 자체 formatter vs 외부 의존성 비교
 
-### 4. 템플릿 deep clone / id 재생성 계획
+### 4. Syntax highlighting 설계안
 
-* 기존 helper 존재 여부
-* 새 helper 필요 여부
-* children 재귀 처리
-* internal block 처리
-* SLIDER_ZONE / LIST 등 중첩 구조 처리
-* id 충돌 방지 방식
+* highlighter 위치
+* token 구분 방식
+* escaping / XSS 안전성
+* 표시용 span 구조
+* Tailwind class 구성
+* copy 동작과 분리
+* script/style 처리
 
-### 5. 템플릿 삽입 계획
+### 5. Copy behavior 제안
 
-* root append 방식
-* 여러 block 삽입 방식
-* selection 처리
-* Preview / Code View / Export 갱신
-* DnD와 분리되는지
+* raw HTML copy
+* formatted HTML copy
+* 권장 정책
+* 기존 사용자 경험과의 차이
 
-### 6. UI 배치 제안
+### 6. 수정 파일 계획
 
-* 추천 위치
-* v1 UI 구성
-* StylePanel / BlockPalette와의 관계
-* 드래그 삽입을 제외하는 이유
+예상 수정 파일과 새 파일이 있다면 정리해 주세요.
 
-### 7. v1 템플릿 후보
+### 7. Phase별 구현 제안
 
-각 후보에 대해 다음 형식으로 정리해 주세요.
-
-```text
-템플릿 이름:
-사용 블록:
-사용 스타일:
-학습 포인트:
-구현 난이도:
-```
-
-### 8. 권장 구현 Phase
-
-작고 reviewable한 Phase로 나눠 주세요.
+작고 reviewable하게 나눠 주세요.
 
 예시:
 
 ```text
-T1: starterTemplate 구조 조사 및 template data 타입 정리
-T2: deep clone / id regeneration helper
-T3: Template gallery UI
-T4: root append insertion
-T5: sample templates 작성 및 회귀 검증
+CV2-1: 현재 Code View 구조 정리 및 formatter helper 추가
+CV2-2: Code View 표시를 formatted HTML로 전환
+CV2-3: syntax highlighting 추가
+CV2-4: copy behavior 정리 및 회귀 검증
 ```
 
 실제 repo 구조에 맞춰 더 적절한 Phase를 제안해 주세요.
 
-### 9. 검증 계획
+### 8. 검증 계획
 
 자동 검증:
 
@@ -260,24 +288,26 @@ git diff --check
 
 수동 검증에는 최소한 다음을 포함해 주세요.
 
-* 템플릿 목록이 표시되는지
-* “이 템플릿 추가하기” 버튼 동작
-* Canvas root 맨 아래에 블록 묶음 추가
-* 같은 템플릿을 여러 번 추가해도 id 충돌 없음
-* nested children id도 재생성
-* LIST/LIST_ITEM 구조 유지
-* SLIDER_ZONE/SLIDE_ITEM 구조 유지
-* PASSWORD_ZONE/TOGGLE_ZONE 포함 템플릿 정상 작동
-* Preview 갱신
-* Code View 갱신
-* Export HTML 정상
-* 기존 DnD 동작 회귀 없음
-* 기존 block palette 동작 회귀 없음
-* 기존 StylePanel 편집 회귀 없음
+* 빈 Canvas Code View
+* 단순 HEADING / PARAGRAPH
+* nested CONTAINER / CARD
+* GRID_ZONE
+* LIST / LIST_ITEM
+* PASSWORD_ZONE
+* TOGGLE_ZONE
+* SLIDER_ZONE
+* Learning Template 삽입 후 Code View
+* formatting 줄바꿈/들여쓰기 확인
+* syntax highlighting 확인
+* copy button 결과 확인
+* Export HTML이 기존처럼 작동하는지 확인
+* Preview와 Code View 의미 일치 확인
+* 기존 Code View empty state 회귀 없음
+* 기존 Canvas / DnD / StylePanel 회귀 없음
 
 ## 중요
 
 이번 요청에서는 코드를 수정하지 마세요.
-조사와 계획 보고서만 작성해 주세요.
+조사와 Code View v2 구현 계획만 작성해 주세요.
 
 응답은 한국어로 작성해 주세요.

@@ -1,17 +1,36 @@
+import { useMemo } from "react";
 import type { HtmlBlock } from "../../../types/types";
 import { compileBlocksForCodeView } from "../../../features/block-studio/blocks/html/blockHtmlCompiler";
+import { formatCodeViewHtml } from "../../../features/block-studio/code-view/formatCodeViewHtml";
+import {
+  tokenizeCodeViewHtml,
+  type CodeViewTokenKind,
+} from "../../../features/block-studio/code-view/tokenizeCodeViewHtml";
 
 interface CodeViewPanelProps {
   blocks: HtmlBlock[];
 }
 
+const tokenClasses: Record<CodeViewTokenKind, string> = {
+  punctuation: "text-slate-400",
+  tagName: "text-cyan-300",
+  attributeName: "text-sky-300",
+  attributeValue: "text-amber-300",
+  text: "text-slate-100",
+  comment: "text-emerald-400",
+  scriptContent: "text-violet-300",
+  styleContent: "text-fuchsia-300",
+};
+
 export default function CodeViewPanel({ blocks }: CodeViewPanelProps) {
-  const code = compileBlocksForCodeView(blocks);
+  const rawCode = useMemo(() => compileBlocksForCodeView(blocks), [blocks]);
+  const formattedCode = useMemo(() => formatCodeViewHtml(rawCode), [rawCode]);
+  const tokens = useMemo(() => tokenizeCodeViewHtml(formattedCode), [formattedCode]);
   const hasCode = blocks.length > 0;
 
   const handleCopy = async () => {
     if (!hasCode) return;
-    await navigator.clipboard.writeText(code);
+    await navigator.clipboard.writeText(formattedCode);
   };
 
   if (!hasCode) {
@@ -34,7 +53,13 @@ export default function CodeViewPanel({ blocks }: CodeViewPanelProps) {
         </button>
       </div>
       <pre className="flex-1 overflow-auto rounded-xl bg-slate-950 p-4 text-xs leading-relaxed text-slate-100 font-mono whitespace-pre-wrap wrap-break-word">
-        <code>{code}</code>
+        <code>
+          {tokens.map((token, index) => (
+            <span key={`${index}-${token.kind}`} className={tokenClasses[token.kind]}>
+              {token.text}
+            </span>
+          ))}
+        </code>
       </pre>
     </div>
   );
