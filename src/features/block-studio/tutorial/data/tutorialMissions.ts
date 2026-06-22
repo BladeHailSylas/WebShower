@@ -14,7 +14,7 @@ export const tutorialMissions = [
     description: "방금 만든 일반 구역 안에 제목 블록을 넣어 보세요.",
     condition: { type: "hasAddedNestedBlock", parentType: "CONTAINER", childType: "H1" },
     commentOnSuccess:
-      "잘 했어요. 제목이 구역 안에 들어가면 HTML에서도 부모-자식 구조가 만들어집니다.",
+      "제목이 구역 안에 들어가면 HTML에서도 부모-자식 구조가 만들어집니다.",
   },
   {
     id: "edit-heading-content",
@@ -147,7 +147,7 @@ export const tutorialMissions = [
       "코드 보기 탭을 눌러 방금 만든 블록 구조가 HTML로 어떻게 바뀌는지 확인해 보세요.",
     condition: { type: "uiSignal", signal: "codeViewOpened" },
     commentOnSuccess:
-      "잘 했어요. 지금 만든 블록 구조가 실제 HTML 코드로 변환된 모습을 확인했습니다.",
+      "지금 만든 블록 구조가 실제 HTML 코드로 변환된 모습을 확인했습니다.",
   },
 ] as const satisfies readonly TutorialMission[];
 
@@ -156,10 +156,10 @@ export const promotionTutorialMissions = [
     id: "promotion-add-hero-container",
     title: "첫인상 구역을 만들어 보세요",
     description:
-      "홍보 페이지의 맨 위에는 방문자가 가장 먼저 보게 될 구역이 필요합니다. 일반 구역을 추가해 보세요.",
+      "홍보 페이지의 맨 위에, 방문자가 가장 먼저 보게 될 일반 구역을 추가해 보세요.",
     condition: { type: "hasAddedBlock", blockType: "CONTAINER" },
     commentOnSuccess:
-      "좋습니다. 웹페이지 맨 위에서 제목, 설명, 이미지, 버튼으로 첫인상을 만드는 영역을 Hero 구역이라고 부르기도 합니다.",
+      "웹페이지 맨 위에서 제목, 설명, 이미지, 버튼으로 첫인상을 만드는 영역을 Hero 구역이라고 부르기도 합니다.",
   },
   {
     id: "promotion-add-heading",
@@ -175,7 +175,7 @@ export const promotionTutorialMissions = [
     description:
       "예를 들어 ‘우리 동아리를 소개합니다’ 또는 ‘함께 만드는 웹 제작 모임’처럼 바꿔 보세요.",
     condition: { type: "hasContentChanged", blockType: "H1" },
-    commentOnSuccess: "좋습니다. 짧고 분명한 제목은 홍보 페이지의 첫인상을 결정합니다.",
+    commentOnSuccess: "짧고 분명한 제목은 홍보 페이지의 첫인상을 결정합니다.",
   },
   {
     id: "promotion-add-introduction",
@@ -318,7 +318,7 @@ export const promotionTutorialMissions = [
       "코드 보기 탭을 눌러 첫인상 구역, Grid, Card, FAQ가 HTML 구조로 어떻게 표현되는지 확인해 보세요.",
     condition: { type: "uiSignal", signal: "codeViewOpened" },
     commentOnSuccess:
-      "잘 했어요. 지금 만든 홍보 페이지의 블록 구조가 실제 HTML 코드로 변환된 모습을 확인했습니다.",
+      "지금 만든 홍보 페이지의 블록 구조가 실제 HTML 코드로 변환된 모습을 확인했습니다.",
   },
 ] as const satisfies readonly TutorialMission[];
 
@@ -346,23 +346,23 @@ export const invitationTutorialMissions = [
       "예를 들어 ‘당신을 초대합니다’ 또는 ‘우리의 특별한 모임에 함께해요’처럼 바꿔 보세요.",
     condition: { type: "hasContentChanged", blockType: "H1" },
     commentOnSuccess:
-      "좋습니다. 초대 문구는 방문자가 페이지의 분위기를 바로 느끼게 해 줍니다.",
+      "초대 문구는 방문자가 페이지의 분위기를 바로 느끼게 해 줍니다.",
   },
   {
     id: "invitation-add-paragraph",
     title: "초대 문장을 추가해 보세요",
-    description: "초대장 구역 안에 본문 블록을 추가해, 어떤 자리인지 짧게 설명해 보세요.",
+    description: "초대장 구역 안에 문단 블록을 추가해, 어떤 자리인지 짧게 설명해 보세요.",
     condition: { type: "hasAddedNestedBlock", parentType: "CONTAINER", childType: "P" },
-    commentOnSuccess: "본문은 제목만으로 부족한 내용을 조금 더 자세히 설명해 줍니다.",
+    commentOnSuccess: "문단은 제목만으로 부족한 내용을 조금 더 자세히 설명해 줍니다.",
   },
   {
     id: "invitation-edit-paragraph",
     instantSuccess: false,
     title: "초대 문장을 직접 써 보세요",
-    description: "방문자가 초대받았다는 느낌을 받을 수 있도록 문장을 바꿔 보세요.",
+    description: "방문자가 초대받았다는 느낌을 받을 수 있도록 문단의 내용을 바꿔 보세요.",
     condition: { type: "hasContentChanged", blockType: "P" },
     commentOnSuccess:
-      "좋습니다. 초대장은 정보를 전달하는 동시에 분위기를 만드는 글이기도 합니다.",
+      "초대장은 정보를 전달하는 동시에 분위기를 만드는 글이기도 합니다.",
   },
   {
     id: "invitation-add-image",
@@ -450,7 +450,7 @@ export const invitationTutorialMissions = [
       childTypes: ["P"],
     },
     commentOnSuccess:
-      "좋습니다. 접힌 안내를 사용하면 화면은 깔끔하게 유지하면서 필요한 정보를 숨겨 둘 수 있습니다.",
+      "접힌 안내를 사용하면 화면은 깔끔하게 유지하면서 필요한 정보를 숨겨 둘 수 있습니다.",
   },
   {
     id: "invitation-add-password-zone",
@@ -472,7 +472,7 @@ export const invitationTutorialMissions = [
       field: "correctAnswer",
     },
     commentOnSuccess:
-      "좋습니다. 이 값은 사용자가 입력한 비밀번호와 비교되는 정답 역할을 합니다.",
+      "이 값은 사용자가 입력한 비밀번호와 비교되는 정답 역할을 합니다.",
   },
   {
     id: "invitation-edit-secret-message",
@@ -487,7 +487,7 @@ export const invitationTutorialMissions = [
       childField: "conditionalChildren",
     },
     commentOnSuccess:
-      "잘 했어요. 비밀번호를 맞혔을 때만 보이는 내용은 숨겨진 특별 메시지처럼 사용할 수 있습니다.",
+      "비밀번호를 맞혔을 때만 보이는 내용은 숨겨진 특별 메시지처럼 사용할 수 있습니다.",
   },
   {
     id: "invitation-add-link",
@@ -511,7 +511,7 @@ export const invitationTutorialMissions = [
       "오른쪽 미리보기 탭을 눌러 초대장이 어떻게 보이는지 확인해 보세요. 가능하면 Toggle과 Password Zone도 직접 눌러 보세요.",
     condition: { type: "uiSignal", signal: "previewOpened" },
     commentOnSuccess:
-      "좋습니다. 미리보기에서는 초대장의 화면과 인터랙션을 함께 확인할 수 있습니다.",
+      "미리보기에서는 초대장의 화면과 인터랙션을 함께 확인할 수 있습니다.",
   },
   {
     id: "invitation-view-code",
@@ -520,6 +520,6 @@ export const invitationTutorialMissions = [
       "코드 보기 탭을 눌러 초대장 구조와 비밀번호 구역이 HTML/JavaScript로 어떻게 표현되는지 확인해 보세요.",
     condition: { type: "uiSignal", signal: "codeViewOpened" },
     commentOnSuccess:
-      "잘 했어요. 초대장 페이지의 블록 구조와 인터랙션이 실제 HTML과 JavaScript 코드로 연결되는 모습을 확인했습니다.",
+      "초대장 페이지의 블록 구조와 인터랙션이 실제 HTML과 JavaScript 코드로 연결되는 모습을 확인했습니다.",
   },
 ] as const satisfies readonly TutorialMission[];
