@@ -1,4 +1,5 @@
 import type { BlockType, HtmlBlock, StyleProps } from "../../../../types/types";
+import type { BlockChildField } from "../../blocks/types/childField.types";
 
 export type TutorialUiSignal = "previewOpened" | "codeViewOpened" | "templateInserted";
 
@@ -16,6 +17,7 @@ export type TutorialPropertySnapshot = {
   content?: string;
   src?: string;
   link?: string;
+  correctAnswer?: string;
   styles: { [Key in TutorialTrackedStyleKey]?: StyleProps[Key] };
 };
 
@@ -34,8 +36,19 @@ export type TutorialCondition =
       minChildren?: number;
     }
   | { type: "hasContentChanged"; blockType: "H1" | "P" | "A" }
+  | {
+      type: "hasNestedContentChanged";
+      parentType: BlockType;
+      childTypes: readonly ("H1" | "P")[];
+      childField?: BlockChildField;
+    }
   | { type: "hasAttributeChanged"; blockType: "IMAGE"; field: "src" }
   | { type: "hasAttributeChanged"; blockType: "A"; field: "link" }
+  | {
+      type: "hasAttributeChanged";
+      blockType: "PASSWORD_ZONE";
+      field: "correctAnswer";
+    }
   | { type: "hasStyleChanged"; blockType: BlockType; styleKey: TutorialTrackedStyleKey }
   | { type: "uiSignal"; signal: TutorialUiSignal };
 

@@ -1,714 +1,527 @@
-홍보 페이지 튜토리얼 트랙의 실제 미션 데이터를 작성해 주세요.
+TODO: Tutorial Mission Bar에 수동 완료 버튼을 추가한다.
 
-이번 작업은 기존 Tutorial Track / TutorialMission 구조에 맞춰 **데이터를 채우는 작업**입니다.
-가능하면 로직 변경 없이 mission data 중심으로 작업해 주세요.
+## 배경
+
+현재 Tutorial Mission은 조건을 만족하는 순간 자동으로 완료 처리된다.
+
+현재 흐름:
+
+```text
+미션 조건 충족
+→ completed ledger에 즉시 기록
+→ success feedback 표시
+→ 다음 미션으로 진행
+```
+
+이 방식은 다음과 같은 미션에는 적절하다.
+
+```text
+- 블록 추가하기
+- Preview 열기
+- Code View 열기
+- LIST 만들기
+- GRID 추가하기
+```
+
+하지만 content/property 수정 미션에는 다소 부적절할 수 있다.
+
+예:
+
+```text
+- 제목을 나만의 문장으로 바꿔 보세요
+- 본문을 충분히 작성해 보세요
+- 이미지 주소를 바꿔 보세요
+- FAQ 답변을 수정해 보세요
+- 비밀 메시지를 수정해 보세요
+```
+
+이런 미션은 조건상 `content !== baseline`이 되는 순간 완료되지만, 사용자는 아직 충분히 내용을 다듬지 않았을 수 있다.
+
+따라서 미션별로 다음 두 방식을 구분할 필요가 있다.
+
+```text
+1. 즉시 완료형 미션
+   - 조건을 만족하면 기존처럼 자동 완료
+
+2. 수동 완료형 미션
+   - 조건을 만족해도 바로 완료하지 않음
+   - Tutorial Bar에 “완료” 버튼 표시
+   - 사용자가 “완료” 버튼을 눌렀을 때 조건을 다시 검사
+   - 조건이 여전히 만족되면 완료 처리
+   - 조건이 만족되지 않으면 안내 메시지 표시
+```
 
 ## 목표
 
-두 번째 튜토리얼 트랙은 다음 주제입니다.
+`TutorialMission` 타입에 `instantSuccess` 필드를 추가한다.
 
-```text
-홍보 페이지 만들기
-```
-
-설명:
-
-```text
-동아리, 행사, 프로젝트처럼 사람들에게 알리고 싶은 내용을 홍보 페이지로 만들어 봅니다.
-```
-
-이 튜토리얼은 사용자가 따라 하면 간단한 홍보 페이지 하나가 완성되는 흐름이어야 합니다.
-
-## 교육 방향
-
-이 트랙은 첫 번째 “소개 페이지” 튜토리얼보다 한 단계 발전된 내용입니다.
-
-첫 번째 튜토리얼이 다음을 다뤘다면:
-
-```text
-Box, H1, P, Img, Card, UL, A, 기본 스타일, Preview, Code View
-```
-
-두 번째 튜토리얼에서는 다음을 추가로 자연스럽게 경험하게 합니다.
-
-```text
-Grid를 사용해 정보를 나란히 배치하기
-Card를 반복적으로 사용해 장점을 정리하기
-Toggle을 사용해 FAQ 만들기
-홍보 제목, 소개 문장, 대표 이미지, 참여 링크를 조합하기
-```
-
-## 용어 정책
-
-“Hero 구역”이라는 전문 용어는 초보자에게 낯설 수 있습니다.
-
-따라서 미션 문구에서는 “Hero 구역” 대신 다음 표현을 사용해 주세요.
-
-```text
-첫인상 구역
-```
-
-성공 코멘트에서만 다음처럼 자연스럽게 설명해 주세요.
-
-```text
-웹페이지 맨 위에서 제목, 설명, 이미지, 버튼으로 첫인상을 만드는 영역을 Hero 구역이라고 부르기도 합니다.
-```
-
-## 사용 블록
-
-이 트랙에서 주로 사용할 블록:
-
-* Box / CONTAINER
-* Grid / GRID_ZONE
-* Card / CARD
-* UL / LIST
-* LIST_ITEM
-* H1 / HEADING
-* P / PARAGRAPH
-* Img / IMAGE
-* A / LINK
-* Toggle / TOGGLE_ZONE
-
-이 트랙에서는 다음 블록은 사용하지 않습니다.
-
-* PASSWORD_ZONE / Pw
-* SLIDER_ZONE / Slide
-
-SLIDER_ZONE은 홍보 페이지에도 어울릴 수 있지만, 이번 트랙에서는 Grid와 FAQ에 집중하기 위해 제외합니다.
-
-## 전체 결과물 구조
-
-사용자가 완성하게 될 홍보 페이지의 구조는 대략 다음과 같습니다.
-
-```text
-[첫인상 구역]
-  H1: 우리 동아리를 소개합니다
-  P: 함께 배우고 만드는 즐거운 공간입니다
-  Img: 대표 이미지
-  A: 가입 신청하기 / 더 알아보기
-
-[장점 구역]
-  H1 또는 P: 이런 점이 좋아요
-  Grid
-    Card 1: 함께 배워요
-    Card 2: 직접 만들어요
-    Card 3: 결과를 공유해요
-
-[활동 안내 구역]
-  H1 또는 P: 활동 안내
-  UL
-    모임 시간
-    장소
-    준비물
-
-[FAQ 구역]
-  Toggle 1: 처음이어도 괜찮나요?
-  Toggle 2: 준비물이 필요한가요?
-
-[마무리]
-  Preview 확인
-  Code View 확인
-```
-
-## 미션 흐름
-
-아래 흐름을 현재 repo의 `TutorialMission` 타입과 condition 구조에 맞게 mission data로 작성해 주세요.
-
-현재 타입/condition 명칭이 다르면 repo에 맞게 조정해 주세요.
-새 condition 타입이 꼭 필요하면 최소 범위로 제안하고 적용해 주세요.
-
----
-
-### 1. 첫인상 구역 만들기
-
-제목:
-
-```text
-첫인상 구역을 만들어 보세요
-```
-
-안내:
-
-```text
-홍보 페이지의 맨 위에는 방문자가 가장 먼저 보게 될 구역이 필요합니다. 일반 구역을 추가해 보세요.
-```
-
-완료 조건:
-
-```text
-튜토리얼 시작 baseline 이후 새 CONTAINER/Box가 존재
-```
-
-성공 코멘트:
-
-```text
-좋습니다. 웹페이지 맨 위에서 제목, 설명, 이미지, 버튼으로 첫인상을 만드는 영역을 Hero 구역이라고 부르기도 합니다.
-```
-
----
-
-### 2. 홍보 제목 넣기
-
-제목:
-
-```text
-홍보 제목을 넣어 보세요
-```
-
-안내:
-
-```text
-첫인상 구역 안에 제목 블록을 넣어, 무엇을 홍보하는 페이지인지 알려주세요.
-```
-
-완료 조건:
-
-```text
-새 CONTAINER의 direct child 또는 descendant로 HEADING/H1이 존재
-```
-
-성공 코멘트:
-
-```text
-제목은 방문자가 페이지의 주제를 가장 먼저 이해하도록 도와줍니다.
-```
-
----
-
-### 3. 제목을 홍보 문구로 수정하기
-
-제목:
-
-```text
-제목을 홍보 문구로 바꿔 보세요
-```
-
-안내:
-
-```text
-예를 들어 “우리 동아리를 소개합니다” 또는 “함께 만드는 웹 제작 모임”처럼 바꿔 보세요.
-```
-
-완료 조건:
-
-```text
-HEADING/H1의 content가 baseline 또는 기본값과 달라짐
-```
-
-성공 코멘트:
-
-```text
-좋습니다. 짧고 분명한 제목은 홍보 페이지의 첫인상을 결정합니다.
-```
-
----
-
-### 4. 소개 문장 추가하기
-
-제목:
-
-```text
-짧은 소개 문장을 추가해 보세요
-```
-
-안내:
-
-```text
-첫인상 구역 안에 본문 블록을 추가해, 이 페이지가 무엇을 소개하는지 한두 문장으로 설명해 보세요.
-```
-
-완료 조건:
-
-```text
-새 CONTAINER의 direct child 또는 descendant로 PARAGRAPH/P가 존재
-```
-
-성공 코멘트:
-
-```text
-본문은 제목을 조금 더 자세히 설명하는 역할을 합니다.
-```
-
----
-
-### 5. 소개 문장 수정하기
-
-제목:
-
-```text
-소개 문장을 직접 써 보세요
-```
-
-안내:
-
-```text
-동아리, 행사, 프로젝트의 매력을 짧게 소개하는 문장으로 바꿔 보세요.
-```
-
-완료 조건:
-
-```text
-PARAGRAPH/P의 content가 baseline 또는 기본값과 달라짐
-```
-
-성공 코멘트:
-
-```text
-좋습니다. 홍보 문장은 방문자가 계속 읽어 볼지 결정하는 중요한 단서가 됩니다.
-```
-
----
-
-### 6. 대표 이미지 추가하기
-
-제목:
-
-```text
-대표 이미지를 추가해 보세요
-```
+예상 타입:
 
-안내:
-
-```text
-첫인상 구역에 이미지 블록을 추가해 페이지의 분위기를 보여주세요.
-```
-
-완료 조건:
-
-```text
-baseline 이후 새 IMAGE/Img가 존재
-```
-
-성공 코멘트:
-
-```text
-이미지는 글보다 빠르게 분위기와 주제를 전달할 수 있습니다.
+```ts
+type TutorialMission = {
+  id: string;
+  title: string;
+  description: string;
+  condition: TutorialCondition;
+  commentOnSuccess?: string;
+  instantSuccess?: boolean;
+};
 ```
-
----
 
-### 7. 이미지 주소 바꾸기
+정책:
 
-제목:
-
 ```text
-이미지 주소를 바꿔 보세요
-```
+instantSuccess가 true이면:
+- 기존 방식 유지
+- 조건이 만족되는 즉시 완료 처리
 
-안내:
-
-```text
-이미지 블록의 주소를 홍보 내용과 어울리는 이미지 URL로 바꿔 보세요.
+instantSuccess가 false이면:
+- 조건이 만족되어도 즉시 완료하지 않음
+- Tutorial Mission Bar에 “완료” 버튼 표시
+- 사용자가 “완료” 버튼을 눌렀을 때 완료 검사를 수행
+- 조건이 만족되면 완료 처리
+- 조건이 만족되지 않으면 아직 완료 조건을 만족하지 않았다는 안내를 표시
 ```
 
-완료 조건:
+기본값 정책은 신중하게 정한다.
 
-```text
-IMAGE/Img의 src가 baseline 또는 기본값과 달라짐
-```
-
-성공 코멘트:
+권장:
 
 ```text
-img 태그는 src 속성에 적힌 주소에서 이미지를 불러옵니다.
+instantSuccess 기본값은 true로 처리한다.
 ```
 
----
+이유:
 
-### 8. 참여 링크 추가하기
-
-제목:
-
-```text
-참여 링크를 추가해 보세요
-```
+* 기존 미션 데이터의 동작을 보존할 수 있음
+* 모든 기존 mission data에 필드를 한 번에 추가하지 않아도 회귀 위험이 낮음
+* 필요한 content/property 미션에만 `instantSuccess: false`를 명시하면 됨
 
-안내:
+## 적용 대상
 
-```text
-방문자가 더 알아보거나 신청할 수 있도록 링크 블록을 추가해 보세요.
-```
+### instantSuccess: true 권장
 
-완료 조건:
+조건을 만족하는 순간 완료해도 자연스러운 미션:
 
 ```text
-baseline 이후 새 LINK/A가 존재
+- 블록 추가 미션
+- 구조 생성 미션
+- Preview 탭 확인
+- Code View 탭 확인
+- LIST/LIST_ITEM 구조 생성
+- GRID 추가
+- TOGGLE 추가
+- PASSWORD_ZONE 추가
+- HR 추가
 ```
 
-성공 코멘트:
+예:
 
-```text
-홍보 페이지에는 보통 신청하기, 더 알아보기 같은 다음 행동으로 이어지는 링크가 필요합니다.
+```ts
+{
+  id: "add-container",
+  title: "소개 구역을 만들어 보세요",
+  condition: { type: "hasAddedBlock", blockType: "CONTAINER" },
+  instantSuccess: true,
+}
 ```
 
----
+`instantSuccess` 기본값이 true라면 생략 가능하다.
 
-### 9. 링크 주소 입력하기
+### instantSuccess: false 권장
 
-제목:
+사용자가 내용을 충분히 다듬은 뒤 완료할 수 있어야 하는 미션:
 
 ```text
-링크 주소를 입력해 보세요
+- 제목 content 수정
+- 본문 content 수정
+- 이미지 src 수정
+- 링크 주소 입력
+- 카드 내용 수정
+- FAQ 답변 수정
+- Password Zone correctAnswer 수정
+- Password Zone conditionalChildren 내용 수정
+- 배경색 변경
+- padding/margin/shadow 등 스타일 조정
 ```
 
-안내:
+예:
 
-```text
-링크가 이동할 주소를 입력해 보세요.
+```ts
+{
+  id: "edit-intro-title",
+  title: "제목을 나만의 문장으로 바꿔 보세요",
+  description: "제목을 “안녕하세요, 저는 ○○입니다”처럼 나를 소개하는 문장으로 바꿔 보세요.",
+  condition: {
+    type: "hasContentChanged",
+    blockType: "HEADING",
+  },
+  commentOnSuccess: "좋습니다. 화면에 보이는 글자는 HTML 요소의 내용으로 저장됩니다.",
+  instantSuccess: false,
+}
 ```
 
-완료 조건:
+## UI 요구사항
 
-```text
-LINK/A의 link 또는 href 값이 비어 있지 않고 meaningful value임
-```
+`instantSuccess: false`인 미션에서는 TutorialMissionBar에 “완료” 버튼을 표시한다.
 
-성공 코멘트:
+버튼 문구 후보:
 
 ```text
-a 태그는 href 속성에 적힌 주소로 이동합니다.
+완료
 ```
-
----
-
-### 10. 장점 구역 만들기
 
-제목:
+또는 조금 더 명확하게:
 
 ```text
-장점 구역을 만들어 보세요
+완료 확인
 ```
 
-안내:
+권장 문구:
 
 ```text
-홍보하려는 대상의 장점을 따로 정리할 구역을 추가해 보세요.
+완료
 ```
 
-완료 조건:
+UI 동작:
 
 ```text
-baseline 이후 새 CONTAINER/Box가 2개 이상 존재하거나, 첫인상 구역 이후 새 CONTAINER가 추가됨
-```
-
-성공 코멘트:
+조건이 아직 만족되지 않은 상태:
+- “완료” 버튼은 표시된다.
+- 사용자가 누르면 조건을 검사한다.
+- 조건이 false이면 짧은 안내 메시지를 보여준다.
 
-```text
-페이지를 여러 구역으로 나누면 방문자가 정보를 더 쉽게 이해할 수 있습니다.
+조건이 만족된 상태:
+- “완료” 버튼을 누르면 완료 처리된다.
+- success feedback으로 이동한다.
 ```
-
----
 
-### 11. Grid 추가하기
-
-제목:
-
-```text
-장점을 나란히 배치해 보세요
-```
+버튼을 조건 만족 전에는 disabled 처리할 수도 있지만, v1에서는 비추천한다.
 
-안내:
+이유:
 
-```text
-장점 구역 안에 Grid를 추가해 여러 정보를 나란히 보여줄 준비를 해 보세요.
-```
+* 사용자가 왜 버튼이 비활성화되어 있는지 모를 수 있음
+* 클릭 후 “아직 제목을 바꾸지 않았어요” 같은 안내가 학습적으로 더 좋음
 
-완료 조건:
+권장:
 
 ```text
-baseline 이후 새 GRID_ZONE/Grid가 존재
+완료 버튼은 항상 활성화한다.
+조건 미충족 시 안내 메시지를 표시한다.
 ```
 
-성공 코멘트:
+조건 미충족 안내 예시:
 
 ```text
-Grid는 여러 정보를 같은 줄에 나란히 배치할 때 유용합니다.
+아직 미션 조건이 완료되지 않았어요. 안내를 따라 한 번 더 확인해 주세요.
 ```
 
----
+가능하면 mission별 custom failure message는 v1에서는 도입하지 않는다.
+필요하면 나중에 `commentOnIncomplete` 같은 필드로 확장한다.
 
-### 12. Grid 안에 Card 추가하기
+## 상태/로직 설계
 
-제목:
-
-```text
-Grid 안에 카드를 넣어 보세요
-```
+현재 evaluator는 조건을 만족한 모든 mission id를 찾아 completed ledger에 합치는 구조일 가능성이 있다.
 
-안내:
+이때 `instantSuccess: false` 미션은 자동 완료 대상에서 제외해야 한다.
 
-```text
-Grid 안에 Card를 추가해 장점 하나를 담을 공간을 만들어 보세요.
-```
+권장 흐름:
 
-완료 조건:
+### 자동 평가 시
 
 ```text
-GRID_ZONE/Grid의 direct child 또는 descendant로 CARD가 존재
+evaluateTutorialMissions(...)
+→ satisfiedMissionIds 계산
+→ 각 mission 확인
+   - instantSuccess !== false 이면 자동 완료 후보
+   - instantSuccess === false 이면 자동 완료하지 않음
+→ 자동 완료 후보만 completed ledger에 합침
 ```
 
-성공 코멘트:
+즉:
 
-```text
-Grid 안에 Card를 넣으면 여러 정보를 일정한 칸으로 정리할 수 있습니다.
+```ts
+const autoCompletableMissionIds = satisfiedMissionIds.filter((id) => {
+  const mission = getMissionById(id);
+  return mission.instantSuccess !== false;
+});
 ```
 
----
+### 수동 완료 버튼 클릭 시
 
-### 13. 카드 내용을 수정하기
-
-제목:
-
 ```text
-카드 내용을 장점으로 바꿔 보세요
+사용자가 activeMission의 “완료” 버튼 클릭
+→ activeMission condition을 현재 blocks/uiSignals 기준으로 다시 평가
+→ true이면 completed ledger에 activeMission.id 추가
+→ success feedback 표시
+→ false이면 incomplete message 표시
 ```
-
-안내:
 
-```text
-카드 안의 제목이나 본문을 “함께 배워요”, “직접 만들어요” 같은 장점으로 바꿔 보세요.
-```
+주의:
 
-완료 조건:
+* 버튼 클릭 시 과거에 계산된 satisfied state만 믿지 말고 현재 상태로 다시 검사하는 편이 안전함
+* 완료 처리 후 success feedback 기존 구조를 그대로 사용
+* completed ledger latch 정책 유지
+* skip/hide/reopen 기존 동작 유지
 
-```text
-CARD 안의 HEADING/H1 또는 PARAGRAPH/P content가 baseline 또는 기본값과 달라짐
-```
+## active mission 처리
 
-성공 코멘트:
+수동 완료형 미션이 active인 경우:
 
 ```text
-좋습니다. 카드는 하나의 장점이나 정보를 짧게 묶어 보여줄 때 좋습니다.
+조건이 이미 만족되어도 active mission은 계속 표시된다.
+사용자가 “완료” 버튼을 눌러야 success feedback으로 넘어간다.
 ```
 
----
+이는 의도된 동작이다.
 
-### 14. 카드 스타일 바꾸기
+예:
 
-제목:
-
-```text
-카드를 눈에 띄게 꾸며 보세요
-```
-
-안내:
-
 ```text
-카드의 배경색이나 그림자를 바꿔, 중요한 정보가 잘 보이게 만들어 보세요.
+사용자가 제목을 조금 수정함
+→ condition은 true
+→ 하지만 바로 다음 미션으로 넘어가지 않음
+→ 사용자가 제목을 더 다듬음
+→ 완료 버튼 클릭
+→ 완료 처리
 ```
 
-완료 조건:
+## 여러 미션 동시 완료 처리
 
-```text
-CARD의 styles.bgColor 또는 styles.shadow가 meaningful value로 변경됨
-```
+현재 구조에서 템플릿 삽입이나 여러 property 변경으로 여러 미션이 동시에 완료될 수 있다.
 
-성공 코멘트:
+정책:
 
 ```text
-배경색과 그림자는 CSS 스타일입니다. 중요한 정보를 시각적으로 강조할 때 사용할 수 있습니다.
+- instantSuccess true 미션은 기존처럼 자동 완료 가능
+- instantSuccess false 미션은 자동 완료하지 않음
+- 현재 active mission이 instantSuccess false이면 완료 버튼을 눌러야 완료
+- 후속 수동 미션이 이미 조건을 만족하고 있어도, 해당 미션이 active가 된 뒤 완료 버튼을 눌러야 완료
 ```
-
----
 
-### 15. 활동 안내 목록 만들기
+이 정책은 튜토리얼이 너무 빨리 지나가는 것을 막는다.
 
-제목:
+## success feedback과의 관계
 
-```text
-활동 안내 목록을 만들어 보세요
-```
-
-안내:
+수동 완료 버튼으로 완료된 미션도 기존 success feedback 흐름을 그대로 사용한다.
 
 ```text
-모임 시간, 장소, 준비물처럼 반복되는 정보를 목록으로 정리해 보세요.
+완료 버튼 클릭
+→ condition true
+→ completed ledger에 mission id 추가
+→ success feedback 표시
+→ commentOnSuccess 표시
+→ “다음 미션” 클릭
+→ 다음 미션 표시
 ```
 
-완료 조건:
+조건 미충족 시에는 success feedback으로 가지 않는다.
 
-```text
-baseline 이후 새 LIST/UL이 존재하고, LIST가 direct LIST_ITEM을 1개 이상 가짐
-```
+## skip/hide/reopen과의 관계
 
-성공 코멘트:
-
-```text
-목록은 HTML에서 ul과 li 구조로 표현됩니다. 일정, 준비물, 특징처럼 반복되는 정보를 정리하기 좋습니다.
-```
+### skip
 
----
+* 일반 미션 상태에서 기존처럼 동작한다.
+* instantSuccess false 미션에서도 skip 가능하다.
+* skip은 조건 검사 없이 현재 미션을 skipped ledger에 추가한다.
 
-### 16. FAQ 구역 만들기
+### hide
 
-제목:
+* hide는 기존처럼 Mission Bar를 숨긴다.
+* hidden 상태에서도 progress/evaluator는 유지된다.
+* 수동 완료형 미션은 hidden 상태에서 자동 완료되지 않아야 한다.
 
-```text
-FAQ 구역을 만들어 보세요
-```
+### reopen
 
-안내:
+* reopen 시 active mission이 그대로 표시된다.
+* 수동 완료형 미션이 이미 조건을 만족한 상태여도 “완료” 버튼을 눌러야 완료된다.
 
-```text
-방문자가 궁금해할 질문을 모아 둘 구역을 추가해 보세요.
-```
+## mission data 조정
 
-완료 조건:
+기존 튜토리얼 트랙의 미션 중 content/property/style 수정 미션에는 `instantSuccess: false`를 추가한다.
 
-```text
-baseline 이후 새 CONTAINER/Box가 3개 이상 존재하거나, FAQ 용도로 새 CONTAINER가 추가됨
-```
+대상 후보:
 
-성공 코멘트:
+### 소개 페이지 트랙
 
 ```text
-FAQ는 자주 묻는 질문을 미리 정리해 방문자의 궁금증을 줄여 주는 구역입니다.
+- 제목 문구 바꾸기
+- 본문 내용 수정
+- 이미지 주소 바꾸기
+- 안쪽 여백 조절
+- 카드 안 제목/내용 수정
+- 목록 항목 수정이 별도 condition으로 있다면 해당 미션
+- 배경색 바꾸기
+- 그림자 추가
+- 링크 주소 입력
 ```
-
----
 
-### 17. Toggle로 질문 만들기
+### 홍보 페이지 트랙
 
-제목:
-
 ```text
-접었다 펼칠 수 있는 질문을 만들어 보세요
+- 제목을 홍보 문구로 수정하기
+- 소개 문장 수정하기
+- 이미지 주소 바꾸기
+- 링크 주소 입력하기
+- 카드 내용을 수정하기
+- 카드 스타일 바꾸기
+- Toggle/FAQ 답변 수정하기
 ```
 
-안내:
+### 초대장 페이지 트랙
 
 ```text
-FAQ 구역에 Toggle 블록을 추가해 질문과 답변을 접었다 펼칠 수 있게 만들어 보세요.
+- 제목을 초대 문구로 수정하기
+- 초대 문장 수정하기
+- 이미지 주소 바꾸기
+- 초대장 배경색 바꾸기
+- 초대장 안쪽 여백 조절하기
+- Toggle 안내 문구 수정하기
+- 비밀번호 정답 정하기
+- 비밀 메시지 수정하기
+- 링크 주소 입력하기
 ```
 
-완료 조건:
+구조 추가형 미션은 기본값 true를 사용하거나 `instantSuccess`를 생략한다.
 
-```text
-baseline 이후 새 TOGGLE_ZONE/Toggle이 존재
-```
+## 파일 변경 후보
 
-성공 코멘트:
+실제 repo 구조를 확인한 뒤 조정하되, 대략 다음 파일이 관련될 가능성이 있다.
 
 ```text
-Toggle은 클릭했을 때 숨겨진 내용을 보여주는 인터랙티브한 블록입니다.
+src/features/block-studio/tutorial/types/tutorial.types.ts
+src/features/block-studio/tutorial/data/tutorialTracks.ts
+src/features/block-studio/tutorial/data/tutorialMissions.ts
+src/features/block-studio/tutorial/evaluator/evaluateTutorialMissions.ts
+src/features/block-studio/tutorial/hooks/useTutorialProgress.ts
+src/features/block-studio/tutorial/components/TutorialMissionBar.tsx
+src/features/block-studio/tutorial/components/TutorialOverlay.tsx
 ```
 
----
-
-### 18. FAQ 답변 수정하기
-
-제목:
-
-```text
-FAQ 답변을 수정해 보세요
-```
+로직 변경은 tutorial feature 내부로 제한한다.
 
-안내:
+가능하면 다음 파일은 변경하지 않는다.
 
 ```text
-Toggle 안의 답변 내용을 실제 질문에 맞게 바꿔 보세요.
+HtmlBlock model
+blockDefinitions
+DnD 관련 파일
+StylePanel input handler
+Preview renderer
+Code View
+Export compiler
+Learning Templates
+Canvas renderer
 ```
-
-완료 조건:
 
-```text
-TOGGLE_ZONE 내부의 PARAGRAPH/P content가 baseline 또는 기본값과 달라짐
-```
+단, mission data 파일은 당연히 수정 가능하다.
 
-성공 코멘트:
+## 구현 단계 제안
 
-```text
-좋습니다. 방문자가 궁금해할 내용을 미리 답해 주면 홍보 페이지가 더 친절해집니다.
-```
+### TUT-MANUAL-1: 타입 확장
 
----
+* `TutorialMission`에 `instantSuccess?: boolean` 추가
+* 기본값 정책 문서화
+* 기존 mission data가 필드 없이도 기존처럼 동작하도록 보장
 
-### 19. 미리보기 확인하기
+### TUT-MANUAL-2: 자동 완료 필터링
 
-제목:
+* evaluator 또는 progress hook에서 자동 완료 대상 mission을 필터링
+* `instantSuccess === false` 미션은 조건을 만족해도 자동 completed ledger에 넣지 않음
+* 기존 instant 미션은 회귀 없이 동작
 
-```text
-미리보기에서 홍보 페이지를 확인해 보세요
-```
+### TUT-MANUAL-3: 수동 완료 action 추가
 
-안내:
+* `useTutorialProgress`에 `completeActiveMissionManually` 또는 유사 action 추가
+* active mission condition을 현재 상태 기준으로 재검사
+* true이면 completed ledger + success feedback
+* false이면 incomplete message state 설정
 
-```text
-오른쪽 미리보기 탭을 눌러 지금 만든 홍보 페이지가 어떻게 보이는지 확인해 보세요.
-```
+### TUT-MANUAL-4: Mission Bar UI 추가
 
-완료 조건:
+* active mission이 `instantSuccess === false`이면 “완료” 버튼 표시
+* 일반 instant mission에서는 기존 UI 유지
+* incomplete message 표시
+* success feedback UI는 기존 흐름 재사용
 
-```text
-previewOpened UI signal
-```
+### TUT-MANUAL-5: mission data 조정
 
-성공 코멘트:
+* content/property/style 수정 미션에 `instantSuccess: false` 추가
+* 구조 추가형 미션은 생략 또는 true 유지
+* 소개/홍보/초대장 트랙 모두 검토
 
-```text
-좋습니다. 미리보기는 블록으로 만든 페이지가 실제 화면에서 어떻게 보일지 보여줍니다.
-```
+### TUT-MANUAL-6: 회귀 검증
 
----
+* 자동 완료형 미션 정상
+* 수동 완료형 미션은 조건 만족 후에도 바로 넘어가지 않음
+* 완료 버튼으로만 완료됨
+* 조건 미충족 시 안내 표시
+* success feedback 정상
+* skip/hide/reopen 정상
 
-### 20. 코드 보기 확인하기
+## 수동 검증 체크리스트
 
-제목:
+### 자동 완료형
 
-```text
-코드 보기에서 구조를 확인해 보세요
-```
+* 일반 구역 추가 시 기존처럼 즉시 성공 feedback 표시
+* 이미지 추가 시 즉시 성공 feedback 표시
+* LIST 추가 시 즉시 성공 feedback 표시
+* Preview / Code View tab 확인 미션 즉시 성공 feedback 표시
 
-안내:
+### 수동 완료형
 
-```text
-코드 보기 탭을 눌러 첫인상 구역, Grid, Card, FAQ가 HTML 구조로 어떻게 표현되는지 확인해 보세요.
-```
+* 제목 수정 미션 진입
+* 제목을 아직 수정하지 않은 상태에서 완료 버튼 클릭
 
-완료 조건:
+  * incomplete message 표시
+  * completed ledger에 추가되지 않음
+* 제목을 조금 수정
 
-```text
-codeViewOpened UI signal
-```
+  * 즉시 다음 미션으로 넘어가지 않음
+  * active mission 유지
+* 완료 버튼 클릭
 
-성공 코멘트:
+  * success feedback 표시
+  * commentOnSuccess 표시
+* “다음 미션” 클릭
 
-```text
-잘 했어요. 지금 만든 홍보 페이지의 블록 구조가 실제 HTML 코드로 변환된 모습을 확인했습니다.
-```
+  * 다음 미션 표시
 
-## 구현 지침
+### property/style 미션
 
-* 현재 `TutorialTrack` / `TutorialMission` 타입에 맞춰 작성해 주세요.
-* 기존 condition 구조를 최대한 재사용해 주세요.
-* 새 condition 타입이 꼭 필요하면 먼저 최소 범위로 제안하고 적용해 주세요.
-* mission data에 JSX, React component, mutation function을 넣지 마세요.
-* 튜토리얼은 block tree를 수정하지 않아야 합니다.
-* 튜토리얼 모드에서 Templates 탭 비활성화 정책은 유지합니다.
-* Preview / Code View / Export 경로는 변경하지 마세요.
-* DnD, StylePanel input handler, HtmlBlock 모델, blockDefinitions 구조는 변경하지 마세요.
-* 홍보 페이지 트랙에서는 PASSWORD_ZONE과 SLIDER_ZONE을 사용하지 마세요.
+* 이미지 src 수정 후 자동 완료되지 않음
+* 링크 주소 입력 후 자동 완료되지 않음
+* 배경색 변경 후 자동 완료되지 않음
+* padding 변경 후 자동 완료되지 않음
+* 완료 버튼 클릭 후에만 완료됨
 
-## 주의할 점
+### skip/hide/reopen
 
-CONTAINER/Box가 여러 번 등장하므로, 미션 10과 16의 조건은 현재 evaluator가 안전하게 지원하는 방식으로 조정해 주세요.
+* 수동 완료형 미션에서 skip 가능
+* 수동 완료형 미션에서 hide 가능
+* reopen 시 같은 미션 표시
+* 이미 조건을 만족했더라도 reopen 후 자동 완료되지 않음
+* 완료 버튼 클릭 시 완료됨
 
-예를 들어 다음 중 repo에 가장 맞는 방식을 사용해 주세요.
+### 동시 완료
 
-```text
-- baseline 이후 추가된 CONTAINER 개수 기준
-- 특정 순서 이후 새 CONTAINER 존재 기준
-- hasAddedBlockCount condition
-- 현재 지원 condition 조합으로 가능한 간단한 대체 조건
-```
+* 어떤 행동으로 여러 조건이 동시에 만족되어도, 수동 완료형 미션은 자동 완료되지 않음
+* instantSuccess true 미션만 자동 완료됨
+* active 수동 미션은 버튼 클릭 필요
 
-불필요하게 복잡한 origin tracking이나 label tracking은 추가하지 마세요.
+### 회귀
 
-Grid 안의 Card, Card 안의 content, Toggle 안의 answer content는 기존 tree traversal/property-aware condition으로 가능한지 확인하고, 불가능하면 최소 condition 확장을 제안해 주세요.
+* DnD 정상
+* StylePanel content/style 수정 정상
+* Preview 정상
+* Code View 정상
+* Export 정상
+* Templates 일반 모드 정상
+* Tutorial mode에서 Templates 비활성화 유지
 
-## 검증
+## 자동 검증
 
-가능하면 다음을 실행해 주세요.
+가능하면 다음 명령을 실행한다.
 
 ```powershell
 npx.cmd tsc --noEmit
@@ -717,5 +530,44 @@ npm.cmd run lint
 git diff --check
 ```
 
+필요 시 changed-file lint를 실행한다.
 
-응답은 한국어로 작성해 주세요.
+## 구현 후 보고 형식
+
+구현 후 다음을 보고한다.
+
+```text
+변경 요약:
+- 수정 파일:
+- 신규 파일:
+- TutorialMission 타입 변경:
+- instantSuccess 기본값 정책:
+- 자동 완료 필터링 방식:
+- 수동 완료 action:
+- incomplete message 처리:
+- mission data 조정 내용:
+- 실행한 검증:
+- 수동 테스트 결과:
+- 남은 위험:
+```
+
+## 명시적 제외 범위
+
+이번 TODO에서는 다음을 제외한다.
+
+```text
+- mission별 custom incomplete message
+- 자동 timeout
+- success feedback queue
+- localStorage
+- 계정 저장
+- 튜토리얼 저장/복원
+- 튜토리얼 전용 block mutation
+- StylePanel handler 변경
+- DnD 변경
+- HtmlBlock 모델 변경
+- blockDefinitions 변경
+- Preview / Code View / Export 변경
+- Learning Templates 구조 변경
+- unrelated repository 변경
+```

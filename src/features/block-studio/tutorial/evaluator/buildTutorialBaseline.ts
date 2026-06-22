@@ -10,6 +10,7 @@ function snapshotBlock(block: HtmlBlock): TutorialPropertySnapshot {
     content: block.content,
     src: block.src,
     link: block.link,
+    correctAnswer: block.correctAnswer,
     styles: {
       bgColor: block.styles?.bgColor,
       textColor: block.styles?.textColor,

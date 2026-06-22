@@ -9,6 +9,22 @@ function isAdded(blockId: string, initialBlockIds: ReadonlySet<string>) {
   return !initialBlockIds.has(blockId);
 }
 
+function hasDescendantOfType(
+  roots: readonly { id: string; type: string }[],
+  childType: string,
+  context: TutorialEvaluationContext,
+): boolean {
+  return roots.some(
+    (block) =>
+      block.type === childType ||
+      hasDescendantOfType(
+        context.tree.directChildrenByParentId.get(block.id) ?? [],
+        childType,
+        context,
+      ),
+  );
+}
+
 function isMissionComplete(mission: TutorialMission, context: TutorialEvaluationContext): boolean {
   const { condition } = mission;
   const { baseline } = context;
@@ -28,8 +44,10 @@ function isMissionComplete(mission: TutorialMission, context: TutorialEvaluation
       return parents.some(
         (parent) =>
           isAdded(parent.id, baseline.initialBlockIds) &&
-          (context.tree.directChildrenByParentId.get(parent.id) ?? []).some(
-            (child) => child.type === condition.childType,
+          hasDescendantOfType(
+            context.tree.directChildrenByParentId.get(parent.id) ?? [],
+            condition.childType,
+            context,
           ),
       );
     }
@@ -47,6 +65,22 @@ function isMissionComplete(mission: TutorialMission, context: TutorialEvaluation
       return (context.tree.blocksByType.get(condition.blockType) ?? []).some((block) =>
         hasContentChanged(block, baseline.initialBlockById.get(block.id)),
       );
+    case "hasNestedContentChanged": {
+      const parents = context.tree.blocksByType.get(condition.parentType) ?? [];
+      return parents.some((parent) => {
+        const children = condition.childField
+          ? (parent[condition.childField] ?? [])
+          : (context.tree.directChildrenByParentId.get(parent.id) ?? []);
+        const hasChangedContent = (candidates: typeof children): boolean =>
+          candidates.some(
+            (child) =>
+              (condition.childTypes.includes(child.type as "H1" | "P") &&
+                hasContentChanged(child, baseline.initialBlockById.get(child.id))) ||
+              hasChangedContent(context.tree.directChildrenByParentId.get(child.id) ?? []),
+          );
+        return hasChangedContent(children);
+      });
+    }
     case "hasAttributeChanged":
       return (context.tree.blocksByType.get(condition.blockType) ?? []).some((block) =>
         hasAttributeChanged(block, baseline.initialBlockById.get(block.id), condition.field),
