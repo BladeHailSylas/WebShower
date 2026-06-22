@@ -7,6 +7,8 @@ interface TutorialMissionBarProps {
   processedCount: number;
   totalCount: number;
   isComplete: boolean;
+  incompleteMessage?: string;
+  onCompleteMission: () => void;
   onSkip: () => void;
   onNextMission: () => void;
   onHide: () => void;
@@ -22,6 +24,8 @@ export default function TutorialMissionBar({
   processedCount,
   totalCount,
   isComplete,
+  incompleteMessage,
+  onCompleteMission,
   onSkip,
   onNextMission,
   onHide,
@@ -66,13 +70,19 @@ export default function TutorialMissionBar({
             {successMission.commentOnSuccess ?? defaultSuccessComment}
           </p>
         ) : (
-          <div><p className="mt-0.5 truncate text-sm text-slate-300 @max-[420px]:hidden">
-            {isShowingComplete
-              ? `${totalCount}개의 미션을 모두 처리했습니다.`
-              : mission?.description}
-          </p>
-          {!isShowingComplete && (
-            <p className="text-xs text-slate-500 @max-[420px]:hidden">{mission?.comment}</p>
+          <div>
+            <p className="mt-0.5 truncate text-sm text-slate-300 @max-[420px]:hidden">
+              {isShowingComplete
+                ? `${totalCount}개의 미션을 모두 처리했습니다.`
+                : mission?.description}
+            </p>
+            {!isShowingComplete && mission?.comment && (
+              <p className="text-xs text-slate-500 @max-[420px]:hidden">{mission.comment}</p>
+            )}
+            {!isShowingComplete && incompleteMessage && (
+              <p className="mt-1 text-xs font-bold text-amber-300" role="alert">
+                {incompleteMessage}
+              </p>
             )}
           </div>
         )}
@@ -88,13 +98,24 @@ export default function TutorialMissionBar({
             다음 미션
           </button>
         ) : !isShowingComplete ? (
-          <button
-            type="button"
-            className="rounded-lg border border-slate-700 px-2.5 py-1.5 text-[11px] font-bold text-slate-300 transition-colors hover:border-slate-500 hover:bg-slate-800 hover:text-white"
-            onClick={onSkip}
-          >
-            건너뛰기
-          </button>
+          <>
+            {mission?.instantSuccess === false && (
+              <button
+                type="button"
+                className="rounded-lg bg-emerald-400 px-3 py-1.5 text-[11px] font-black text-emerald-950 transition-colors hover:bg-emerald-300"
+                onClick={onCompleteMission}
+              >
+                완료
+              </button>
+            )}
+            <button
+              type="button"
+              className="rounded-lg border border-slate-700 px-2.5 py-1.5 text-[11px] font-bold text-slate-300 transition-colors hover:border-slate-500 hover:bg-slate-800 hover:text-white"
+              onClick={onSkip}
+            >
+              건너뛰기
+            </button>
+          </>
         ) : null}
         <button
           type="button"

@@ -25,7 +25,10 @@ function hasDescendantOfType(
   );
 }
 
-function isMissionComplete(mission: TutorialMission, context: TutorialEvaluationContext): boolean {
+export function evaluateTutorialMission(
+  mission: TutorialMission,
+  context: TutorialEvaluationContext,
+): boolean {
   const { condition } = mission;
   const { baseline } = context;
 
@@ -99,6 +102,8 @@ export function evaluateTutorialMissions(
   context: TutorialEvaluationContext,
 ): ReadonlySet<string> {
   return new Set(
-    missions.filter((mission) => isMissionComplete(mission, context)).map((mission) => mission.id),
+    missions
+      .filter((mission) => evaluateTutorialMission(mission, context))
+      .map((mission) => mission.id),
   );
 }

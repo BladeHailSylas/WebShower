@@ -18,9 +18,11 @@ export const tutorialMissions = [
   },
   {
     id: "edit-heading-content",
+    instantSuccess: false,
     title: "제목을 나만의 문장으로 바꿔 보세요",
     description:
       "제목을 ‘안녕하세요, 저는 ○○입니다’처럼 나를 소개하는 문장으로 바꿔 보세요.",
+      comment: "제목 블록의 파란색 단추를 누르면 내용을 바꿀 수 있는 창이 나온답니다.",
     condition: { type: "hasContentChanged", blockType: "H1" },
     commentOnSuccess: "좋습니다. 화면에 보이는 글자는 HTML 요소의 내용으로 저장됩니다.",
   },
@@ -34,12 +36,13 @@ export const tutorialMissions = [
   },
   {
     id: "edit-paragraph-content",
+    instantSuccess: false,
     title: "나를 소개하는 글을 써 보세요",
     description:
       "문단 내용을 내가 좋아하는 것, 배우고 싶은 것, 나를 표현하는 문장으로 바꿔 보세요.",
     condition: { type: "hasContentChanged", blockType: "P" },
     commentOnSuccess:
-      "좋습니다. 제목과 문단을 함께 쓰면 페이지의 핵심 메시지가 더 분명해집니다.",
+      "내용을 수정할 수 있는 이 창을 스타일 창이라고 부릅시다.",
   },
   {
     id: "add-intro-image",
@@ -50,16 +53,20 @@ export const tutorialMissions = [
   },
   {
     id: "edit-image-source",
+    instantSuccess: false,
     title: "이미지 주소를 바꿔 보세요",
     description: "이미지 블록의 주소를 다른 이미지 URL로 바꿔 보세요.",
+    comment: "이 링크를 넣어보세요: https://picsum.photos/200",
     condition: { type: "hasAttributeChanged", blockType: "IMAGE", field: "src" },
     commentOnSuccess: "img 태그는 src 속성에 적힌 주소에서 이미지를 불러옵니다.",
   },
   {
     id: "style-intro-padding",
+    instantSuccess: false,
     title: "소개 구역에 안쪽 여백을 주세요",
     description:
       "소개 구역의 안쪽 여백을 조절해 내용이 조금 더 편하게 보이도록 만들어 보세요.",
+      comment: "구역 블록의 파란 단추를 누르고, 스크롤을 아래로 내리면 설정을 찾을 수 있어요.",
     condition: { type: "hasStyleChanged", blockType: "CONTAINER", styleKey: "paddingSize" },
     commentOnSuccess:
       "안쪽 여백은 CSS의 padding입니다. 내용과 테두리 사이에 숨 쉴 공간을 만들어 줍니다.",
@@ -93,6 +100,7 @@ export const tutorialMissions = [
   },
   {
     id: "style-intro-background",
+    instantSuccess: false,
     title: "소개 구역의 배경색을 바꿔 보세요",
     description: "소개 구역의 배경색을 바꿔 페이지 분위기를 만들어 보세요.",
     condition: { type: "hasStyleChanged", blockType: "CONTAINER", styleKey: "bgColor" },
@@ -101,6 +109,7 @@ export const tutorialMissions = [
   },
   {
     id: "style-card-shadow",
+    instantSuccess: false,
     title: "카드에 그림자를 넣어 보세요",
     description: "카드에 그림자를 넣어 화면에서 살짝 떠 있는 느낌을 만들어 보세요.",
     condition: { type: "hasStyleChanged", blockType: "CARD", styleKey: "shadow" },
@@ -116,6 +125,7 @@ export const tutorialMissions = [
   },
   {
     id: "enter-link-address",
+    instantSuccess: false,
     title: "링크 주소를 입력해 보세요",
     description: "링크가 이동할 주소를 입력해 보세요.",
     condition: { type: "hasAttributeChanged", blockType: "A", field: "link" },
@@ -160,6 +170,7 @@ export const promotionTutorialMissions = [
   },
   {
     id: "promotion-edit-heading",
+    instantSuccess: false,
     title: "제목을 홍보 문구로 바꿔 보세요",
     description:
       "예를 들어 ‘우리 동아리를 소개합니다’ 또는 ‘함께 만드는 웹 제작 모임’처럼 바꿔 보세요.",
@@ -176,6 +187,7 @@ export const promotionTutorialMissions = [
   },
   {
     id: "promotion-edit-introduction",
+    instantSuccess: false,
     title: "소개 문장을 직접 써 보세요",
     description: "동아리, 행사, 프로젝트의 매력을 짧게 소개하는 문장으로 바꿔 보세요.",
     condition: { type: "hasContentChanged", blockType: "P" },
@@ -191,6 +203,7 @@ export const promotionTutorialMissions = [
   },
   {
     id: "promotion-edit-image-source",
+    instantSuccess: false,
     title: "이미지 주소를 바꿔 보세요",
     description: "이미지 블록의 주소를 홍보 내용과 어울리는 이미지 URL로 바꿔 보세요.",
     condition: { type: "hasAttributeChanged", blockType: "IMAGE", field: "src" },
@@ -206,6 +219,7 @@ export const promotionTutorialMissions = [
   },
   {
     id: "promotion-enter-link-address",
+    instantSuccess: false,
     title: "링크 주소를 입력해 보세요",
     description: "링크가 이동할 주소를 입력해 보세요.",
     condition: { type: "hasAttributeChanged", blockType: "A", field: "link" },
@@ -234,6 +248,7 @@ export const promotionTutorialMissions = [
   },
   {
     id: "promotion-edit-card-content",
+    instantSuccess: false,
     title: "카드 내용을 장점으로 바꿔 보세요",
     description:
       "카드 안의 제목이나 문단을 ‘함께 배워요’, ‘직접 만들어요’ 같은 장점으로 바꿔 보세요.",
@@ -242,6 +257,7 @@ export const promotionTutorialMissions = [
   },
   {
     id: "promotion-style-card",
+    instantSuccess: false,
     title: "카드를 눈에 띄게 꾸며 보세요",
     description: "카드의 그림자를 바꿔, 중요한 정보가 잘 보이게 만들어 보세요.",
     condition: { type: "hasStyleChanged", blockType: "CARD", styleKey: "shadow" },
@@ -279,6 +295,7 @@ export const promotionTutorialMissions = [
   },
   {
     id: "promotion-edit-faq-answer",
+    instantSuccess: false,
     title: "FAQ 답변을 수정해 보세요",
     description: "Toggle 안의 답변 내용을 실제 질문에 맞게 바꿔 보세요.",
     condition: { type: "hasAddedNestedBlock", parentType: "TOGGLE_ZONE", childType: "P" },
@@ -323,6 +340,7 @@ export const invitationTutorialMissions = [
   },
   {
     id: "invitation-edit-heading",
+    instantSuccess: false,
     title: "제목을 초대 문구로 바꿔 보세요",
     description:
       "예를 들어 ‘당신을 초대합니다’ 또는 ‘우리의 특별한 모임에 함께해요’처럼 바꿔 보세요.",
@@ -339,6 +357,7 @@ export const invitationTutorialMissions = [
   },
   {
     id: "invitation-edit-paragraph",
+    instantSuccess: false,
     title: "초대 문장을 직접 써 보세요",
     description: "방문자가 초대받았다는 느낌을 받을 수 있도록 문장을 바꿔 보세요.",
     condition: { type: "hasContentChanged", blockType: "P" },
@@ -354,6 +373,7 @@ export const invitationTutorialMissions = [
   },
   {
     id: "invitation-edit-image-source",
+    instantSuccess: false,
     title: "이미지 주소를 바꿔 보세요",
     description:
       "이미지 블록의 주소를 초대장 분위기와 어울리는 이미지 URL로 바꿔 보세요.",
@@ -392,6 +412,7 @@ export const invitationTutorialMissions = [
   },
   {
     id: "invitation-style-background",
+    instantSuccess: false,
     title: "초대장 배경색을 바꿔 보세요",
     description: "초대장 구역의 배경색을 바꿔 원하는 분위기를 만들어 보세요.",
     condition: { type: "hasStyleChanged", blockType: "CONTAINER", styleKey: "bgColor" },
@@ -400,6 +421,7 @@ export const invitationTutorialMissions = [
   },
   {
     id: "invitation-style-padding",
+    instantSuccess: false,
     title: "초대장 안쪽 여백을 조절해 보세요",
     description:
       "초대장 구역의 안쪽 여백을 조절해 내용이 더 편하게 보이도록 만들어 보세요.",
@@ -418,6 +440,7 @@ export const invitationTutorialMissions = [
   },
   {
     id: "invitation-edit-toggle-content",
+    instantSuccess: false,
     title: "접힌 안내 내용을 수정해 보세요",
     description:
       "Toggle 안의 답변 내용을 준비물, 오시는 길, 드레스코드 같은 안내 문구로 바꿔 보세요.",
@@ -440,6 +463,7 @@ export const invitationTutorialMissions = [
   },
   {
     id: "invitation-edit-password-answer",
+    instantSuccess: false,
     title: "비밀번호 정답을 정해 보세요",
     description: "비밀 메시지를 열 수 있는 비밀번호 정답을 정해 보세요.",
     condition: {
@@ -452,6 +476,7 @@ export const invitationTutorialMissions = [
   },
   {
     id: "invitation-edit-secret-message",
+    instantSuccess: false,
     title: "비밀 메시지를 수정해 보세요",
     description:
       "비밀번호를 맞혔을 때 보이는 특별 메시지를 실제 초대장 내용에 맞게 바꿔 보세요.",
@@ -473,6 +498,7 @@ export const invitationTutorialMissions = [
   },
   {
     id: "invitation-edit-link-address",
+    instantSuccess: false,
     title: "링크 주소를 입력해 보세요",
     description: "링크가 이동할 주소를 입력해 보세요.",
     condition: { type: "hasAttributeChanged", blockType: "A", field: "link" },

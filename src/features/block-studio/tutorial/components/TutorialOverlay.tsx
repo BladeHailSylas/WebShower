@@ -20,6 +20,8 @@ interface TutorialOverlayProps {
   totalCount: number;
   isComplete: boolean;
   isHidden: boolean;
+  incompleteMessage?: string;
+  onCompleteMission: () => void;
   onSkip: () => void;
   onNextMission: () => void;
   onHide: () => void;
@@ -41,6 +43,8 @@ export default function TutorialOverlay({
   totalCount,
   isComplete,
   isHidden,
+  incompleteMessage,
+  onCompleteMission,
   onSkip,
   onNextMission,
   onHide,
@@ -90,6 +94,8 @@ export default function TutorialOverlay({
           processedCount={processedCount}
           totalCount={totalCount}
           isComplete={isComplete}
+          incompleteMessage={incompleteMessage}
+          onCompleteMission={onCompleteMission}
           onSkip={onSkip}
           onNextMission={onNextMission}
           onHide={onHide}

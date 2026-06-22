@@ -67,6 +67,8 @@ export default function BlockStudioPage() {
             totalCount={tutorial.progress.missions.length}
             isComplete={tutorial.progress.isComplete}
             isHidden={tutorial.progress.isHidden}
+            incompleteMessage={tutorial.progress.incompleteMessage}
+            onCompleteMission={tutorial.progress.completeActiveMissionManually}
             onSkip={tutorial.skipActiveMission}
             onNextMission={tutorial.continueAfterSuccess}
             onHide={tutorial.progress.hide}

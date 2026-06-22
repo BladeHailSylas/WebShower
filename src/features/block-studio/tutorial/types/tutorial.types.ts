@@ -59,6 +59,8 @@ export interface TutorialMission {
   condition: TutorialCondition;
   comment?: string;
   commentOnSuccess?: string;
+  commentOnIncomplete?: string;
+  instantSuccess?: boolean;
 }
 
 export interface TutorialTrack {
