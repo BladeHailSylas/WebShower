@@ -1,5 +1,6 @@
 import type { HtmlBlock } from "../../../../types/types";
 import { escapeAttribute, escapeJsString } from "./escapeHtml";
+import { resolveGuiInlineStyleString } from "./resolveGuiInlineStyles";
 import { transformGuiToTailwind } from "./transformGuiToTailwind";
 
 type CompileBlock = (block: HtmlBlock) => string;
@@ -19,9 +20,11 @@ export function compilePasswordZone(block: HtmlBlock, compileBlock: CompileBlock
   const defaultHtml = block.defaultChildren?.map(compileBlock).join("") || "";
   const conditionalHtml = block.conditionalChildren?.map(compileBlock).join("") || "";
   const classes = escapeAttribute(transformGuiToTailwind(block.styles, block.type));
+  const inlineStyle = resolveGuiInlineStyleString(block.styles);
+  const styleAttribute = inlineStyle ? ` style="${escapeAttribute(inlineStyle)}"` : "";
 
   return `
-<div id="${uniqueId}-root" class="${classes}">
+<div id="${uniqueId}-root" class="${classes}"${styleAttribute}>
   <script>
     function ${functionName}(event) {
       event.preventDefault();
@@ -57,9 +60,11 @@ export function compileToggleZone(block: HtmlBlock, compileBlock: CompileBlock):
   const defaultHtml = block.defaultChildren?.map(compileBlock).join("") || "";
   const conditionalHtml = block.conditionalChildren?.map(compileBlock).join("") || "";
   const classes = escapeAttribute(transformGuiToTailwind(block.styles, block.type));
+  const inlineStyle = resolveGuiInlineStyleString(block.styles);
+  const styleAttribute = inlineStyle ? ` style="${escapeAttribute(inlineStyle)}"` : "";
 
   return `
-<div id="${uniqueId}-root" class="${classes}">
+<div id="${uniqueId}-root" class="${classes}"${styleAttribute}>
   <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px;">
     <div style="flex: 1;">${defaultHtml}</div>
     <button onclick="${functionName}(this)" style="padding: 6px 12px; background: rgba(15,23,42,0.05); color: #334155; font-size: 12px; font-weight: bold; border-radius: 8px; border: none; cursor: pointer;">열기</button>

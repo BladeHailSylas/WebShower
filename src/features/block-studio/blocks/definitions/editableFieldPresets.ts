@@ -112,6 +112,14 @@ export const borderColorField: EditableFieldDefinition = {
   ],
 };
 
+export const borderColorCustomField: EditableFieldDefinition = {
+  path: "styles.borderColorCustom",
+  label: "테두리 사용자 지정 색상",
+  control: "color",
+  section: "border",
+  defaultValue: "",
+};
+
 export const paddingSizeField: EditableFieldDefinition = {
   path: "styles.paddingSize",
   label: "안쪽 여백",
@@ -175,6 +183,7 @@ export const listStyleField: EditableFieldDefinition = {
 export const hrBorderFields: EditableFieldDefinition[] = [
   { ...borderWidthField, label: "선 굵기" },
   { ...borderColorField, label: "선 색상" },
+  { ...borderColorCustomField, label: "선 사용자 지정 색상" },
 ];
 
 export const commonStyleFields: EditableFieldDefinition[] = [
@@ -203,6 +212,13 @@ export const commonStyleFields: EditableFieldDefinition[] = [
       { label: "파란색", value: "blue" },
       { label: "초록색", value: "green" },
     ],
+  },
+  {
+    path: "styles.textColorCustom",
+    label: "글자 사용자 지정 색상",
+    control: "color",
+    section: "text",
+    defaultValue: "",
   },
   {
     path: "styles.fontSize",
@@ -234,6 +250,13 @@ export const commonStyleFields: EditableFieldDefinition[] = [
     ],
   },
   {
+    path: "styles.bgColorCustom",
+    label: "배경 사용자 지정 색상",
+    control: "color",
+    section: "background",
+    defaultValue: "",
+  },
+  {
     path: "styles.isBold",
     label: "굵게",
     control: "checkbox",
@@ -244,6 +267,7 @@ export const commonStyleFields: EditableFieldDefinition[] = [
   roundedField,
   borderWidthField,
   borderColorField,
+  borderColorCustomField,
 ];
 
 export const typographyDetailFields: EditableFieldDefinition[] = [

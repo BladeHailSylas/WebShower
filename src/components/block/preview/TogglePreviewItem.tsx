@@ -1,17 +1,18 @@
-import { useState, type ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import type { HtmlBlock } from "../../../types/types";
 
 interface TogglePreviewItemProps {
   block: HtmlBlock;
   renderBlock: (block: HtmlBlock) => ReactNode;
   className: string;
+  style?: CSSProperties;
 }
 
-export default function TogglePreviewItem({ block, renderBlock, className }: TogglePreviewItemProps) {
+export default function TogglePreviewItem({ block, renderBlock, className, style }: TogglePreviewItemProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div className={`w-full ${className}`}>
+    <div className={`w-full ${className}`} style={style}>
       <div className="flex justify-between items-center gap-4">
         <div className="flex-1">{block.defaultChildren?.map((child) => renderBlock(child))}</div>
         <button

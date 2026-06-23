@@ -4,7 +4,7 @@ export type EditableFieldPath =
   | keyof Pick<HtmlBlock, "content" | "containerName" | "src" | "link" | "correctAnswer">
   | `styles.${keyof StyleProps}`;
 
-export type EditableFieldControl = "select" | "checkbox" | "text" | "url";
+export type EditableFieldControl = "select" | "checkbox" | "text" | "url" | "color";
 
 export type EditableFieldSection =
   | "content"

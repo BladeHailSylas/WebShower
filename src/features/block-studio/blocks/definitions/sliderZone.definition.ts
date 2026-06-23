@@ -16,7 +16,7 @@ export const sliderZoneDefinition = {
     type: "SLIDER_ZONE",
     children: [],
     styles: {
-      className: "relative flex w-full flex-col overflow-hidden rounded-xl border border-slate-200 shadow-sm text-slate-900",
+      className: "relative flex w-full flex-col overflow-hidden text-slate-900",
     },
   },
   palette: { label: "슬라이더 구역 만들기", icon: "SLIDE", order: 40 },

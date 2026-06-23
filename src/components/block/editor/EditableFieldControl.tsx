@@ -51,6 +51,10 @@ function updatePath(
   return { [field.path as HtmlEditableFieldPath]: value };
 }
 
+function isHexColor(value: unknown): value is string {
+  return typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value);
+}
+
 export default function EditableFieldControl({ field, targetBlock, onUpdate }: EditableFieldControlProps) {
   const value = getFieldValue(targetBlock, field.path) ?? field.defaultValue ?? "";
 
@@ -95,6 +99,36 @@ export default function EditableFieldControl({ field, targetBlock, onUpdate }: E
             </option>
           ))}
         </select>
+      </label>
+    );
+  }
+
+  if (field.control === "color") {
+    const colorValue = isHexColor(value) ? value : "#000000";
+    const hasCustomColor = isHexColor(value);
+
+    return (
+      <label className="flex flex-col gap-1">
+        <span className="text-xs text-slate-600 font-bold">{field.label}</span>
+        <div className="flex items-center gap-2">
+          <input
+            type="color"
+            value={colorValue}
+            onChange={(event) => onUpdate(updatePath(targetBlock, field, event.target.value))}
+            className="h-8 w-10 shrink-0 cursor-pointer rounded-lg border border-amber-300 bg-white p-1"
+          />
+          <span className="min-w-20 flex-1 rounded-lg border border-amber-200 bg-amber-50/60 px-2 py-1.5 font-mono text-xs text-slate-700">
+            {hasCustomColor ? value : "기본값"}
+          </span>
+          <button
+            type="button"
+            onClick={() => onUpdate(updatePath(targetBlock, field, ""))}
+            disabled={!hasCustomColor}
+            className="rounded-lg border border-amber-300 px-2 py-1.5 text-xs font-bold text-amber-900 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            초기화
+          </button>
+        </div>
       </label>
     );
   }

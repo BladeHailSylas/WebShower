@@ -9,7 +9,7 @@ export const toggleZoneDefinition = {
   template: {
     id: "template-toggle-zone",
     type: "TOGGLE_ZONE",
-    styles: { className: "border border-slate-200 rounded-xl p-4 bg-white shadow-sm w-full max-w-md mx-auto" },
+    styles: { className: " p-4 w-full max-w-md mx-auto" },
     defaultChildren: [],
     conditionalChildren: [],
   },

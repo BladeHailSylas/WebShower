@@ -1,5 +1,6 @@
 import type { CSSProperties, MouseEvent, ReactNode } from "react";
 import type { HtmlBlock } from "../../../types/types";
+import { resolveGuiInlineStyleObject } from "../../../features/block-studio/blocks/html/resolveGuiInlineStyles";
 import { transformGuiToTailwind } from "../../../features/block-studio/blocks/html/transformGuiToTailwind";
 import PasswordPreviewItem from "./PasswordPreviewItem";
 import SliderPreviewItem from "./SliderPreviewItem";
@@ -24,60 +25,79 @@ function getGridZoneStyle(block: HtmlBlock): CSSProperties {
   };
 }
 
+function getBlockInlineStyle(block: HtmlBlock): CSSProperties {
+  const colorStyles = resolveGuiInlineStyleObject(block.styles);
+  if (block.type !== "GRID_ZONE") return colorStyles;
+
+  return {
+    ...colorStyles,
+    ...getGridZoneStyle(block),
+  };
+}
+
 function renderPreviewBlock(block: HtmlBlock, options: RenderPreviewBlockOptions = {}): ReactNode {
   const classes = transformGuiToTailwind(block.styles, block.type);
+  const inlineStyle = getBlockInlineStyle(block);
   const renderChild = (child: HtmlBlock) => renderPreviewBlock(child, options);
 
   switch (block.type) {
     case "CONTAINER":
     case "CARD":
       return (
-        <div key={block.id} className={classes}>
+        <div key={block.id} className={classes} style={inlineStyle}>
           {block.children?.map(renderChild)}
         </div>
       );
     case "LIST":
       return (
-        <ul key={block.id} className={classes}>
+        <ul key={block.id} className={classes} style={inlineStyle}>
           {block.children?.map(renderChild)}
         </ul>
       );
     case "LIST_ITEM":
       return (
-        <li key={block.id} className={classes}>
+        <li key={block.id} className={classes} style={inlineStyle}>
           {block.children?.map(renderChild)}
         </li>
       );
     case "SLIDER_ZONE":
-      return <SliderPreviewItem key={block.id} block={block} renderBlock={renderChild} className={classes} />;
+      return (
+        <SliderPreviewItem
+          key={block.id}
+          block={block}
+          renderBlock={renderChild}
+          className={classes}
+          style={inlineStyle}
+        />
+      );
     case "SLIDE_ITEM":
       return (
-        <article key={block.id} className={classes}>
+        <article key={block.id} className={classes} style={inlineStyle}>
           {block.children?.map(renderChild)}
         </article>
       );
     case "GRID_ZONE":
       return (
-        <div key={block.id} className={classes} style={getGridZoneStyle(block)}>
+        <div key={block.id} className={classes} style={inlineStyle}>
           {block.children?.map(renderChild)}
         </div>
       );
     case "H1":
       return (
-        <h1 key={block.id} className={classes}>
+        <h1 key={block.id} className={classes} style={inlineStyle}>
           {block.content}
         </h1>
       );
     case "P":
       return (
-        <p key={block.id} className={classes}>
+        <p key={block.id} className={classes} style={inlineStyle}>
           {block.content}
         </p>
       );
     case "HR":
-      return <hr key={block.id} className={classes} />;
+      return <hr key={block.id} className={classes} style={inlineStyle} />;
     case "IMAGE":
-      return <img key={block.id} src={block.src} alt="미리보기" className={classes} />;
+      return <img key={block.id} src={block.src} alt="미리보기" className={classes} style={inlineStyle} />;
     case "A": {
       const handleLinkClick = (event: MouseEvent<HTMLAnchorElement>) => {
         if (options.disableLinks) event.preventDefault();
@@ -90,6 +110,7 @@ function renderPreviewBlock(block: HtmlBlock, options: RenderPreviewBlockOptions
           target="_blank"
           rel="noopener noreferrer"
           className={classes}
+          style={inlineStyle}
           onClick={handleLinkClick}
         >
           {block.content}
@@ -97,9 +118,25 @@ function renderPreviewBlock(block: HtmlBlock, options: RenderPreviewBlockOptions
       );
     }
     case "PASSWORD_ZONE":
-      return <PasswordPreviewItem key={block.id} block={block} renderBlock={renderChild} className={classes} />;
+      return (
+        <PasswordPreviewItem
+          key={block.id}
+          block={block}
+          renderBlock={renderChild}
+          className={classes}
+          style={inlineStyle}
+        />
+      );
     case "TOGGLE_ZONE":
-      return <TogglePreviewItem key={block.id} block={block} renderBlock={renderChild} className={classes} />;
+      return (
+        <TogglePreviewItem
+          key={block.id}
+          block={block}
+          renderBlock={renderChild}
+          className={classes}
+          style={inlineStyle}
+        />
+      );
     default:
       return null;
   }

@@ -1,13 +1,14 @@
-import { useState, type ReactNode, type SubmitEvent } from "react";
+import { useState, type CSSProperties, type ReactNode, type SubmitEvent } from "react";
 import type { HtmlBlock } from "../../../types/types";
 
 interface PasswordPreviewItemProps {
   block: HtmlBlock;
   renderBlock: (block: HtmlBlock) => ReactNode;
   className: string;
+  style?: CSSProperties;
 }
 
-export default function PasswordPreviewItem({ block, renderBlock, className }: PasswordPreviewItemProps) {
+export default function PasswordPreviewItem({ block, renderBlock, className, style }: PasswordPreviewItemProps) {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [inputVal, setInputVal] = useState("");
   const [isShaking, setIsShaking] = useState(false);
@@ -24,7 +25,7 @@ export default function PasswordPreviewItem({ block, renderBlock, className }: P
 
   if (isUnlocked) {
     return (
-      <div className={`w-full duration-500 animate-fade-in ${className}`}>
+      <div className={`w-full duration-500 animate-fade-in ${className}`} style={style}>
         <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl mb-4 text-center text-xs font-bold text-emerald-700">
           잠금 해제 완료!
         </div>
@@ -34,7 +35,10 @@ export default function PasswordPreviewItem({ block, renderBlock, className }: P
   }
 
   return (
-    <div className={`w-full transition-transform ${className} ${isShaking ? "animate-[shake_0.5s_ease-in-out]" : ""}`}>
+    <div
+      className={`w-full transition-transform ${className} ${isShaking ? "animate-[shake_0.5s_ease-in-out]" : ""}`}
+      style={style}
+    >
       <form onSubmit={handleSubmit} className="space-y-3 mb-4">
         <input
           type="password"

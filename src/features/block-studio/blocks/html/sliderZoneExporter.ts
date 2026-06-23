@@ -1,5 +1,6 @@
 import type { HtmlBlock } from "../../../../types/types";
 import { escapeAttribute } from "./escapeHtml";
+import { resolveGuiInlineStyleString } from "./resolveGuiInlineStyles";
 import { transformGuiToTailwind } from "./transformGuiToTailwind";
 
 type CompileBlock = (block: HtmlBlock) => string;
@@ -17,10 +18,12 @@ export function compileSliderZone(block: HtmlBlock, compileBlock: CompileBlock):
   const uniqueId = createSafeId("slider", block.id);
   const functionName = createSafeFunctionName("moveSlider", block.id);
   const classes = escapeAttribute(transformGuiToTailwind(block.styles, block.type));
+  const inlineStyle = resolveGuiInlineStyleString(block.styles);
+  const styleAttribute = inlineStyle ? ` style="${escapeAttribute(inlineStyle)}"` : "";
 
   if (slides.length === 0) {
     return `
-<section id="${uniqueId}-root" class="${classes}" aria-label="콘텐츠 슬라이더">
+<section id="${uniqueId}-root" class="${classes}"${styleAttribute} aria-label="콘텐츠 슬라이더">
   <div class="grid flex-1 place-items-center p-4 text-center text-sm text-slate-500">슬라이드가 없습니다</div>
 </section>`.trim();
   }
@@ -71,7 +74,7 @@ export function compileSliderZone(block: HtmlBlock, compileBlock: CompileBlock):
       : "";
 
   return `
-<section id="${uniqueId}-root" class="${classes}" data-slide-index="0" aria-label="콘텐츠 슬라이더">
+<section id="${uniqueId}-root" class="${classes}"${styleAttribute} data-slide-index="0" aria-label="콘텐츠 슬라이더">
   <div class="slider-viewport grid flex-1" aria-live="polite">${slideHtml}
   </div>${controls}
 </section>`.trim();

@@ -1,13 +1,14 @@
-import { useState, type ReactNode } from "react";
+import { useState, type CSSProperties, type ReactNode } from "react";
 import type { HtmlBlock } from "../../../types/types";
 
 interface SliderPreviewItemProps {
   block: HtmlBlock;
   className: string;
   renderBlock: (block: HtmlBlock) => ReactNode;
+  style?: CSSProperties;
 }
 
-export default function SliderPreviewItem({ block, className, renderBlock }: SliderPreviewItemProps) {
+export default function SliderPreviewItem({ block, className, renderBlock, style }: SliderPreviewItemProps) {
   const slides = (block.children ?? []).filter((child) => child.type === "SLIDE_ITEM");
   const [currentIndex, setCurrentIndex] = useState(0);
   const lastIndex = slides.length - 1;
@@ -15,14 +16,14 @@ export default function SliderPreviewItem({ block, className, renderBlock }: Sli
 
   if (slides.length === 0) {
     return (
-      <section className={className} aria-label="콘텐츠 슬라이더">
+      <section className={className} style={style} aria-label="콘텐츠 슬라이더">
         <div className="grid flex-1 place-items-center p-4 text-center text-sm text-slate-500">슬라이드가 없습니다</div>
       </section>
     );
   }
 
   return (
-    <section className={className} aria-label="콘텐츠 슬라이더">
+    <section className={className} style={style} aria-label="콘텐츠 슬라이더">
       <div className="slider-viewport grid flex-1" aria-live="polite">
         {slides.map((slide, index) => {
           const isActive = index === safeIndex;

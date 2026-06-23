@@ -6,7 +6,9 @@ export interface StyleProps {
   inherit?: boolean;  // '공통으로 적용' 여부 (Phase 3에서 활성화)
   // 아이들이 드롭다운과 체크박스로 선택할 스타일 원자 단위
   textColor?: 'black' | 'gray' | 'red' | 'blue' | 'green';
+  textColorCustom?: string;
   bgColor?: 'none' | 'white' | 'slate' | 'red' | 'blue' | 'green' | 'yellow';
+  bgColorCustom?: string;
   textAlign?: 'left' | 'center' | 'right';
   fontSize?: 'small' | 'normal' | 'large' | 'xlarge';
   fontFamily?: 'default' | 'sans' | 'serif' | 'mono';
@@ -18,6 +20,7 @@ export interface StyleProps {
   rounded?: 'default' | 'none' | 'small' | 'medium' | 'large' | 'full';
   borderWidth?: 'default' | 'none' | 'thin' | 'medium' | 'thick';
   borderColor?: 'default' | 'slate' | 'black' | 'red' | 'blue' | 'green';
+  borderColorCustom?: string;
   paddingSize?: 'default' | 'none' | 'sm' | 'md' | 'lg' | 'xl';
   marginSize?: 'default' | 'none' | 'sm' | 'md' | 'lg' | 'xl';
   sliderHeight?: 'default' | 'sm' | 'md' | 'lg' | 'xl';

@@ -15,7 +15,7 @@ export const passwordZoneDefinition = {
     id: "template-password-zone",
     type: "PASSWORD_ZONE",
     correctAnswer: "12345",
-    styles: { className: "border border-slate-200 rounded-xl p-4 bg-white shadow-sm w-full max-w-md mx-auto" },
+    styles: { className: "p-4 w-full max-w-md mx-auto" },
     defaultChildren: [],
     conditionalChildren: [],
   },

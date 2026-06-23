@@ -13,10 +13,13 @@ function snapshotBlock(block: HtmlBlock): TutorialPropertySnapshot {
     correctAnswer: block.correctAnswer,
     styles: {
       bgColor: block.styles?.bgColor,
+      bgColorCustom: block.styles?.bgColorCustom,
       textColor: block.styles?.textColor,
+      textColorCustom: block.styles?.textColorCustom,
       paddingSize: block.styles?.paddingSize,
       marginSize: block.styles?.marginSize,
       borderColor: block.styles?.borderColor,
+      borderColorCustom: block.styles?.borderColorCustom,
       borderWidth: block.styles?.borderWidth,
       shadow: block.styles?.shadow,
       sliderHeight: block.styles?.sliderHeight,

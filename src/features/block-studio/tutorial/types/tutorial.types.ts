@@ -18,7 +18,8 @@ export type TutorialPropertySnapshot = {
   src?: string;
   link?: string;
   correctAnswer?: string;
-  styles: { [Key in TutorialTrackedStyleKey]?: StyleProps[Key] };
+  styles: { [Key in TutorialTrackedStyleKey]?: StyleProps[Key] } &
+    Pick<StyleProps, "bgColorCustom" | "textColorCustom" | "borderColorCustom">;
 };
 
 export interface TutorialBaseline {

@@ -9,7 +9,7 @@ export const cardDefinition = {
   template: {
     id: "template-card",
     type: "CARD",
-    styles: { className: "p-5 bg-white border border-slate-200 rounded-xl shadow-sm text-slate-800" },
+    styles: { className: "p-5 text-slate-800" },
     children: [],
   },
   palette: { label: "카드 만들기", icon: "CARD", order: 30 },
