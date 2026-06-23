@@ -1,573 +1,161 @@
-TODO: Tutorial Mission Bar에 수동 완료 버튼을 추가한다.
+# 튜토리얼 트랙 Intro Modal 계획 요청
+
+아직 구현하지 말고, 먼저 구현 계획만 작성해주세요.
 
 ## 배경
 
-현재 Tutorial Mission은 조건을 만족하는 순간 자동으로 완료 처리된다.
+현재 Block Studio에는 여러 튜토리얼 트랙이 있습니다.
 
-현재 흐름:
+* 기본 튜토리얼: 자기소개 페이지 만들기
+* 홍보 튜토리얼: 홍보 페이지 만들기
+* 초대장 튜토리얼: 초대장 페이지 만들기
 
-```text
-미션 조건 충족
-→ completed ledger에 즉시 기록
-→ success feedback 표시
-→ 다음 미션으로 진행
-```
+최근 튜토리얼의 `description`, `comment`, `condition`을 정리했고, 비전공자 성인 사용자가 스스로 튜토리얼을 완료할 수 있는 것도 확인했습니다.
 
-이 방식은 다음과 같은 미션에는 적절하다.
-
-```text
-- 블록 추가하기
-- Preview 열기
-- Code View 열기
-- LIST 만들기
-- GRID 추가하기
-```
-
-하지만 content/property 수정 미션에는 다소 부적절할 수 있다.
-
-예:
-
-```text
-- 제목을 나만의 문장으로 바꿔 보세요
-- 본문을 충분히 작성해 보세요
-- 이미지 주소를 바꿔 보세요
-- FAQ 답변을 수정해 보세요
-- 비밀 메시지를 수정해 보세요
-```
-
-이런 미션은 조건상 `content !== baseline`이 되는 순간 완료되지만, 사용자는 아직 충분히 내용을 다듬지 않았을 수 있다.
-
-따라서 미션별로 다음 두 방식을 구분할 필요가 있다.
-
-```text
-1. 즉시 완료형 미션
-   - 조건을 만족하면 기존처럼 자동 완료
-
-2. 수동 완료형 미션
-   - 조건을 만족해도 바로 완료하지 않음
-   - Tutorial Bar에 “완료” 버튼 표시
-   - 사용자가 “완료” 버튼을 눌렀을 때 조건을 다시 검사
-   - 조건이 여전히 만족되면 완료 처리
-   - 조건이 만족되지 않으면 안내 메시지 표시
-```
+이제 다음 개선으로, 각 튜토리얼 트랙을 시작할 때 사용자가 **“이 튜토리얼을 따라가면 무엇을 만들게 되는지”** 미리 볼 수 있도록 하고 싶습니다.
 
 ## 목표
 
-`TutorialMission` 타입에 `instantSuccess` 필드를 추가한다.
-
-예상 타입:
-
-```ts
-type TutorialMission = {
-  id: string;
-  title: string;
-  description: string;
-  condition: TutorialCondition;
-  commentOnSuccess?: string;
-  instantSuccess?: boolean;
-};
-```
-
-정책:
-
-```text
-instantSuccess가 true이면:
-- 기존 방식 유지
-- 조건이 만족되는 즉시 완료 처리
-
-instantSuccess가 false이면:
-- 조건이 만족되어도 즉시 완료하지 않음
-- Tutorial Mission Bar에 “완료” 버튼 표시
-- 사용자가 “완료” 버튼을 눌렀을 때 완료 검사를 수행
-- 조건이 만족되면 완료 처리
-- 조건이 만족되지 않으면 아직 완료 조건을 만족하지 않았다는 안내를 표시
-```
-
-기본값 정책은 신중하게 정한다.
-
-권장:
-
-```text
-instantSuccess 기본값은 true로 처리한다.
-```
-
-이유:
-
-* 기존 미션 데이터의 동작을 보존할 수 있음
-* 모든 기존 mission data에 필드를 한 번에 추가하지 않아도 회귀 위험이 낮음
-* 필요한 content/property 미션에만 `instantSuccess: false`를 명시하면 됨
-
-## 적용 대상
-
-### instantSuccess: true 권장
-
-조건을 만족하는 순간 완료해도 자연스러운 미션:
-
-```text
-- 블록 추가 미션
-- 구조 생성 미션
-- Preview 탭 확인
-- Code View 탭 확인
-- LIST/LIST_ITEM 구조 생성
-- GRID 추가
-- TOGGLE 추가
-- PASSWORD_ZONE 추가
-- HR 추가
-```
-
-예:
+각 튜토리얼 트랙 시작 시, **“이 튜토리얼에서 만들 것” Intro Modal**을 표시합니다.
 
-```ts
-{
-  id: "add-container",
-  title: "소개 구역을 만들어 보세요",
-  condition: { type: "hasAddedBlock", blockType: "CONTAINER" },
-  instantSuccess: true,
-}
-```
+Modal 안에는 해당 튜토리얼을 따라가면 만들 수 있는 완성 예시 페이지를 보여줍니다.
 
-`instantSuccess` 기본값이 true라면 생략 가능하다.
+예시 페이지는 단순 이미지나 별도 HTML이 아니라, 가능하면 **실제 Block Studio의 블록 데이터 구조**로 만든 뒤 기존 Preview 렌더링 로직을 재사용해 보여주는 방향을 우선 검토해주세요.
 
-### instantSuccess: false 권장
+## 핵심 요구사항
 
-사용자가 내용을 충분히 다듬은 뒤 완료할 수 있어야 하는 미션:
+1. 각 튜토리얼 트랙별로 완성 예시 데이터를 둘 수 있어야 합니다.
 
-```text
-- 제목 content 수정
-- 본문 content 수정
-- 이미지 src 수정
-- 링크 주소 입력
-- 카드 내용 수정
-- FAQ 답변 수정
-- Password Zone correctAnswer 수정
-- Password Zone conditionalChildren 내용 수정
-- 배경색 변경
-- padding/margin/shadow 등 스타일 조정
-```
+   * 기본 튜토리얼: 자기소개 페이지 예시
+   * 홍보 튜토리얼: 홍보 페이지 예시
+   * 초대장 튜토리얼: 초대장 페이지 예시
 
-예:
+2. Modal에는 다음 내용을 포함하는 것을 검토해주세요.
 
-```ts
-{
-  id: "edit-intro-title",
-  title: "제목을 나만의 문장으로 바꿔 보세요",
-  description: "제목을 “안녕하세요, 저는 ○○입니다”처럼 나를 소개하는 문장으로 바꿔 보세요.",
-  condition: {
-    type: "hasContentChanged",
-    blockType: "HEADING",
-  },
-  commentOnSuccess: "좋습니다. 화면에 보이는 글자는 HTML 요소의 내용으로 저장됩니다.",
-  instantSuccess: false,
-}
-```
+   * 제목: `이 튜토리얼에서 만들 것`
+   * 트랙별 짧은 설명
+   * 완성 예시 미리보기
+   * 이번 튜토리얼에서 배울 내용 3~4개
+   * `시작하기` 버튼
 
-## UI 요구사항
+3. 완성 예시 미리보기는 읽기 전용이어야 합니다.
 
-`instantSuccess: false`인 미션에서는 TutorialMissionBar에 “완료” 버튼을 표시한다.
+   * 사용자가 Modal 안에서 블록을 선택하거나 수정할 수 없어야 합니다.
+   * 실제 편집 대상 document/editor state와 혼동되지 않아야 합니다.
 
-버튼 문구 후보:
+4. 기존 블록 추가/이동/수정/중첩 처리 로직은 건드리지 않는 방향을 우선해주세요.
 
-```text
-완료
-```
+5. 가능하면 기존 PreviewRenderer 또는 미리보기 렌더링 로직을 재사용해주세요.
 
-또는 조금 더 명확하게:
+6. Modal은 튜토리얼 트랙 시작 시 한 번 표시하는 것을 기본으로 검토해주세요.
 
-```text
-완료 확인
-```
+   * 사용자가 `시작하기` 버튼을 누르면 Modal이 닫히고 튜토리얼이 시작됩니다.
+   * 가능하다면 튜토리얼 진행 중 `완성 예시 다시 보기` 버튼으로 다시 열 수 있는 구조도 함께 검토해주세요.
+   * 단, 재열람 기능이 구현 부담을 키운다면 1차 구현에서는 제외해도 됩니다.
 
-권장 문구:
+7. 예시 데이터는 해당 튜토리얼 mission에서 실제로 사용하는 블록만 포함해야 합니다.
 
-```text
-완료
-```
+   * 기본 튜토리얼 예시에 Toggle, Password Zone 같은 고급 블록이 나오면 안 됩니다.
+   * 홍보 튜토리얼 예시에는 첫인상 구역, 장점 카드, FAQ 등 실제 미션 흐름과 맞는 구조를 사용합니다.
+   * 초대장 튜토리얼 예시에는 초대장 구역, 행사 안내, Toggle, Password Zone 등 실제 미션 흐름과 맞는 구조를 사용합니다.
 
-UI 동작:
+## 검토할 내용
 
-```text
-조건이 아직 만족되지 않은 상태:
-- “완료” 버튼은 표시된다.
-- 사용자가 누르면 조건을 검사한다.
-- 조건이 false이면 짧은 안내 메시지를 보여준다.
+아래 항목을 중심으로 계획을 작성해주세요.
 
-조건이 만족된 상태:
-- “완료” 버튼을 누르면 완료 처리된다.
-- success feedback으로 이동한다.
-```
+1. 현재 코드 구조에서 튜토리얼 트랙을 구분하는 방식이 있는지
 
-버튼을 조건 만족 전에는 disabled 처리할 수도 있지만, v1에서는 비추천한다.
+2. Intro Modal을 어느 컴포넌트 계층에 두는 것이 적절한지
 
-이유:
+3. `TutorialTrackIntroModal` 같은 별도 컴포넌트를 만드는 것이 적절한지
 
-* 사용자가 왜 버튼이 비활성화되어 있는지 모를 수 있음
-* 클릭 후 “아직 제목을 바꾸지 않았어요” 같은 안내가 학습적으로 더 좋음
+4. track별 metadata를 어떻게 구성하는 것이 좋은지
 
-권장:
+   예:
 
-```text
-완료 버튼은 항상 활성화한다.
-조건 미충족 시 안내 메시지를 표시한다.
-```
+   ```ts
+   type TutorialTrackMeta = {
+     id: string;
+     title: string;
+     description: string;
+     learningPoints: string[];
+     previewBlocks: Block[];
+   };
+   ```
 
-조건 미충족 안내 예시:
+5. `previewBlocks` 데이터를 어디에 두는 것이 유지보수에 좋은지
 
-```text
-아직 미션 조건이 완료되지 않았어요. 안내를 따라 한 번 더 확인해 주세요.
-```
+   * 기존 tutorial mission 파일과 함께 둘지
+   * 별도 `tutorialPreviews.ts` 같은 파일로 분리할지
+   * track metadata로 통합할지
 
-가능하면 mission별 custom failure message는 v1에서는 도입하지 않는다.
-필요하면 나중에 `commentOnIncomplete` 같은 필드로 확장한다.
+6. 기존 PreviewRenderer 또는 미리보기 렌더링 로직을 Modal 안에서 재사용할 수 있는지
 
-## 상태/로직 설계
+7. Modal 안에서 preview를 읽기 전용으로 렌더링할 방법
 
-현재 evaluator는 조건을 만족한 모든 mission id를 찾아 completed ledger에 합치는 구조일 가능성이 있다.
+8. Modal 크기, 스크롤, 반응형 처리 방식
 
-이때 `instantSuccess: false` 미션은 자동 완료 대상에서 제외해야 한다.
+9. DaisyUI modal 사용 가능 여부
 
-권장 흐름:
+10. 예시 미리보기가 너무 커질 경우의 UX 처리
 
-### 자동 평가 시
+    * 축소된 preview
+    * 내부 스크롤
+    * 일부만 보여주고 “이런 페이지를 만들게 됩니다” 정도로 처리
 
-```text
-evaluateTutorialMissions(...)
-→ satisfiedMissionIds 계산
-→ 각 mission 확인
-   - instantSuccess !== false 이면 자동 완료 후보
-   - instantSuccess === false 이면 자동 완료하지 않음
-→ 자동 완료 후보만 completed ledger에 합침
-```
+11. 튜토리얼 시작 시 Modal을 언제 띄우는 것이 좋은지
 
-즉:
+    * 트랙 선택 직후
+    * 첫 mission 시작 직전
+    * 튜토리얼 상태 초기화 직후
 
-```ts
-const autoCompletableMissionIds = satisfiedMissionIds.filter((id) => {
-  const mission = getMissionById(id);
-  return mission.instantSuccess !== false;
-});
-```
+12. 사용자가 Modal을 닫은 뒤에도 튜토리얼 상태가 올바르게 유지되는지
 
-### 수동 완료 버튼 클릭 시
+13. 새로고침, 트랙 재시작, 다른 트랙 전환 시 Modal 표시 정책
 
-```text
-사용자가 activeMission의 “완료” 버튼 클릭
-→ activeMission condition을 현재 blocks/uiSignals 기준으로 다시 평가
-→ true이면 completed ledger에 activeMission.id 추가
-→ success feedback 표시
-→ false이면 incomplete message 표시
-```
+14. 구현 난이도와 위험 요소
 
-주의:
+15. 추천 구현 순서
 
-* 버튼 클릭 시 과거에 계산된 satisfied state만 믿지 말고 현재 상태로 다시 검사하는 편이 안전함
-* 완료 처리 후 success feedback 기존 구조를 그대로 사용
-* completed ledger latch 정책 유지
-* skip/hide/reopen 기존 동작 유지
+## UX 문구 방향
 
-## active mission 처리
+예시 페이지가 사용자를 압박하지 않도록 문구를 제안해주세요.
 
-수동 완료형 미션이 active인 경우:
+예를 들어 다음 방향이 좋습니다.
 
-```text
-조건이 이미 만족되어도 active mission은 계속 표시된다.
-사용자가 “완료” 버튼을 눌러야 success feedback으로 넘어간다.
-```
+* “아래는 이 튜토리얼을 따라가면 만들 수 있는 예시입니다.”
+* “문구와 이미지는 자유롭게 바꿔도 됩니다.”
+* “예시와 완전히 똑같이 만들 필요는 없습니다.”
 
-이는 의도된 동작이다.
+## 우선순위
 
-예:
+이 기능은 가이드 overlay보다 먼저 검토하려고 합니다.
 
-```text
-사용자가 제목을 조금 수정함
-→ condition은 true
-→ 하지만 바로 다음 미션으로 넘어가지 않음
-→ 사용자가 제목을 더 다듬음
-→ 완료 버튼 클릭
-→ 완료 처리
-```
+이유는 다음과 같습니다.
 
-## 여러 미션 동시 완료 처리
+* 현재 튜토리얼은 비전공자도 완료 가능한 수준까지 개선되었습니다.
+* 따라서 다음 개선은 막힘 해결보다, 시작 전 목표 인식과 동기부여를 강화하는 쪽이 적절해 보입니다.
+* 완성 예시를 보여주면 사용자가 각 mission의 의미를 더 쉽게 이해할 수 있습니다.
 
-현재 구조에서 템플릿 삽입이나 여러 property 변경으로 여러 미션이 동시에 완료될 수 있다.
+## 제약
 
-정책:
+* 아직 구현하지 말고 계획만 작성해주세요.
+* 기존 editor/block handling 로직 변경은 피해주세요.
+* 예시 페이지는 실제 편집 대상이 아니라 읽기 전용 preview여야 합니다.
+* 실제 튜토리얼 mission에서 만들 수 없는 블록이나 구조를 예시에 넣지 않도록 해주세요.
+* 구현 범위가 커진다면 1차 구현과 후속 개선으로 나누어 제안해주세요.
 
-```text
-- instantSuccess true 미션은 기존처럼 자동 완료 가능
-- instantSuccess false 미션은 자동 완료하지 않음
-- 현재 active mission이 instantSuccess false이면 완료 버튼을 눌러야 완료
-- 후속 수동 미션이 이미 조건을 만족하고 있어도, 해당 미션이 active가 된 뒤 완료 버튼을 눌러야 완료
-```
+## 산출물
 
-이 정책은 튜토리얼이 너무 빨리 지나가는 것을 막는다.
+다음 형식으로 답변해주세요.
 
-## success feedback과의 관계
-
-수동 완료 버튼으로 완료된 미션도 기존 success feedback 흐름을 그대로 사용한다.
-
-```text
-완료 버튼 클릭
-→ condition true
-→ completed ledger에 mission id 추가
-→ success feedback 표시
-→ commentOnSuccess 표시
-→ “다음 미션” 클릭
-→ 다음 미션 표시
-```
-
-조건 미충족 시에는 success feedback으로 가지 않는다.
-
-## skip/hide/reopen과의 관계
-
-### skip
-
-* 일반 미션 상태에서 기존처럼 동작한다.
-* instantSuccess false 미션에서도 skip 가능하다.
-* skip은 조건 검사 없이 현재 미션을 skipped ledger에 추가한다.
-
-### hide
-
-* hide는 기존처럼 Mission Bar를 숨긴다.
-* hidden 상태에서도 progress/evaluator는 유지된다.
-* 수동 완료형 미션은 hidden 상태에서 자동 완료되지 않아야 한다.
-
-### reopen
-
-* reopen 시 active mission이 그대로 표시된다.
-* 수동 완료형 미션이 이미 조건을 만족한 상태여도 “완료” 버튼을 눌러야 완료된다.
-
-## mission data 조정
-
-기존 튜토리얼 트랙의 미션 중 content/property/style 수정 미션에는 `instantSuccess: false`를 추가한다.
-
-대상 후보:
-
-### 소개 페이지 트랙
-
-```text
-- 제목 문구 바꾸기
-- 본문 내용 수정
-- 이미지 주소 바꾸기
-- 안쪽 여백 조절
-- 카드 안 제목/내용 수정
-- 목록 항목 수정이 별도 condition으로 있다면 해당 미션
-- 배경색 바꾸기
-- 그림자 추가
-- 링크 주소 입력
-```
-
-### 홍보 페이지 트랙
-
-```text
-- 제목을 홍보 문구로 수정하기
-- 소개 문장 수정하기
-- 이미지 주소 바꾸기
-- 링크 주소 입력하기
-- 카드 내용을 수정하기
-- 카드 스타일 바꾸기
-- Toggle/FAQ 답변 수정하기
-```
-
-### 초대장 페이지 트랙
-
-```text
-- 제목을 초대 문구로 수정하기
-- 초대 문장 수정하기
-- 이미지 주소 바꾸기
-- 초대장 배경색 바꾸기
-- 초대장 안쪽 여백 조절하기
-- Toggle 안내 문구 수정하기
-- 비밀번호 정답 정하기
-- 비밀 메시지 수정하기
-- 링크 주소 입력하기
-```
-
-구조 추가형 미션은 기본값 true를 사용하거나 `instantSuccess`를 생략한다.
-
-## 파일 변경 후보
-
-실제 repo 구조를 확인한 뒤 조정하되, 대략 다음 파일이 관련될 가능성이 있다.
-
-```text
-src/features/block-studio/tutorial/types/tutorial.types.ts
-src/features/block-studio/tutorial/data/tutorialTracks.ts
-src/features/block-studio/tutorial/data/tutorialMissions.ts
-src/features/block-studio/tutorial/evaluator/evaluateTutorialMissions.ts
-src/features/block-studio/tutorial/hooks/useTutorialProgress.ts
-src/features/block-studio/tutorial/components/TutorialMissionBar.tsx
-src/features/block-studio/tutorial/components/TutorialOverlay.tsx
-```
-
-로직 변경은 tutorial feature 내부로 제한한다.
-
-가능하면 다음 파일은 변경하지 않는다.
-
-```text
-HtmlBlock model
-blockDefinitions
-DnD 관련 파일
-StylePanel input handler
-Preview renderer
-Code View
-Export compiler
-Learning Templates
-Canvas renderer
-```
-
-단, mission data 파일은 당연히 수정 가능하다.
-
-## 구현 단계 제안
-
-### TUT-MANUAL-1: 타입 확장
-
-* `TutorialMission`에 `instantSuccess?: boolean` 추가
-* 기본값 정책 문서화
-* 기존 mission data가 필드 없이도 기존처럼 동작하도록 보장
-
-### TUT-MANUAL-2: 자동 완료 필터링
-
-* evaluator 또는 progress hook에서 자동 완료 대상 mission을 필터링
-* `instantSuccess === false` 미션은 조건을 만족해도 자동 completed ledger에 넣지 않음
-* 기존 instant 미션은 회귀 없이 동작
-
-### TUT-MANUAL-3: 수동 완료 action 추가
-
-* `useTutorialProgress`에 `completeActiveMissionManually` 또는 유사 action 추가
-* active mission condition을 현재 상태 기준으로 재검사
-* true이면 completed ledger + success feedback
-* false이면 incomplete message state 설정
-
-### TUT-MANUAL-4: Mission Bar UI 추가
-
-* active mission이 `instantSuccess === false`이면 “완료” 버튼 표시
-* 일반 instant mission에서는 기존 UI 유지
-* incomplete message 표시
-* success feedback UI는 기존 흐름 재사용
-
-### TUT-MANUAL-5: mission data 조정
-
-* content/property/style 수정 미션에 `instantSuccess: false` 추가
-* 구조 추가형 미션은 생략 또는 true 유지
-* 소개/홍보/초대장 트랙 모두 검토
-
-### TUT-MANUAL-6: 회귀 검증
-
-* 자동 완료형 미션 정상
-* 수동 완료형 미션은 조건 만족 후에도 바로 넘어가지 않음
-* 완료 버튼으로만 완료됨
-* 조건 미충족 시 안내 표시
-* success feedback 정상
-* skip/hide/reopen 정상
-
-## 수동 검증 체크리스트
-
-### 자동 완료형
-
-* 일반 구역 추가 시 기존처럼 즉시 성공 feedback 표시
-* 이미지 추가 시 즉시 성공 feedback 표시
-* LIST 추가 시 즉시 성공 feedback 표시
-* Preview / Code View tab 확인 미션 즉시 성공 feedback 표시
-
-### 수동 완료형
-
-* 제목 수정 미션 진입
-* 제목을 아직 수정하지 않은 상태에서 완료 버튼 클릭
-
-  * incomplete message 표시
-  * completed ledger에 추가되지 않음
-* 제목을 조금 수정
-
-  * 즉시 다음 미션으로 넘어가지 않음
-  * active mission 유지
-* 완료 버튼 클릭
-
-  * success feedback 표시
-  * commentOnSuccess 표시
-* “다음 미션” 클릭
-
-  * 다음 미션 표시
-
-### property/style 미션
-
-* 이미지 src 수정 후 자동 완료되지 않음
-* 링크 주소 입력 후 자동 완료되지 않음
-* 배경색 변경 후 자동 완료되지 않음
-* padding 변경 후 자동 완료되지 않음
-* 완료 버튼 클릭 후에만 완료됨
-
-### skip/hide/reopen
-
-* 수동 완료형 미션에서 skip 가능
-* 수동 완료형 미션에서 hide 가능
-* reopen 시 같은 미션 표시
-* 이미 조건을 만족했더라도 reopen 후 자동 완료되지 않음
-* 완료 버튼 클릭 시 완료됨
-
-### 동시 완료
-
-* 어떤 행동으로 여러 조건이 동시에 만족되어도, 수동 완료형 미션은 자동 완료되지 않음
-* instantSuccess true 미션만 자동 완료됨
-* active 수동 미션은 버튼 클릭 필요
-
-### 회귀
-
-* DnD 정상
-* StylePanel content/style 수정 정상
-* Preview 정상
-* Code View 정상
-* Export 정상
-* Templates 일반 모드 정상
-* Tutorial mode에서 Templates 비활성화 유지
-
-## 자동 검증
-
-가능하면 다음 명령을 실행한다.
-
-```powershell
-npx.cmd tsc --noEmit
-npm.cmd run build
-npm.cmd run lint
-git diff --check
-```
-
-필요 시 changed-file lint를 실행한다.
-
-## 구현 후 보고 형식
-
-구현 후 다음을 보고한다.
-
-```text
-변경 요약:
-- 수정 파일:
-- 신규 파일:
-- TutorialMission 타입 변경:
-- instantSuccess 기본값 정책:
-- 자동 완료 필터링 방식:
-- 수동 완료 action:
-- incomplete message 처리:
-- mission data 조정 내용:
-- 실행한 검증:
-- 수동 테스트 결과:
-- 남은 위험:
-```
-
-## 명시적 제외 범위
-
-이번 TODO에서는 다음을 제외한다.
-
-```text
-- mission별 custom incomplete message
-- 자동 timeout
-- success feedback queue
-- localStorage
-- 계정 저장
-- 튜토리얼 저장/복원
-- 튜토리얼 전용 block mutation
-- StylePanel handler 변경
-- DnD 변경
-- HtmlBlock 모델 변경
-- blockDefinitions 변경
-- Preview / Code View / Export 변경
-- Learning Templates 구조 변경
-- unrelated repository 변경
-```
+1. 현재 구조 파악 요약
+2. 추천 설계
+3. 필요한 파일/컴포넌트/타입 변경 목록
+4. preview 데이터 관리 방식
+5. Modal 표시 흐름
+6. 읽기 전용 preview 렌더링 방식
+7. UX 문구 초안
+8. 구현 순서
+9. 위험 요소와 대응 방안
+10. 구현 전에 확인이 필요한 질문

@@ -66,18 +66,18 @@ export default function TutorialMissionBar({
           </h2>
         </div>
         {isShowingSuccess ? (
-          <p className="mt-0.5 line-clamp-2 text-xs leading-relaxed text-emerald-100">
+          <p className="mt-0.5 line-clamp-2 leading-relaxed text-emerald-100">
             {successMission.commentOnSuccess ?? defaultSuccessComment}
           </p>
         ) : (
           <div>
-            <p className="mt-0.5 truncate text-sm text-slate-300 @max-[420px]:hidden">
+            <p className="mt-0.5 truncate text-slate-300 @max-[420px]:hidden">
               {isShowingComplete
                 ? `${totalCount}개의 미션을 모두 처리했습니다.`
                 : mission?.description}
             </p>
             {!isShowingComplete && mission?.comment && (
-              <p className="text-xs text-slate-500 @max-[420px]:hidden">{mission.comment}</p>
+              <p className="text-sm text-slate-300 @max-[420px]:hidden">{mission.comment}</p>
             )}
             {!isShowingComplete && incompleteMessage && (
               <p className="mt-1 text-xs font-bold text-amber-300" role="alert">

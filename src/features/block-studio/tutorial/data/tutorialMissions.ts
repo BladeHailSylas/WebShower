@@ -431,6 +431,7 @@ export const invitationTutorialMissions = [
     title: "이미지 주소를 바꿔 보세요",
     description:
       "이미지 블록의 주소를 초대장 분위기와 어울리는 이미지 URL로 바꿔 보세요.",
+    comment: "이 주소도 사용해보세요: https://loremflickr.com/400/200",
     condition: { type: "hasAttributeChanged", blockType: "IMAGE", field: "src" },
     commentOnSuccess: "img 태그는 src 속성에 적힌 주소에서 이미지를 불러옵니다.",
   },
