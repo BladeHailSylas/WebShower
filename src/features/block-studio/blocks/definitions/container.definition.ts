@@ -1,5 +1,10 @@
 import type { BlockDefinition } from "../types/blockDefinition.types";
-import { commonStyleFields, marginSizeField, paddingSizeField } from "./editableFieldPresets";
+import {
+  commonStyleFields,
+  containerNameField,
+  marginSizeField,
+  paddingSizeField,
+} from "./editableFieldPresets";
 
 export const containerDefinition = {
   type: "CONTAINER",
@@ -9,6 +14,7 @@ export const containerDefinition = {
   template: {
     id: "template-container",
     type: "CONTAINER",
+    containerName: "",
     styles: { className: "mb-2 text-slate-800 w-full" },
     children: [],
   },
@@ -22,7 +28,7 @@ export const containerDefinition = {
       sortable: "vertical",
     },
   ],
-  editableFields: [...commonStyleFields, paddingSizeField, marginSizeField],
+  editableFields: [containerNameField, ...commonStyleFields, paddingSizeField, marginSizeField],
   dropPolicy: { acceptsChildren: true, childFields: ["children"], allowRoot: true },
   dragPreview: { label: "일반 구역" },
   htmlSchema: { tag: "div", childField: "children" },

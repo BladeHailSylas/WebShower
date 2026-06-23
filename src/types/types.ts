@@ -29,6 +29,7 @@ export interface HtmlBlock {
   id: string;
   type: BlockType;
   content?: string;
+  containerName?: string;
   src?: string;
   link?: string;
   correctAnswer?: string; // 🌟 비밀번호 매크로 블록 정답 필드

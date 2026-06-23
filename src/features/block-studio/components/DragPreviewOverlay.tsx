@@ -9,6 +9,10 @@ interface DragPreviewOverlayProps {
 
 function getPreviewLabel(block: HtmlBlock): string {
   const definition = getBlockDefinition(block.type);
+  if (block.type === "CONTAINER" && block.containerName?.trim()) {
+    return `${definition.dragPreview.label}: ${block.containerName.trim().slice(0, 10)}`;
+  }
+
   const field = definition.dragPreview.contentField;
   const value = field ? block[field] : undefined;
   return value ? `${definition.dragPreview.label}: ${String(value).slice(0, 10)}` : definition.dragPreview.label;

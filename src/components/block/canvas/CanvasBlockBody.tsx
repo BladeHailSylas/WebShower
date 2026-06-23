@@ -26,6 +26,9 @@ function getBlockLabel(block: HtmlBlock): string | null {
   if (block.type === "A") return `링크: ${block.content || "(글 없음)"} (${block.link || "링크 없음"})`;
   if (block.type === "GRID_ZONE") return `${block.styles?.gridCols ?? 2}칸 바둑판 구역`;
   if (block.type === "SPACER") return null;
+  if (block.type === "CONTAINER" && block.containerName?.trim()) {
+    return `${definition.label}: ${block.containerName.trim()}`;
+  }
 
   return definition.label;
 }

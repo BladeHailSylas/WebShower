@@ -1,7 +1,7 @@
 import type { HtmlBlock, StyleProps } from "../../../../types/types";
 
 export type EditableFieldPath =
-  | keyof Pick<HtmlBlock, "content" | "src" | "link" | "correctAnswer">
+  | keyof Pick<HtmlBlock, "content" | "containerName" | "src" | "link" | "correctAnswer">
   | `styles.${keyof StyleProps}`;
 
 export type EditableFieldControl = "select" | "checkbox" | "text" | "url";

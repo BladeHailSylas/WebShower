@@ -15,7 +15,7 @@ export const linkDefinition = {
   template: {
     id: "template-link",
     type: "A",
-    content: "",
+    content: "링크",
     link: "",
     styles: { className: "mb-2 text-slate-800 underline" },
   },

@@ -29,6 +29,12 @@ export interface TutorialBaseline {
 export type TutorialCondition =
   | { type: "hasAddedBlock"; blockType?: BlockType; min?: number }
   | { type: "hasAddedNestedBlock"; parentType: BlockType; childType: BlockType }
+  | { type: "hasContainerNamed"; containerName: string }
+  | {
+      type: "hasNestedBlockInNamedContainer";
+      containerName: string;
+      childType: BlockType;
+    }
   | {
       type: "hasStructure";
       parentType: BlockType;
@@ -50,6 +56,11 @@ export type TutorialCondition =
       field: "correctAnswer";
     }
   | { type: "hasStyleChanged"; blockType: BlockType; styleKey: TutorialTrackedStyleKey }
+  | {
+      type: "hasStyleChangedInNamedContainer";
+      containerName: string;
+      styleKey: TutorialTrackedStyleKey;
+    }
   | { type: "uiSignal"; signal: TutorialUiSignal };
 
 export interface TutorialMission {

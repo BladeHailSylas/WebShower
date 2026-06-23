@@ -14,6 +14,14 @@ export const paragraphContentField: EditableFieldDefinition = {
   section: "content",
 };
 
+export const containerNameField: EditableFieldDefinition = {
+  path: "containerName",
+  label: "구역 이름",
+  control: "text",
+  section: "content",
+  defaultValue: "",
+};
+
 export const linkTextField: EditableFieldDefinition = {
   path: "content",
   label: "링크 글자",

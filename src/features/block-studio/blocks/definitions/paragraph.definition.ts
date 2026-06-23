@@ -14,7 +14,7 @@ export const paragraphDefinition = {
   template: {
     id: "template-paragraph",
     type: "P",
-    content: "",
+    content: "문단",
     styles: { className: "mb-2 text-slate-800" },
   },
   palette: { label: "문단 넣기 (P)", icon: "P", order: 20 },

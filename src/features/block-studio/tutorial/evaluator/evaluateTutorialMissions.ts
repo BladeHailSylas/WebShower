@@ -9,6 +9,18 @@ function isAdded(blockId: string, initialBlockIds: ReadonlySet<string>) {
   return !initialBlockIds.has(blockId);
 }
 
+function hasContainerName(block: { containerName?: string }, containerName: string) {
+  return block.containerName?.trim() === containerName.trim();
+}
+
+function getAddedNamedContainers(containerName: string, context: TutorialEvaluationContext) {
+  return (context.tree.blocksByType.get("CONTAINER") ?? []).filter(
+    (block) =>
+      isAdded(block.id, context.baseline.initialBlockIds) &&
+      hasContainerName(block, containerName),
+  );
+}
+
 function hasDescendantOfType(
   roots: readonly { id: string; type: string }[],
   childType: string,
@@ -54,6 +66,16 @@ export function evaluateTutorialMission(
           ),
       );
     }
+    case "hasContainerNamed":
+      return getAddedNamedContainers(condition.containerName, context).length > 0;
+    case "hasNestedBlockInNamedContainer":
+      return getAddedNamedContainers(condition.containerName, context).some((container) =>
+        hasDescendantOfType(
+          context.tree.directChildrenByParentId.get(container.id) ?? [],
+          condition.childType,
+          context,
+        ),
+      );
     case "hasStructure": {
       const parents = context.tree.blocksByType.get(condition.parentType) ?? [];
       return parents.some((parent) => {
@@ -90,6 +112,10 @@ export function evaluateTutorialMission(
       );
     case "hasStyleChanged":
       return (context.tree.blocksByType.get(condition.blockType) ?? []).some((block) =>
+        hasStyleChanged(block, baseline.initialBlockById.get(block.id), condition.styleKey),
+      );
+    case "hasStyleChangedInNamedContainer":
+      return getAddedNamedContainers(condition.containerName, context).some((block) =>
         hasStyleChanged(block, baseline.initialBlockById.get(block.id), condition.styleKey),
       );
     case "uiSignal":

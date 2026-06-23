@@ -14,7 +14,7 @@ export const headingDefinition = {
   template: {
     id: "template-heading",
     type: "H1",
-    content: "",
+    content: "제목",
     styles: { className: "mb-2 text-slate-800 text-2xl font-bold" },
   },
   palette: { label: "제목 넣기 (H1)", icon: "H1", order: 10 },
