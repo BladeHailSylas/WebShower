@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { HtmlBlock } from "../../../types/types";
+import LearningTemplateExportPanel from "../../../features/block-studio/templates/components/LearningTemplateExportPanel";
 import CodeViewPanel from "./CodeViewPanel";
 import PreviewBlockRenderer from "./PreviewBlockRenderer";
 import QrExportPanel from "./QrExportPanel";
@@ -70,6 +71,7 @@ export default function BlockRenderer({ blocks, onTabViewed }: BlockRendererProp
       </div>
 
       <QrExportPanel blocks={blocks} />
+      <LearningTemplateExportPanel blocks={blocks} />
     </div>
   );
 }
