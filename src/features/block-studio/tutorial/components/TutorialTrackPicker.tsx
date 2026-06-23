@@ -58,7 +58,7 @@ export default function TutorialTrackPicker({
               className="shrink-0 rounded-lg bg-emerald-400 px-3 py-2 text-[11px] font-black text-emerald-950 transition-colors hover:bg-emerald-300"
               onClick={() => onStartTrack(track.id)}
             >
-              시작하기
+              더보기
             </button>
           </article>
         ))}
