@@ -5,6 +5,7 @@ export const tutorialMissions = [
     id: "add-intro-container",
     title: "소개 구역을 만들어 보세요",
     description: "왼쪽 블록 목록에서 일반 구역을 추가해 보세요.",
+    comment: "블록을 추가하려면 원하는 블록을 중앙으로 끌어오면 된답니다.",
     condition: { type: "hasAddedBlock", blockType: "CONTAINER" },
     commentOnSuccess: "구역은 HTML에서 div처럼 여러 요소를 묶는 역할을 합니다.",
   },
@@ -13,7 +14,7 @@ export const tutorialMissions = [
     instantSuccess: false,
     title: "구역 이름을 정해 보세요",
     description: "방금 만든 일반 구역의 이름을 ‘소개 구역’으로 바꿔 보세요.",
-    comment: "구역 블록의 파란 단추를 누르면 스타일 창에서 구역 이름을 입력할 수 있어요.",
+    comment: "구역 블록의 파란 단추를 누르면 구역 이름을 입력할 수 있는 창이 나옵니다.",
     condition: { type: "hasContainerNamed", containerName: "소개 구역" },
     commentOnSuccess: "이제 튜토리얼은 이름이 붙은 소개 구역을 기준으로 다음 작업을 확인합니다.",
   },
@@ -49,6 +50,7 @@ export const tutorialMissions = [
     title: "나를 소개하는 글을 써 보세요",
     description:
       "문단 내용을 내가 좋아하는 것, 배우고 싶은 것, 나를 표현하는 문장으로 바꿔 보세요.",
+    comment: "문단 블록도 파란색 단추를 눌러 내용을 수정할 수 있어요.",
     condition: { type: "hasContentChanged", blockType: "P" },
     commentOnSuccess:
       "내용을 수정할 수 있는 이 창을 스타일 창이라고 부릅시다.",
@@ -65,7 +67,7 @@ export const tutorialMissions = [
     instantSuccess: false,
     title: "이미지 주소를 바꿔 보세요",
     description: "이미지 블록의 주소를 다른 이미지 URL로 바꿔 보세요.",
-    comment: "이 링크를 넣어보세요: https://loremflickr.com/400/200",
+    comment: "이미지 블록의 파란색 단추를 눌러 창을 열고, 이 링크를 입력해보세요: https://loremflickr.com/400/200",
     condition: { type: "hasAttributeChanged", blockType: "IMAGE", field: "src" },
     commentOnSuccess: "img 태그는 src 속성에 적힌 주소에서 이미지를 불러옵니다.",
   },
@@ -394,7 +396,8 @@ export const invitationTutorialMissions = [
     instantSuccess: false,
     title: "제목을 초대 문구로 바꿔 보세요",
     description:
-      "예를 들어 ‘당신을 초대합니다’ 또는 ‘우리의 특별한 모임에 함께해요’처럼 바꿔 보세요.",
+      "제목 블록의 내용을 실제 초대 문구로 바꿔 보세요.",
+    comment: "‘당신을 초대합니다’ 또는 ‘우리의 특별한 모임에 함께해요’처럼 써 보세요!",
     condition: { type: "hasContentChanged", blockType: "H1" },
     commentOnSuccess:
       "초대 문구는 방문자가 페이지의 분위기를 바로 느끼게 해 줍니다.",
@@ -457,9 +460,9 @@ export const invitationTutorialMissions = [
   },
   {
     id: "invitation-add-details-list",
-    title: "일정과 장소를 목록으로 정리해 보세요",
+    title: "행사 안내 구역에 목록을 추가해주세요",
     description:
-      "행사 안내 구역에 목록을 추가해 날짜, 장소, 준비물 같은 정보를 정리해 보세요.",
+      "날짜, 장소, 준비물 같은 정보를 정리할 수 있게, 행사 안내 구역에 목록을 추가해 보세요.",
     condition: { type: "hasNestedBlockInNamedContainer", containerName: "행사 안내 구역", childType: "LIST" },
     commentOnSuccess:
       "목록은 HTML에서 ul과 li 구조로 표현됩니다. 날짜, 장소, 준비물처럼 반복되는 정보를 정리하기 좋습니다.",
@@ -485,19 +488,20 @@ export const invitationTutorialMissions = [
   },
   {
     id: "invitation-add-toggle",
-    title: "자세한 안내를 접어 둘 수 있게 만들어 보세요",
+    title: "접어 둘 수 있는 행사 안내를 만들어 보세요",
     description:
-      "자세한 안내 구역에 Toggle 블록을 추가해, 필요한 사람이 펼쳐 볼 수 있게 만들어 보세요.",
+      "행사 안내 구역에 여닫는 구역을 추가해, 필요한 사람이 펼쳐 볼 수 있게 만들어 보세요.",
     condition: { type: "hasNestedBlockInNamedContainer", containerName: "행사 안내 구역", childType: "TOGGLE_ZONE" },
     commentOnSuccess:
-      "Toggle은 길게 보이면 부담스러운 안내를 접어 두었다가 필요할 때 펼쳐 보여줄 수 있습니다.",
+      "여닫는 구역은 길게 보이면 부담스러운 안내를 접어 두었다가 필요할 때 펼쳐 보여줄 수 있습니다.",
   },
   {
     id: "invitation-edit-toggle-content",
     instantSuccess: false,
-    title: "접힌 안내 내용을 수정해 보세요",
+    title: "접힌 안내 내용을 추가해 보세요",
     description:
-      "Toggle 안의 답변 내용을 준비물, 오시는 길, 드레스코드 같은 안내 문구로 바꿔 보세요.",
+      "'열렸을 때 보이는 요소' 안에 문단 블록을 추가하고, 안내 문구를 써보세요.",
+    comment: "준비물, 오시는 길, 드레스코드 같은 내용을 넣어보세요!",
     condition: {
       type: "hasNestedContentChanged",
       parentType: "TOGGLE_ZONE",
@@ -510,16 +514,17 @@ export const invitationTutorialMissions = [
     id: "invitation-add-password-zone",
     title: "비밀 메시지 구역을 추가해 보세요",
     description:
-      "Password Zone을 추가해 비밀번호를 입력해야 열리는 특별한 메시지를 만들어 보세요.",
+      "비밀번호 구역을 추가해 비밀번호를 입력해야 열리는 특별한 메시지를 만들어 보세요.",
     condition: { type: "hasAddedBlock", blockType: "PASSWORD_ZONE" },
     commentOnSuccess:
-      "비밀번호 구역은 정답을 입력했을 때만 숨겨진 내용을 보여주는 인터랙티브한 블록입니다.",
+      "비밀번호 구역은 정답을 입력했을 때만 숨겨진 내용을 보여주는 신기한 블록입니다.",
   },
   {
     id: "invitation-edit-password-answer",
     instantSuccess: false,
     title: "비밀번호 정답을 정해 보세요",
     description: "비밀 메시지를 열 수 있는 비밀번호 정답을 정해 보세요.",
+    comment: "비밀번호 구역 블록의 파란 버튼을 누르고, 아래로 쭉 내려서 찾을 수 있답니다.",
     condition: {
       type: "hasAttributeChanged",
       blockType: "PASSWORD_ZONE",
@@ -533,7 +538,8 @@ export const invitationTutorialMissions = [
     instantSuccess: false,
     title: "비밀 메시지를 수정해 보세요",
     description:
-      "비밀번호를 맞혔을 때 보이는 특별 메시지를 실제 초대장 내용에 맞게 바꿔 보세요.",
+      "'비밀번호가 맞을 때 보여줄 요소' 에 제목 블록과 내용 블록을 넣고, 내용을 바꿔 보세요.",
+    comment: "내용은 원하는 대로 바꿔보세요!",
     condition: {
       type: "hasNestedContentChanged",
       parentType: "PASSWORD_ZONE",
@@ -546,7 +552,7 @@ export const invitationTutorialMissions = [
   {
     id: "invitation-add-link",
     title: "참석 링크를 추가해 보세요",
-    description: "참석 여부를 알려주거나 더 자세한 정보를 볼 수 있는 링크를 추가해 보세요.",
+    description: "참석 여부를 알려주거나 더 자세한 정보를 볼 수 있는 링크를 원하는 곳에 추가해 보세요.",
     condition: { type: "hasAddedBlock", blockType: "A" },
     commentOnSuccess: "링크는 초대받은 사람이 다음 행동으로 넘어갈 수 있게 도와줍니다.",
   },
@@ -561,8 +567,10 @@ export const invitationTutorialMissions = [
   {
     id: "invitation-view-preview",
     title: "미리보기에서 초대장을 확인해 보세요",
+    instantSuccess: false,
     description:
-      "오른쪽 미리보기 탭을 눌러 초대장이 어떻게 보이는지 확인해 보세요. 가능하면 Toggle과 Password Zone도 직접 눌러 보세요.",
+      "오른쪽 미리보기 탭을 눌러 초대장이 어떻게 보이는지 확인해 보세요.",
+    comment: "가능하면 여닫는 구역과 비밀번호 구역도 직접 체험해 보세요.",
     condition: { type: "uiSignal", signal: "previewOpened" },
     commentOnSuccess:
       "미리보기에서는 초대장의 화면과 인터랙션을 함께 확인할 수 있습니다.",
