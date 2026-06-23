@@ -11,6 +11,7 @@ interface TutorialMissionBarProps {
   onCompleteMission: () => void;
   onSkip: () => void;
   onNextMission: () => void;
+  onShowIntro: () => void;
   onHide: () => void;
   onExit: () => void;
 }
@@ -28,6 +29,7 @@ export default function TutorialMissionBar({
   onCompleteMission,
   onSkip,
   onNextMission,
+  onShowIntro,
   onHide,
   onExit,
 }: TutorialMissionBarProps) {
@@ -117,6 +119,13 @@ export default function TutorialMissionBar({
             </button>
           </>
         ) : null}
+        <button
+          type="button"
+          className="rounded-lg border border-slate-700 px-2.5 py-1.5 text-[11px] font-bold text-slate-300 transition-colors hover:border-slate-500 hover:bg-slate-800 hover:text-white"
+          onClick={onShowIntro}
+        >
+          예시 보기
+        </button>
         <button
           type="button"
           className="rounded-lg px-2 py-1.5 text-xs font-bold text-slate-400 transition-colors hover:bg-slate-800 hover:text-white"

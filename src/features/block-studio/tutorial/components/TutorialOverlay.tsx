@@ -6,6 +6,7 @@ import type {
 } from "../types/tutorial.types";
 import TutorialCompletionBar from "./TutorialCompletionBar";
 import TutorialMissionBar from "./TutorialMissionBar";
+import TutorialTrackIntroModal, { type TutorialTrackIntroMode } from "./TutorialTrackIntroModal";
 import TutorialTrackPicker from "./TutorialTrackPicker";
 
 interface TutorialOverlayProps {
@@ -31,6 +32,11 @@ interface TutorialOverlayProps {
   onExit: () => void;
 }
 
+type IntroRequest = {
+  trackId: string;
+  mode: TutorialTrackIntroMode;
+};
+
 export default function TutorialOverlay({
   mode,
   tracks,
@@ -54,8 +60,34 @@ export default function TutorialOverlay({
   onExit,
 }: TutorialOverlayProps) {
   const [isTrackPickerHidden, setIsTrackPickerHidden] = useState(false);
+  const [introRequest, setIntroRequest] = useState<IntroRequest | null>(null);
   const currentMissionNumber =
     successMissionNumber ?? (isComplete ? totalCount : Math.min(processedCount + 1, totalCount));
+  const introTrack = introRequest
+    ? tracks.find((track) => track.id === introRequest.trackId)
+    : undefined;
+
+  const openTrackIntro = (trackId: string, mode: TutorialTrackIntroMode) => {
+    setIntroRequest({ trackId, mode });
+  };
+
+  const closeTrackIntro = () => setIntroRequest(null);
+
+  const confirmTrackIntro = () => {
+    if (!introRequest) return;
+
+    const { trackId, mode: introMode } = introRequest;
+    setIntroRequest(null);
+
+    if (introMode === "start") {
+      onStartTrack(trackId);
+      return;
+    }
+
+    if (introMode === "restart") {
+      onRestart();
+    }
+  };
 
   return (
     <div className="pointer-events-none flex w-full justify-center px-2">
@@ -72,11 +104,15 @@ export default function TutorialOverlay({
         <TutorialTrackPicker
           tracks={tracks}
           completedTrackIds={completedTrackIds}
-          onStartTrack={onStartTrack}
+          onStartTrack={(trackId) => openTrackIntro(trackId, "start")}
           onClose={() => setIsTrackPickerHidden(true)}
         />
       ) : mode.status === "completed" && activeTrack ? (
-        <TutorialCompletionBar track={activeTrack} onRestart={onRestart} onExit={onExit} />
+        <TutorialCompletionBar
+          track={activeTrack}
+          onRestart={() => openTrackIntro(activeTrack.id, "restart")}
+          onExit={onExit}
+        />
       ) : isHidden ? (
         <button
           type="button"
@@ -98,8 +134,17 @@ export default function TutorialOverlay({
           onCompleteMission={onCompleteMission}
           onSkip={onSkip}
           onNextMission={onNextMission}
+          onShowIntro={() => activeTrack && openTrackIntro(activeTrack.id, "review")}
           onHide={onHide}
           onExit={onExit}
+        />
+      )}
+      {introTrack && introRequest && (
+        <TutorialTrackIntroModal
+          track={introTrack}
+          mode={introRequest.mode}
+          onPrimaryAction={introRequest.mode === "review" ? closeTrackIntro : confirmTrackIntro}
+          onClose={closeTrackIntro}
         />
       )}
     </div>

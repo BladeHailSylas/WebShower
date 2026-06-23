@@ -74,10 +74,17 @@ export interface TutorialMission {
   instantSuccess?: boolean;
 }
 
+export interface TutorialTrackIntro {
+  summary: string;
+  learningPoints: readonly string[];
+  previewBlocks: readonly HtmlBlock[];
+}
+
 export interface TutorialTrack {
   id: string;
   title: string;
   description: string;
+  intro: TutorialTrackIntro;
   missions: readonly TutorialMission[];
 }
 
